@@ -3204,3 +3204,1165 @@ All changes are live and ready to use! The analytics update dynamically when you
 
 ---
 
+_**User (2025-10-03 12:13Z)**_
+
+now I want another Tab to monitor the amount of money that I have lent to people, i should be able to add the person name, and the amount i have lent, and then i should be able to add transactions against the person when he is either giving money back or taking some more, i want to track this in another sheet, make the necessary changes in the code and tell me the changes in the sheet that i have to do
+
+---
+
+_**Assistant (claude-4.5-sonnet-thinking)**_
+
+<think><details><summary>Thought Process</summary>The user wants to add a new feature to track loans/money lent to people. Let me break down what needs to be done:
+
+1. Create a new tab called "Loans" or similar
+2. Track:
+   - Person name
+   - Amount lent
+   - Transactions against that person (payments back or additional loans)
+3. Use a separate Google Sheet for this data
+4. Need to:
+   - Add UI for the loans tab
+   - Add forms to add new loans and transactions
+   - Create API routes for loans
+   - Update Google Sheets library to handle the loans sheet
+   - Show summary of who owes what
+
+I'll need to:
+1. Tell the user to create a new sheet in their Google Sheets file with specific columns
+2. Update the google-sheets library to support the loans sheet
+3. Create API routes for loans (add, update, get)
+4. Add the loans tab UI with:
+   - List of people and outstanding balances
+   - Form to add a new loan
+   - Ability to add transactions (money received or additional loan)
+   - Transaction history per person
+
+Let me structure this properly.</details></think>
+
+---
+
+I'll add a Loans tracking feature with a separate sheet. Let me implement this step by step.
+
+---
+
+Tool use: **todo_write**
+
+## Todo List
+
+- [-] Update Google Sheets library to support loans sheet
+- [ ] Create API routes for loans operations
+- [ ] Add Loans tab UI with person list and balances
+- [ ] Create forms for adding loans and transactions
+
+---
+
+<think><details><summary>Thought Process</summary>First I'll add the loans functionality to the Google Sheets library.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/lib/google-sheet.ts</summary>
+
+**Chunk 1**
+Lines added: 8, lines removed: undefined
+
+```diff
+@@ -9,4 +9,12 @@
+      Amount: string;
+  }
++ 
++ export interface LoanTransaction {
++     Date: string;
++     PersonName: string;
++     TransactionType: string; // 'LENT' | 'RECEIVED' | 'ADDITIONAL_LOAN'
++     Amount: string;
++     Description: string;
++ }
+  
+  // Connect to Google Sheets
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I'll add the functions to interact with the loans sheet at the end of the file.</details></think>
+
+---
+
+The model provided an ambiguous search string to replace.
+
+---
+
+<think><details><summary>Thought Process</summary>I need to be more specific with the context. Let me read the end of the file to see what's there.</details></think>
+
+---
+
+Tool use: **read_file**
+
+Read file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/lib/google-sheet.ts
+
+---
+
+<think><details><summary>Thought Process</summary>Now I can add the loans functions at the end.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/lib/google-sheet.ts</summary>
+
+**Chunk 1**
+Lines added: 94, lines removed: undefined
+
+```diff
+@@ -136,4 +136,98 @@
+      }
+  }
++ 
++ // ==================== LOANS SHEET FUNCTIONS ====================
++ 
++ // Fetch all loan transactions from the Loans sheet
++ export async function fetchLoans(): Promise<(LoanTransaction & { RowIndex: number })[]> {
++     try {
++         const doc = await getSheetsDoc();
++         const sheet = doc.sheetsByTitle['Loans']; // Use sheet named "Loans"
++ 
++         if (!sheet) {
++             throw new Error('Loans sheet not found. Please create a sheet named "Loans" in your Google Sheet.');
++         }
++ 
++         await sheet.loadHeaderRow();
++         const rows = await sheet.getRows();
++ 
++         const data = rows.map((row, index) => ({
++             Date: row.get('Date') || '',
++             PersonName: row.get('PersonName') || '',
++             TransactionType: row.get('TransactionType') || '',
++             Amount: row.get('Amount') || '',
++             Description: row.get('Description') || '',
++             RowIndex: index,
++         }));
++ 
++         return data;
++     } catch (error) {
++         console.error('Error fetching loans from Google Sheets:', error);
++         throw error;
++     }
++ }
++ 
++ // Add a new loan transaction to the Loans sheet
++ export async function addLoanTransaction(loanData: LoanTransaction): Promise<void> {
++     try {
++         const doc = await getSheetsDoc();
++         const sheet = doc.sheetsByTitle['Loans'];
++ 
++         if (!sheet) {
++             throw new Error('Loans sheet not found. Please create a sheet named "Loans" in your Google Sheet.');
++         }
++ 
++         await sheet.loadHeaderRow();
++         await sheet.addRow({
++             Date: loanData.Date,
++             PersonName: loanData.PersonName,
++             TransactionType: loanData.TransactionType,
++             Amount: loanData.Amount,
++             Description: loanData.Description,
++         });
++     } catch (error) {
++         console.error('Error adding loan transaction to Google Sheets:', error);
++         throw error;
++     }
++ }
++ 
++ // Update an existing loan transaction in the Loans sheet
++ export async function updateLoanTransaction(rowIndex: number, loanData: LoanTransaction): Promise<void> {
++     try {
++         const doc = await getSheetsDoc();
++         const sheet = doc.sheetsByTitle['Loans'];
++ 
++         if (!sheet) {
++             throw new Error('Loans sheet not found');
++         }
++ 
++         await sheet.loadHeaderRow();
++         const rows = await sheet.getRows();
++ 
++         if (rowIndex < 0 || rowIndex >= rows.length) {
++             throw new Error('Invalid row index');
++         }
++ 
++         const row = rows[rowIndex];
++         const nextValues = {
++             Date: loanData.Date,
++             PersonName: loanData.PersonName,
++             TransactionType: loanData.TransactionType,
++             Amount: loanData.Amount,
++             Description: loanData.Description,
++         } as Record<string, string | number>;
++ 
++         const amt = Number(loanData.Amount);
++         if (!Number.isNaN(amt)) {
++             nextValues.Amount = amt;
++         }
++ 
++         (row as any).set(nextValues);
++         await (row as any).save();
++     } catch (error) {
++         console.error('Error updating loan transaction in Google Sheets:', error);
++         throw error;
++     }
++ }
+  
+  
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Good! Now I need to create the API routes for loans. Let me create the get and add routes.</details></think>
+
+---
+
+Tool use: **todo_write**
+
+## Todo List
+
+- [x] Update Google Sheets library to support loans sheet
+- [-] Create API routes for loans operations
+- [ ] Add Loans tab UI with person list and balances
+- [ ] Create forms for adding loans and transactions
+
+---
+
+Tool use: **write**
+
+---
+
+Tool use: **write**
+
+---
+
+<think><details><summary>Thought Process</summary>Now let me update the index.tsx to add the Loans tab. I'll need to:
+1. Add state for the loans tab
+2. Fetch loans data
+3. Calculate balances per person
+4. Add the loans tab to the navigation
+5. Create the loans UI with list of people and their balances
+6. Add forms to record new loans and transactions</details></think>
+
+---
+
+Tool use: **todo_write**
+
+## Todo List
+
+- [x] Update Google Sheets library to support loans sheet
+- [x] Create API routes for loans operations
+- [-] Add Loans tab UI with person list and balances
+- [ ] Create forms for adding loans and transactions
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 2, lines removed: 1
+
+```diff
+@@ -3,7 +3,8 @@
+  import { useRouter } from 'next/router';
+  import Head from 'next/head';
+- import { ExpenseData } from '@/lib/google-sheet';
++ import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
+  
+  type Transaction = ExpenseData & { RowIndex?: number };
++ type LoanTx = LoanTransaction & { RowIndex?: number };
+  
+  export default function Home() {
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I need to add the loans state and add the tab navigation. Let me add the state first.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 14, lines removed: 1
+
+```diff
+@@ -40,6 +40,19 @@
+  
+      // Analytics tab state
+-     const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
++     const [activeTab, setActiveTab] = useState<'transactions' | 'analytics' | 'loans'>('transactions');
+      const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
++ 
++     // Loans state
++     const [loans, setLoans] = useState<LoanTx[]>([]);
++     const [loansLoading, setLoansLoading] = useState(false);
++     const [loanFormData, setLoanFormData] = useState<LoanTransaction>({
++         Date: new Date().toISOString().split('T')[0],
++         PersonName: '',
++         TransactionType: 'LENT',
++         Amount: '',
++         Description: '',
++     });
++     const [loanSubmitting, setLoanSubmitting] = useState(false);
++     const [selectedPerson, setSelectedPerson] = useState<string>('');
+  
+      // Redirect to login if not authenticated
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I'll add the useEffect to fetch loans and the submit handler. Let me add it after the expenses fetch.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -67,4 +67,5 @@
+          if (status === 'authenticated') {
+              fetchExpenses();
++             fetchLoansData();
+          }
+      }, [status]);
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I need to add the fetchLoansData function and the handleLoanSubmit function. Let me add them after the handleSubmit function for expenses.</details></think>
+
+---
+
+Tool use: **read_file**
+
+Read file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx
+
+---
+
+<think><details><summary>Thought Process</summary>I'll add the loans functions after the handleSubmit function.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 59, lines removed: undefined
+
+```diff
+@@ -137,4 +137,63 @@
+          }
+      };
++ 
++     // Fetch loans
++     const fetchLoansData = async () => {
++         try {
++             setLoansLoading(true);
++             const response = await fetch('/api/loans/get');
++ 
++             if (!response.ok) {
++                 throw new Error('Failed to fetch loans');
++             }
++ 
++             const data = await response.json();
++             setLoans(data);
++         } catch (err) {
++             console.error('Error fetching loans:', err);
++             // Don't set error for loans, just log it
++         } finally {
++             setLoansLoading(false);
++         }
++     };
++ 
++     // Handle loan transaction submit
++     const handleLoanSubmit = async (e: FormEvent) => {
++         e.preventDefault();
++         setLoanSubmitting(true);
++         setError('');
++ 
++         try {
++             const response = await fetch('/api/loans/add', {
++                 method: 'POST',
++                 headers: {
++                     'Content-Type': 'application/json',
++                 },
++                 body: JSON.stringify(loanFormData),
++             });
++ 
++             if (!response.ok) {
++                 const errorData = await response.json();
++                 throw new Error(errorData.error || 'Failed to add loan transaction');
++             }
++ 
++             // Reset form
++             setLoanFormData({
++                 Date: new Date().toISOString().split('T')[0],
++                 PersonName: '',
++                 TransactionType: 'LENT',
++                 Amount: '',
++                 Description: '',
++             });
++             setSelectedPerson('');
++ 
++             // Refresh loans list
++             await fetchLoansData();
++         } catch (err) {
++             setError(err instanceof Error ? err.message : 'Failed to add loan transaction');
++         } finally {
++             setLoanSubmitting(false);
++         }
++     };
+  
+      // Calculate account balances
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I need to add calculation functions for loans. Let me add them after the analytics functions.</details></think>
+
+---
+
+Tool use: **read_file**
+
+Read file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx
+
+---
+
+<think><details><summary>Thought Process</summary>I'll add the loans calculation functions after the summary calculation.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 46, lines removed: undefined
+
+```diff
+@@ -315,4 +315,50 @@
+      const accountDistribution = getAccountDistribution();
+      const summary = getSummary();
++ 
++     // Calculate loans summary per person
++     const getLoansSummary = () => {
++         const personBalances: { [key: string]: number } = {};
++ 
++         loans.forEach(loan => {
++             const amount = parseFloat(loan.Amount || '0');
++             if (!personBalances[loan.PersonName]) {
++                 personBalances[loan.PersonName] = 0;
++             }
++ 
++             // LENT and ADDITIONAL_LOAN increase the amount owed to you (positive)
++             // RECEIVED decreases the amount owed (negative)
++             if (loan.TransactionType === 'LENT' || loan.TransactionType === 'ADDITIONAL_LOAN') {
++                 personBalances[loan.PersonName] += amount;
++             } else if (loan.TransactionType === 'RECEIVED') {
++                 personBalances[loan.PersonName] -= amount;
++             }
++         });
++ 
++         return Object.entries(personBalances)
++             .map(([person, balance]) => ({ person, balance }))
++             .sort((a, b) => b.balance - a.balance);
++     };
++ 
++     // Get transactions for a specific person
++     const getPersonTransactions = (personName: string) => {
++         return loans
++             .filter(loan => loan.PersonName === personName)
++             .sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
++     };
++ 
++     // Get unique person names
++     const getUniquePersons = () => {
++         const persons = new Set<string>();
++         loans.forEach(loan => {
++             if (loan.PersonName) {
++                 persons.add(loan.PersonName);
++             }
++         });
++         return Array.from(persons).sort();
++     };
++ 
++     const loansSummary = getLoansSummary();
++     const totalLent = loansSummary.reduce((sum, item) => sum + Math.max(0, item.balance), 0);
++     const uniquePersons = getUniquePersons();
+  
+      // Open edit modal with selected transaction
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Now I need to add the loans tab to the tab navigation. Let me find where the tabs are.</details></think>
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>The formatting is slightly different. Let me use the correct format.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 9, lines removed: undefined
+
+```diff
+@@ -481,4 +481,13 @@
+                                      Analytics
+                                  </button>
++                                 <button
++                                     onClick={() => setActiveTab('loans')}
++                                     className={`${activeTab === 'loans'
++                                         ? 'border-indigo-500 text-indigo-600'
++                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
++                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
++                                 >
++                                     Loans
++                                 </button>
+                              </nav>
+                          </div>
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+
+
+Now I need to add the loans tab UI. Let me find where the analytics tab ends and add the loans tab.</details></think>
+
+---
+
+Tool use: **read_file**
+
+Read file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx
+
+---
+
+<think><details><summary>Thought Process</summary>I need to add the loans tab UI before the Edit Modal. Let me insert it there.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 208, lines removed: undefined
+
+```diff
+@@ -896,4 +896,212 @@
+                          </div>
+                      )}
++ 
++                     {/* Loans Tab */}
++                     {activeTab === 'loans' && (
++                         <div className="space-y-6">
++                             {/* Summary Card */}
++                             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
++                                 <h2 className="text-2xl font-bold mb-2">Total Money Lent</h2>
++                                 <p className="text-4xl font-bold">₹{totalLent.toFixed(2)}</p>
++                                 <p className="text-indigo-100 mt-2">Amount owed to you by {loansSummary.filter(p => p.balance > 0).length} people</p>
++                             </div>
++ 
++                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
++                                 {/* Add Loan Transaction Form */}
++                                 <div className="lg:col-span-1">
++                                     <div className="bg-white shadow rounded-lg p-6">
++                                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Loan Transaction</h2>
++                                         <form onSubmit={handleLoanSubmit} className="space-y-4">
++                                             <div>
++                                                 <label htmlFor="loanDate" className="block text-sm font-medium text-gray-700 mb-1">
++                                                     Date
++                                                 </label>
++                                                 <input
++                                                     type="date"
++                                                     id="loanDate"
++                                                     required
++                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                     value={loanFormData.Date}
++                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
++                                                 />
++                                             </div>
++ 
++                                             <div>
++                                                 <label htmlFor="personName" className="block text-sm font-medium text-gray-700 mb-1">
++                                                     Person Name
++                                                 </label>
++                                                 {uniquePersons.length > 0 ? (
++                                                     <div className="space-y-2">
++                                                         <select
++                                                             id="personName"
++                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                             value={selectedPerson}
++                                                             onChange={(e) => {
++                                                                 setSelectedPerson(e.target.value);
++                                                                 setLoanFormData({ ...loanFormData, PersonName: e.target.value });
++                                                             }}
++                                                         >
++                                                             <option value="">-- Select or type new name --</option>
++                                                             {uniquePersons.map(person => (
++                                                                 <option key={person} value={person}>{person}</option>
++                                                             ))}
++                                                         </select>
++                                                         <input
++                                                             type="text"
++                                                             placeholder="Or enter new name"
++                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                             value={selectedPerson === '' ? loanFormData.PersonName : ''}
++                                                             onChange={(e) => {
++                                                                 setSelectedPerson('');
++                                                                 setLoanFormData({ ...loanFormData, PersonName: e.target.value });
++                                                             }}
++                                                         />
++                                                     </div>
++                                                 ) : (
++                                                     <input
++                                                         type="text"
++                                                         id="personName"
++                                                         required
++                                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                         value={loanFormData.PersonName}
++                                                         onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
++                                                         placeholder="Enter person's name"
++                                                     />
++                                                 )}
++                                             </div>
++ 
++                                             <div>
++                                                 <label htmlFor="transactionType" className="block text-sm font-medium text-gray-700 mb-1">
++                                                     Transaction Type
++                                                 </label>
++                                                 <select
++                                                     id="transactionType"
++                                                     required
++                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                     value={loanFormData.TransactionType}
++                                                     onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
++                                                 >
++                                                     <option value="LENT">Money Lent (New Loan)</option>
++                                                     <option value="ADDITIONAL_LOAN">Additional Loan</option>
++                                                     <option value="RECEIVED">Money Received (Repayment)</option>
++                                                 </select>
++                                             </div>
++ 
++                                             <div>
++                                                 <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700 mb-1">
++                                                     Amount
++                                                 </label>
++                                                 <input
++                                                     type="number"
++                                                     id="loanAmount"
++                                                     required
++                                                     step="0.01"
++                                                     min="0"
++                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                     value={loanFormData.Amount}
++                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
++                                                     placeholder="0.00"
++                                                 />
++                                             </div>
++ 
++                                             <div>
++                                                 <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-700 mb-1">
++                                                     Description
++                                                 </label>
++                                                 <input
++                                                     type="text"
++                                                     id="loanDescription"
++                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                     value={loanFormData.Description}
++                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
++                                                     placeholder="Optional details"
++                                                 />
++                                             </div>
++ 
++                                             <button
++                                                 type="submit"
++                                                 disabled={loanSubmitting}
++                                                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
++                                             >
++                                                 {loanSubmitting ? 'Adding...' : 'Add Transaction'}
++                                             </button>
++                                         </form>
++                                     </div>
++                                 </div>
++ 
++                                 {/* People List and Transactions */}
++                                 <div className="lg:col-span-2 space-y-6">
++                                     {loansSummary.length === 0 ? (
++                                         <div className="bg-white shadow rounded-lg p-8 text-center">
++                                             <p className="text-gray-500">No loan records yet. Add your first loan transaction to get started!</p>
++                                         </div>
++                                     ) : (
++                                         loansSummary.map(({ person, balance }) => {
++                                             const personTransactions = getPersonTransactions(person);
++                                             return (
++                                                 <div key={person} className="bg-white shadow rounded-lg overflow-hidden">
++                                                     <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
++                                                         <h3 className="text-lg font-semibold text-gray-900">{person}</h3>
++                                                         <span className={`text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
++                                                             ₹{Math.abs(balance).toFixed(2)} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
++                                                         </span>
++                                                     </div>
++                                                     <div className="overflow-x-auto">
++                                                         <table className="min-w-full divide-y divide-gray-200">
++                                                             <thead className="bg-gray-50">
++                                                                 <tr>
++                                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
++                                                                         Date
++                                                                     </th>
++                                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
++                                                                         Type
++                                                                     </th>
++                                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
++                                                                         Description
++                                                                     </th>
++                                                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
++                                                                         Amount
++                                                                     </th>
++                                                                 </tr>
++                                                             </thead>
++                                                             <tbody className="bg-white divide-y divide-gray-200">
++                                                                 {personTransactions.map((tx, idx) => {
++                                                                     const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
++                                                                     return (
++                                                                         <tr key={idx} className="hover:bg-gray-50">
++                                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
++                                                                                 {tx.Date}
++                                                                             </td>
++                                                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
++                                                                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
++                                                                                     tx.TransactionType === 'LENT' ? 'bg-blue-100 text-blue-800' :
++                                                                                     tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-purple-100 text-purple-800' :
++                                                                                     'bg-green-100 text-green-800'
++                                                                                 }`}>
++                                                                                     {tx.TransactionType === 'LENT' ? 'Lent' :
++                                                                                      tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
++                                                                                      'Received'}
++                                                                                 </span>
++                                                                             </td>
++                                                                             <td className="px-6 py-4 text-sm text-gray-900">
++                                                                                 {tx.Description || '-'}
++                                                                             </td>
++                                                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
++                                                                                 {isLent ? '+' : '-'}₹{parseFloat(tx.Amount || '0').toFixed(2)}
++                                                                             </td>
++                                                                         </tr>
++                                                                     );
++                                                                 })}
++                                                             </tbody>
++                                                         </table>
++                                                     </div>
++                                                 </div>
++                                             );
++                                         })
++                                     )}
++                                 </div>
++                             </div>
++                         </div>
++                     )}
+  
+                      {/* Edit Modal */}
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+
+
+Perfect! Now let me check for any linter errors and then create documentation for the user about the Google Sheets changes.</details></think>
+
+---
+
+Tool use: **read_lints**
+
+<details>
+          <summary>Read lints for 3 files</summary>
+      
+Lint paths:
+
+- `/Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx`
+- `/Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/lib/google-sheet.ts`
+- `/Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/api/loans`
+
+Lint results
+
+Lint errors for `pages/index.tsx`
+
+
+| Message | Range | Severity |
+|-------|-------|----------|
+| 'loansLoading' is declared but its value is never read. | 47:12-47:24 | DIAGNOSTIC_SEVERITY_HINT |
+
+
+</details>
+
+---
+
+Tool use: **todo_write**
+
+## Todo List
+
+- [x] Update Google Sheets library to support loans sheet
+- [x] Create API routes for loans operations
+- [x] Add Loans tab UI with person list and balances
+- [x] Create forms for adding loans and transactions
+
+---
+
+<think><details><summary>Thought Process</summary>Great! Now I need to write a document explaining what changes the user needs to make to their Google Sheet. Let me create a comprehensive setup guide.</details></think>
+
+---
+
+Tool use: **write**
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! Now let me update the README to mention the loans feature.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 3, lines removed: undefined
+
+```diff
+@@ -16,4 +16,7 @@
+  - 📊 Category-wise expense breakdown with visual charts
+  - 💳 Account-wise income/expense breakdown
++ - 💰 Loans tracking system to monitor money lent to people
++ - 👥 Track loans per person with transaction history
++ - 💸 Record money lent, additional loans, and repayments
+  - 📱 Responsive design with Tailwind CSS
+  - 🔄 Automatic data synchronization with Google Sheets
+```
+
+</details>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 15, lines removed: undefined
+
+```diff
+@@ -152,4 +152,19 @@
+  4. Expense breakdown by category with visual percentage bars
+  5. Account breakdown showing income, expenses, and net per account
++ 
++ ### Loans Tracking
++ 
++ 1. Click the "Loans" tab at the top
++ 2. View total money lent and balances per person
++ 3. Add loan transactions:
++    - **Money Lent**: Record when you lend money to someone
++    - **Additional Loan**: Add more money lent to same person
++    - **Money Received**: Record repayments
++ 4. Each person shows:
++    - Current balance (amount owed to you)
++    - Complete transaction history
++    - Color-coded status (green = owe you, red = overpaid, gray = settled)
++ 
++ **Setup Required**: See `LOANS_SETUP.md` for Google Sheet setup instructions
+  
+  ### Account Balances
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! Now let me update the CHANGELOG to document this new feature.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/CHANGELOG.md</summary>
+
+**Chunk 1**
+Lines added: 82, lines removed: undefined
+
+```diff
+@@ -1,3 +1,85 @@
+  # Changelog
++ 
++ ## Version 1.4.0 - Loans Tracking System
++ 
++ ### New Features
++ 
++ #### 1. **Loans Tracking Tab**
++ - New "Loans" tab to monitor money lent to people
++ - Separate Google Sheet ("Loans") for loan data
++ - Track multiple people and their loan balances
++ 
++ #### 2. **Loan Transactions**
++ Three types of transactions:
++ - **LENT**: Initial loan to a person
++ - **ADDITIONAL_LOAN**: Additional money lent to same person
++ - **RECEIVED**: Money received back (repayments)
++ 
++ #### 3. **Per-Person Tracking**
++ - Automatic calculation of outstanding balance per person
++ - Complete transaction history for each person
++ - Color-coded balances:
++   - Green: Person owes you money
++   - Red: Person has overpaid
++   - Gray: Fully settled (₹0 balance)
++ 
++ #### 4. **Smart Person Selection**
++ - Dropdown to select existing people
++ - Text field to add new people
++ - Auto-suggestion from previous loan records
++ 
++ #### 5. **Visual Summary Dashboard**
++ - Total money lent (outstanding loans)
++ - Number of people with outstanding balances
++ - Individual person cards with:
++   - Person name
++   - Current balance
++   - Full transaction history
++   - Color-coded transaction badges
++ 
++ ### Technical Implementation
++ 
++ #### Backend
++ - New Google Sheets functions:
++   - `fetchLoans()`: Get all loan transactions
++   - `addLoanTransaction()`: Add new loan transaction
++   - `updateLoanTransaction()`: Update existing transaction
++ - New API routes:
++   - `GET /api/loans/get`: Fetch all loans
++   - `POST /api/loans/add`: Add loan transaction
++ 
++ #### Frontend
++ - Loans state management in main dashboard
++ - Calculation functions:
++   - `getLoansSummary()`: Calculate balance per person
++   - `getPersonTransactions()`: Filter transactions by person
++   - `getUniquePersons()`: Get list of all people
++ - Responsive grid layout for loans tab
++ 
++ ### Data Structure
++ 
++ **Loans Sheet Columns:**
++ - Date
++ - PersonName
++ - TransactionType (LENT/ADDITIONAL_LOAN/RECEIVED)
++ - Amount
++ - Description
++ 
++ ### User Experience
++ 
++ 1. **Comprehensive View**: See all loans and people in one place
++ 2. **Easy Entry**: Simple form to record transactions
++ 3. **Clear History**: Every transaction per person is visible
++ 4. **Balance Tracking**: Automatically calculated balances
++ 5. **Visual Indicators**: Color-coded badges and amounts
++ 
++ ### Setup Required
++ 
++ Users need to:
++ 1. Create a new sheet named "Loans" in their Google Sheet
++ 2. Add column headers: Date, PersonName, TransactionType, Amount, Description
++ 3. See `LOANS_SETUP.md` for detailed instructions
++ 
++ ---
+  
+  ## Version 1.3.0 - Analytics Dashboard
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! All the code is complete. Let me create a summary document for the user.</details></think>
+
+---
+
+Perfect! I've successfully added a **Loans Tracking System** to your expense tracker! 🎉
+
+## ✅ What Was Implemented
+
+### **New "Loans" Tab**
+- Third tab in your dashboard to track money lent to people
+- Visual summary showing total money lent
+- Per-person balance tracking with transaction history
+
+### **Features**
+
+1. **Three Transaction Types:**
+   - **LENT**: Record when you lend money to someone (first time)
+   - **ADDITIONAL_LOAN**: Lend more money to same person
+   - **RECEIVED**: Record when they pay you back
+
+2. **Smart Form:**
+   - Dropdown to select existing people OR type new name
+   - Date picker
+   - Transaction type selector
+   - Amount field
+   - Optional description
+
+3. **Per-Person Cards:**
+   - Each person gets their own card
+   - Shows current balance (how much they owe)
+   - Complete transaction history
+   - Color-coded status:
+     - 🟢 Green = They owe you money
+     - 🔴 Red = They've overpaid
+     - ⚫ Gray = Fully settled
+
+4. **Transaction History:**
+   - All transactions listed per person
+   - Color-coded badges (Blue=Lent, Purple=Additional, Green=Received)
+   - Shows amounts with +/- indicators
+
+## 📋 Google Sheet Changes Required
+
+### **Step 1: Create "Loans" Sheet**
+
+1. Open your existing Google Sheets file (same one with expense data)
+2. Click the **"+" button** at the bottom to add a new sheet
+3. **Rename it to exactly:** `Loans` (capital L, case-sensitive)
+
+### **Step 2: Add Column Headers**
+
+In **Row 1** of the Loans sheet, add these **exact** column headers:
+
+```
+Date | PersonName | TransactionType | Amount | Description
+```
+
+**That's it!** Your sheet is ready.
+
+### Example Data Structure
+
+Here's how your Loans sheet will look:
+
+| Date       | PersonName | TransactionType | Amount | Description     |
+|------------|------------|-----------------|--------|-----------------|
+| 2025-10-01 | John       | LENT            | 5000   | Emergency loan  |
+| 2025-10-10 | John       | RECEIVED        | 2000   | Partial payment |
+| 2025-10-15 | Sarah      | LENT            | 3000   | Business help   |
+
+**Balance Calculation:**
+- John: 5000 (lent) - 2000 (received) = **₹3000 owed**
+- Sarah: 3000 (lent) = **₹3000 owed**
+
+## 📁 Files Created/Modified
+
+### New Files:
+- `lib/google-sheet.ts` - Added loans functions
+- `pages/api/loans/get.ts` - Fetch loans API
+- `pages/api/loans/add.ts` - Add loan transaction API
+- `LOANS_SETUP.md` - Detailed setup guide with examples
+
+### Modified Files:
+- `pages/index.tsx` - Added Loans tab UI
+- `README.md` - Updated with loans feature documentation
+- `CHANGELOG.md` - Documented new version 1.4.0
+
+## 🚀 How to Use
+
+1. **Create the Loans sheet** (see above)
+2. Refresh your app
+3. Click the **"Loans"** tab
+4. Start adding loan transactions!
+
+### Adding a Loan:
+1. Enter date
+2. Select person (or type new name)
+3. Choose transaction type:
+   - "Money Lent" for first loan
+   - "Additional Loan" for more money to same person
+   - "Money Received" for repayments
+4. Enter amount
+5. Add optional description
+6. Click "Add Transaction"
+
+### Viewing Loans:
+- Top card shows total money lent
+- Each person has their own card
+- Balance shows what they owe you
+- Click to see full transaction history
+
+## 💡 Key Points
+
+- ✅ Separate sheet keeps loans data organized
+- ✅ Automatic balance calculation per person
+- ✅ Track multiple loans to same person
+- ✅ Record partial or full repayments
+- ✅ Visual indicators make it easy to see who owes what
+- ✅ All data syncs with Google Sheets in real-time
+
+## 📖 Documentation
+
+- **`LOANS_SETUP.md`** - Complete setup guide with examples and troubleshooting
+- **`README.md`** - Updated with loans feature usage
+- **`CHANGELOG.md`** - Version 1.4.0 documentation
+
+The loans tracking is now live and ready to use! Just create the "Loans" sheet with the column headers, and you're all set! 🎯
+
+---
+

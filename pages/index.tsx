@@ -2,9 +2,10 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { ExpenseData } from '@/lib/google-sheet';
+import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
 
 type Transaction = ExpenseData & { RowIndex?: number };
+type LoanTx = LoanTransaction & { RowIndex?: number };
 
 export default function Home() {
     const router = useRouter();
@@ -38,8 +39,21 @@ export default function Home() {
     const [updating, setUpdating] = useState(false);
 
     // Analytics tab state
-    const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
+    const [activeTab, setActiveTab] = useState<'transactions' | 'analytics' | 'loans'>('transactions');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
+
+    // Loans state
+    const [loans, setLoans] = useState<LoanTx[]>([]);
+    const [loansLoading, setLoansLoading] = useState(false);
+    const [loanFormData, setLoanFormData] = useState<LoanTransaction>({
+        Date: new Date().toISOString().split('T')[0],
+        PersonName: '',
+        TransactionType: 'LENT',
+        Amount: '',
+        Description: '',
+    });
+    const [loanSubmitting, setLoanSubmitting] = useState(false);
+    const [selectedPerson, setSelectedPerson] = useState<string>('');
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -52,6 +66,7 @@ export default function Home() {
     useEffect(() => {
         if (status === 'authenticated') {
             fetchExpenses();
+            fetchLoansData();
         }
     }, [status]);
 
@@ -119,6 +134,65 @@ export default function Home() {
             setError(err instanceof Error ? err.message : 'Failed to add transaction');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    // Fetch loans
+    const fetchLoansData = async () => {
+        try {
+            setLoansLoading(true);
+            const response = await fetch('/api/loans/get');
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch loans');
+            }
+
+            const data = await response.json();
+            setLoans(data);
+        } catch (err) {
+            console.error('Error fetching loans:', err);
+            // Don't set error for loans, just log it
+        } finally {
+            setLoansLoading(false);
+        }
+    };
+
+    // Handle loan transaction submit
+    const handleLoanSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setLoanSubmitting(true);
+        setError('');
+
+        try {
+            const response = await fetch('/api/loans/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loanFormData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to add loan transaction');
+            }
+
+            // Reset form
+            setLoanFormData({
+                Date: new Date().toISOString().split('T')[0],
+                PersonName: '',
+                TransactionType: 'LENT',
+                Amount: '',
+                Description: '',
+            });
+            setSelectedPerson('');
+
+            // Refresh loans list
+            await fetchLoansData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add loan transaction');
+        } finally {
+            setLoanSubmitting(false);
         }
     };
 
@@ -241,6 +315,52 @@ export default function Home() {
     const accountDistribution = getAccountDistribution();
     const summary = getSummary();
 
+    // Calculate loans summary per person
+    const getLoansSummary = () => {
+        const personBalances: { [key: string]: number } = {};
+
+        loans.forEach(loan => {
+            const amount = parseFloat(loan.Amount || '0');
+            if (!personBalances[loan.PersonName]) {
+                personBalances[loan.PersonName] = 0;
+            }
+
+            // LENT and ADDITIONAL_LOAN increase the amount owed to you (positive)
+            // RECEIVED decreases the amount owed (negative)
+            if (loan.TransactionType === 'LENT' || loan.TransactionType === 'ADDITIONAL_LOAN') {
+                personBalances[loan.PersonName] += amount;
+            } else if (loan.TransactionType === 'RECEIVED') {
+                personBalances[loan.PersonName] -= amount;
+            }
+        });
+
+        return Object.entries(personBalances)
+            .map(([person, balance]) => ({ person, balance }))
+            .sort((a, b) => b.balance - a.balance);
+    };
+
+    // Get transactions for a specific person
+    const getPersonTransactions = (personName: string) => {
+        return loans
+            .filter(loan => loan.PersonName === personName)
+            .sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
+    };
+
+    // Get unique person names
+    const getUniquePersons = () => {
+        const persons = new Set<string>();
+        loans.forEach(loan => {
+            if (loan.PersonName) {
+                persons.add(loan.PersonName);
+            }
+        });
+        return Array.from(persons).sort();
+    };
+
+    const loansSummary = getLoansSummary();
+    const totalLent = loansSummary.reduce((sum, item) => sum + Math.max(0, item.balance), 0);
+    const uniquePersons = getUniquePersons();
+
     // Open edit modal with selected transaction
     const openEditModal = (tx: Transaction) => {
         const numericAmount = parseFloat(tx.Amount || '0');
@@ -359,6 +479,15 @@ export default function Home() {
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                                 >
                                     Analytics
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('loans')}
+                                    className={`${activeTab === 'loans'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                >
+                                    Loans
                                 </button>
                             </nav>
                         </div>
@@ -762,6 +891,213 @@ export default function Home() {
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Loans Tab */}
+                    {activeTab === 'loans' && (
+                        <div className="space-y-6">
+                            {/* Summary Card */}
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                                <h2 className="text-2xl font-bold mb-2">Total Money Lent</h2>
+                                <p className="text-4xl font-bold">₹{totalLent.toFixed(2)}</p>
+                                <p className="text-indigo-100 mt-2">Amount owed to you by {loansSummary.filter(p => p.balance > 0).length} people</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Add Loan Transaction Form */}
+                                <div className="lg:col-span-1">
+                                    <div className="bg-white shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Loan Transaction</h2>
+                                        <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                            <div>
+                                                <label htmlFor="loanDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Date
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    id="loanDate"
+                                                    required
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    value={loanFormData.Date}
+                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="personName" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Person Name
+                                                </label>
+                                                {uniquePersons.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        <select
+                                                            id="personName"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            value={selectedPerson}
+                                                            onChange={(e) => {
+                                                                setSelectedPerson(e.target.value);
+                                                                setLoanFormData({ ...loanFormData, PersonName: e.target.value });
+                                                            }}
+                                                        >
+                                                            <option value="">-- Select or type new name --</option>
+                                                            {uniquePersons.map(person => (
+                                                                <option key={person} value={person}>{person}</option>
+                                                            ))}
+                                                        </select>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Or enter new name"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            value={selectedPerson === '' ? loanFormData.PersonName : ''}
+                                                            onChange={(e) => {
+                                                                setSelectedPerson('');
+                                                                setLoanFormData({ ...loanFormData, PersonName: e.target.value });
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        id="personName"
+                                                        required
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        value={loanFormData.PersonName}
+                                                        onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
+                                                        placeholder="Enter person's name"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="transactionType" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Transaction Type
+                                                </label>
+                                                <select
+                                                    id="transactionType"
+                                                    required
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    value={loanFormData.TransactionType}
+                                                    onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
+                                                >
+                                                    <option value="LENT">Money Lent (New Loan)</option>
+                                                    <option value="ADDITIONAL_LOAN">Additional Loan</option>
+                                                    <option value="RECEIVED">Money Received (Repayment)</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Amount
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    id="loanAmount"
+                                                    required
+                                                    step="0.01"
+                                                    min="0"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    value={loanFormData.Amount}
+                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Description
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    id="loanDescription"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    value={loanFormData.Description}
+                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
+                                                    placeholder="Optional details"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={loanSubmitting}
+                                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {loanSubmitting ? 'Adding...' : 'Add Transaction'}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                {/* People List and Transactions */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    {loansSummary.length === 0 ? (
+                                        <div className="bg-white shadow rounded-lg p-8 text-center">
+                                            <p className="text-gray-500">No loan records yet. Add your first loan transaction to get started!</p>
+                                        </div>
+                                    ) : (
+                                        loansSummary.map(({ person, balance }) => {
+                                            const personTransactions = getPersonTransactions(person);
+                                            return (
+                                                <div key={person} className="bg-white shadow rounded-lg overflow-hidden">
+                                                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                                                        <h3 className="text-lg font-semibold text-gray-900">{person}</h3>
+                                                        <span className={`text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                                            ₹{Math.abs(balance).toFixed(2)} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="min-w-full divide-y divide-gray-200">
+                                                            <thead className="bg-gray-50">
+                                                                <tr>
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                        Date
+                                                                    </th>
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                        Type
+                                                                    </th>
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                        Description
+                                                                    </th>
+                                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                                                        Amount
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                                {personTransactions.map((tx, idx) => {
+                                                                    const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
+                                                                    return (
+                                                                        <tr key={idx} className="hover:bg-gray-50">
+                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                                {tx.Date}
+                                                                            </td>
+                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${tx.TransactionType === 'LENT' ? 'bg-blue-100 text-blue-800' :
+                                                                                    tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-purple-100 text-purple-800' :
+                                                                                        'bg-green-100 text-green-800'
+                                                                                    }`}>
+                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
+                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
+                                                                                            'Received'}
+                                                                                </span>
+                                                                            </td>
+                                                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                                                                {tx.Description || '-'}
+                                                                            </td>
+                                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
+                                                                                {isLent ? '+' : '-'}₹{parseFloat(tx.Amount || '0').toFixed(2)}
+                                                                            </td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             </div>
                         </div>

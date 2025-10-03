@@ -1,5 +1,87 @@
 # Changelog
 
+## Version 1.4.0 - Loans Tracking System
+
+### New Features
+
+#### 1. **Loans Tracking Tab**
+- New "Loans" tab to monitor money lent to people
+- Separate Google Sheet ("Loans") for loan data
+- Track multiple people and their loan balances
+
+#### 2. **Loan Transactions**
+Three types of transactions:
+- **LENT**: Initial loan to a person
+- **ADDITIONAL_LOAN**: Additional money lent to same person
+- **RECEIVED**: Money received back (repayments)
+
+#### 3. **Per-Person Tracking**
+- Automatic calculation of outstanding balance per person
+- Complete transaction history for each person
+- Color-coded balances:
+  - Green: Person owes you money
+  - Red: Person has overpaid
+  - Gray: Fully settled (₹0 balance)
+
+#### 4. **Smart Person Selection**
+- Dropdown to select existing people
+- Text field to add new people
+- Auto-suggestion from previous loan records
+
+#### 5. **Visual Summary Dashboard**
+- Total money lent (outstanding loans)
+- Number of people with outstanding balances
+- Individual person cards with:
+  - Person name
+  - Current balance
+  - Full transaction history
+  - Color-coded transaction badges
+
+### Technical Implementation
+
+#### Backend
+- New Google Sheets functions:
+  - `fetchLoans()`: Get all loan transactions
+  - `addLoanTransaction()`: Add new loan transaction
+  - `updateLoanTransaction()`: Update existing transaction
+- New API routes:
+  - `GET /api/loans/get`: Fetch all loans
+  - `POST /api/loans/add`: Add loan transaction
+
+#### Frontend
+- Loans state management in main dashboard
+- Calculation functions:
+  - `getLoansSummary()`: Calculate balance per person
+  - `getPersonTransactions()`: Filter transactions by person
+  - `getUniquePersons()`: Get list of all people
+- Responsive grid layout for loans tab
+
+### Data Structure
+
+**Loans Sheet Columns:**
+- Date
+- PersonName
+- TransactionType (LENT/ADDITIONAL_LOAN/RECEIVED)
+- Amount
+- Description
+
+### User Experience
+
+1. **Comprehensive View**: See all loans and people in one place
+2. **Easy Entry**: Simple form to record transactions
+3. **Clear History**: Every transaction per person is visible
+4. **Balance Tracking**: Automatically calculated balances
+5. **Visual Indicators**: Color-coded badges and amounts
+
+### Setup Required
+
+Users need to:
+1. Create a new sheet named "Loans" in their Google Sheet
+2. Add column headers: Date, PersonName, TransactionType, Amount, Description
+3. See `LOANS_SETUP.md` for detailed instructions
+
+---
+
 ## Version 1.3.0 - Analytics Dashboard
 
 ### New Features

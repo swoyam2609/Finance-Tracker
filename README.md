@@ -15,6 +15,9 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 - 📅 Month-wise and overall expense analysis
 - 📊 Category-wise expense breakdown with visual charts
 - 💳 Account-wise income/expense breakdown
+- 💰 Loans tracking system to monitor money lent to people
+- 👥 Track loans per person with transaction history
+- 💸 Record money lent, additional loans, and repayments
 - 📱 Responsive design with Tailwind CSS
 - 🔄 Automatic data synchronization with Google Sheets
 - 🎨 Visual indicators for income (positive/green) vs expenses (negative/red)
@@ -148,6 +151,21 @@ Use the email and password you configured in `.env.local` to sign in.
    - Total Income, Total Expenses, Net Savings, Savings Rate
 4. Expense breakdown by category with visual percentage bars
 5. Account breakdown showing income, expenses, and net per account
+
+### Loans Tracking
+
+1. Click the "Loans" tab at the top
+2. View total money lent and balances per person
+3. Add loan transactions:
+   - **Money Lent**: Record when you lend money to someone
+   - **Additional Loan**: Add more money lent to same person
+   - **Money Received**: Record repayments
+4. Each person shows:
+   - Current balance (amount owed to you)
+   - Complete transaction history
+   - Color-coded status (green = owe you, red = overpaid, gray = settled)
+
+**Setup Required**: See `LOANS_SETUP.md` for Google Sheet setup instructions
 
 ### Account Balances
 

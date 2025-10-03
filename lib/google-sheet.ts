@@ -9,6 +9,14 @@ export interface ExpenseData {
     Amount: string;
 }
 
+export interface LoanTransaction {
+    Date: string;
+    PersonName: string;
+    TransactionType: string; // 'LENT' | 'RECEIVED' | 'ADDITIONAL_LOAN'
+    Amount: string;
+    Description: string;
+}
+
 // Connect to Google Sheets
 async function getSheetsDoc() {
     const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -124,6 +132,100 @@ export async function updateExpense(rowIndex: number, expenseData: ExpenseData):
         await (row as any).save();
     } catch (error) {
         console.error('Error updating expense in Google Sheets:', error);
+        throw error;
+    }
+}
+
+// ==================== LOANS SHEET FUNCTIONS ====================
+
+// Fetch all loan transactions from the Loans sheet
+export async function fetchLoans(): Promise<(LoanTransaction & { RowIndex: number })[]> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByTitle['Loans']; // Use sheet named "Loans"
+
+        if (!sheet) {
+            throw new Error('Loans sheet not found. Please create a sheet named "Loans" in your Google Sheet.');
+        }
+
+        await sheet.loadHeaderRow();
+        const rows = await sheet.getRows();
+
+        const data = rows.map((row, index) => ({
+            Date: row.get('Date') || '',
+            PersonName: row.get('PersonName') || '',
+            TransactionType: row.get('TransactionType') || '',
+            Amount: row.get('Amount') || '',
+            Description: row.get('Description') || '',
+            RowIndex: index,
+        }));
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching loans from Google Sheets:', error);
+        throw error;
+    }
+}
+
+// Add a new loan transaction to the Loans sheet
+export async function addLoanTransaction(loanData: LoanTransaction): Promise<void> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByTitle['Loans'];
+
+        if (!sheet) {
+            throw new Error('Loans sheet not found. Please create a sheet named "Loans" in your Google Sheet.');
+        }
+
+        await sheet.loadHeaderRow();
+        await sheet.addRow({
+            Date: loanData.Date,
+            PersonName: loanData.PersonName,
+            TransactionType: loanData.TransactionType,
+            Amount: loanData.Amount,
+            Description: loanData.Description,
+        });
+    } catch (error) {
+        console.error('Error adding loan transaction to Google Sheets:', error);
+        throw error;
+    }
+}
+
+// Update an existing loan transaction in the Loans sheet
+export async function updateLoanTransaction(rowIndex: number, loanData: LoanTransaction): Promise<void> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByTitle['Loans'];
+
+        if (!sheet) {
+            throw new Error('Loans sheet not found');
+        }
+
+        await sheet.loadHeaderRow();
+        const rows = await sheet.getRows();
+
+        if (rowIndex < 0 || rowIndex >= rows.length) {
+            throw new Error('Invalid row index');
+        }
+
+        const row = rows[rowIndex];
+        const nextValues = {
+            Date: loanData.Date,
+            PersonName: loanData.PersonName,
+            TransactionType: loanData.TransactionType,
+            Amount: loanData.Amount,
+            Description: loanData.Description,
+        } as Record<string, string | number>;
+
+        const amt = Number(loanData.Amount);
+        if (!Number.isNaN(amt)) {
+            nextValues.Amount = amt;
+        }
+
+        (row as any).set(nextValues);
+        await (row as any).save();
+    } catch (error) {
+        console.error('Error updating loan transaction in Google Sheets:', error);
         throw error;
     }
 }
