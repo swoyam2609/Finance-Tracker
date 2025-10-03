@@ -19,6 +19,7 @@ export default function Home() {
         Description: '',
         Amount: '',
     });
+    const [isIncome, setIsIncome] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     // Redirect to login if not authenticated
@@ -60,17 +61,27 @@ export default function Home() {
         setError('');
 
         try {
+            // Prepare data with correct amount sign
+            const amount = parseFloat(formData.Amount);
+            const signedAmount = isIncome ? Math.abs(amount) : -Math.abs(amount);
+
+            const dataToSend = {
+                ...formData,
+                Amount: signedAmount.toString(),
+                Category: isIncome ? 'Income' : formData.Category,
+            };
+
             const response = await fetch('/api/expenses/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(dataToSend),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to add expense');
+                throw new Error(errorData.error || 'Failed to add transaction');
             }
 
             // Reset form
@@ -81,11 +92,12 @@ export default function Home() {
                 Description: '',
                 Amount: '',
             });
+            setIsIncome(false);
 
             // Refresh expenses list
             await fetchExpenses();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add expense');
+            setError(err instanceof Error ? err.message : 'Failed to add transaction');
         } finally {
             setSubmitting(false);
         }
@@ -168,7 +180,7 @@ export default function Home() {
                             <div key={account} className="bg-white overflow-hidden shadow rounded-lg">
                                 <div className="px-4 py-5 sm:p-6">
                                     <dt className="text-sm font-medium text-gray-500 truncate">{account}</dt>
-                                    <dd className="mt-1 text-2xl font-semibold text-gray-900">
+                                    <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         ₹{balance.toFixed(2)}
                                     </dd>
                                 </div>
@@ -185,11 +197,25 @@ export default function Home() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Add Expense Form */}
+                        {/* Add Transaction Form */}
                         <div className="lg:col-span-1">
                             <div className="bg-white shadow rounded-lg p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Expense</h2>
+                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* Is it Income Checkbox */}
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            id="isIncome"
+                                            checked={isIncome}
+                                            onChange={(e) => setIsIncome(e.target.checked)}
+                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                        />
+                                        <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-700">
+                                            Is it an Income
+                                        </label>
+                                    </div>
+
                                     <div>
                                         <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
                                             Date
@@ -222,20 +248,38 @@ export default function Home() {
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Category
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="category"
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={formData.Category}
-                                            onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
-                                            placeholder="e.g., Food, Transport, Bills"
-                                        />
-                                    </div>
+                                    {/* Category - Only show if NOT income */}
+                                    {!isIncome && (
+                                        <div>
+                                            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Category
+                                            </label>
+                                            <select
+                                                id="category"
+                                                required
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                value={formData.Category}
+                                                onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                            >
+                                                <option value="">Select a category</option>
+                                                <option value="Food & Dining">Food & Dining</option>
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Shopping">Shopping</option>
+                                                <option value="Entertainment">Entertainment</option>
+                                                <option value="Bills & Utilities">Bills & Utilities</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Groceries">Groceries</option>
+                                                <option value="Rent">Rent</option>
+                                                <option value="Insurance">Insurance</option>
+                                                <option value="Personal Care">Personal Care</option>
+                                                <option value="Travel">Travel</option>
+                                                <option value="Subscriptions">Subscriptions</option>
+                                                <option value="Gifts">Gifts</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    )}
 
                                     <div>
                                         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -260,6 +304,7 @@ export default function Home() {
                                             id="amount"
                                             required
                                             step="0.01"
+                                            min="0"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             value={formData.Amount}
                                             onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
@@ -272,7 +317,7 @@ export default function Home() {
                                         disabled={submitting}
                                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {submitting ? 'Adding...' : 'Add Expense'}
+                                        {submitting ? 'Adding...' : (isIncome ? 'Add Income' : 'Add Expense')}
                                     </button>
                                 </form>
                             </div>
@@ -309,29 +354,33 @@ export default function Home() {
                                             {expenses.length === 0 ? (
                                                 <tr>
                                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                                        No expenses found. Add your first expense to get started!
+                                                        No transactions found. Add your first transaction to get started!
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                expenses.slice().reverse().map((expense, index) => (
-                                                    <tr key={index} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                            {expense.Date}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                            {expense.Account}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                            {expense.Category}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-900">
-                                                            {expense.Description}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-                                                            ₹{parseFloat(expense.Amount || '0').toFixed(2)}
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                expenses.slice().reverse().map((expense, index) => {
+                                                    const amount = parseFloat(expense.Amount || '0');
+                                                    const isPositive = amount >= 0;
+                                                    return (
+                                                        <tr key={index} className="hover:bg-gray-50">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                {expense.Date}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                {expense.Account}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                {expense.Category}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                                                {expense.Description}
+                                                            </td>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                                                ₹{Math.abs(amount).toFixed(2)}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
                                             )}
                                         </tbody>
                                     </table>

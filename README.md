@@ -5,11 +5,14 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 ## Features
 
 - 🔐 Secure single-user authentication with NextAuth.js
-- 📊 Real-time expense tracking with Google Sheets integration
+- 📊 Real-time expense and income tracking with Google Sheets integration
 - 💰 Account balance summaries (AXIS Bank, SBI Bank, Credit Card, Cash)
-- 📝 Add expenses with date, account, category, description, and amount
+- 💚❤️ Color-coded balances (green for positive, red for negative)
+- 📝 Add expenses with category selection from popular categories
+- 💵 Income tracking with automatic category assignment
 - 📱 Responsive design with Tailwind CSS
 - 🔄 Automatic data synchronization with Google Sheets
+- 🎨 Visual indicators for income (positive/green) vs expenses (negative/red)
 
 ## Tech Stack
 
@@ -104,18 +107,30 @@ Use the email and password you configured in `.env.local` to sign in.
 
 ## Usage
 
-### Adding Expenses
+### Adding Transactions
 
-1. Fill out the form on the left side of the dashboard
-2. Select the date, account, category, and enter the amount
+#### Adding Expenses
+1. Leave "Is it an Income" checkbox unchecked
+2. Fill out the form: date, account, category (from dropdown), and amount
 3. Optionally add a description
 4. Click "Add Expense" to save to Google Sheets
+5. Amount will be stored as negative and displayed in red
 
-### Viewing Expenses
+#### Adding Income
+1. Check the "Is it an Income" checkbox
+2. The category field will hide automatically
+3. Fill out the form: date, account, and amount
+4. Optionally add a description
+5. Click "Add Income" to save to Google Sheets
+6. Amount will be stored as positive and displayed in green
 
-- All expenses are displayed in the table on the right
+### Viewing Transactions
+
+- All transactions (expenses and income) are displayed in the table on the right
 - Most recent transactions appear at the top
+- Income appears in green, expenses in red
 - Account balances are shown in cards at the top of the page
+- Positive balances are green, negative balances are red
 
 ### Account Balances
 
@@ -161,17 +176,28 @@ expense-tracker/
 
 ### POST `/api/expenses/add`
 - **Authentication**: Required
-- **Description**: Adds a new expense to Google Sheets
-- **Body**: 
+- **Description**: Adds a new transaction (expense or income) to Google Sheets
+- **Body for Expense**: 
   ```json
   {
     "Date": "2025-10-03",
     "Account": "AXIS Bank",
-    "Category": "Food",
+    "Category": "Food & Dining",
     "Description": "Lunch",
-    "Amount": "500"
+    "Amount": "-500"
   }
   ```
+- **Body for Income**: 
+  ```json
+  {
+    "Date": "2025-10-03",
+    "Account": "AXIS Bank",
+    "Category": "Income",
+    "Description": "Salary",
+    "Amount": "50000"
+  }
+  ```
+- **Note**: Positive amounts are income, negative amounts are expenses
 
 ## Deployment
 

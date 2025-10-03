@@ -839,3 +839,718 @@ The application is production-ready and can be deployed to Vercel with just a fe
 
 ---
 
+_**User (2025-10-03 12:13Z)**_
+
+few changes
+
+- make category a drop down, add the popular categories
+- add a check box "Is it an Income", if it is checked, then the the category should disappear and the amount added should be sent to gsheet in positive value
+- when it is unchecked, the value should be sent to gsheet with negetive
+- positive balances should be green text and negetive should be red
+
+---
+
+_**Assistant (claude-4.5-sonnet-thinking)**_
+
+<think><details><summary>Thought Process</summary>The user wants a few changes:
+1. Make category a dropdown with popular categories
+2. Add a checkbox "Is it an Income"
+3. If checked (income), hide category and send amount as positive value
+4. If unchecked (expense), send amount as negative value
+5. Positive balances should be green text, negative should be red
+
+I need to modify the `pages/index.tsx` file to implement these changes.
+
+Let me read the current index.tsx to understand the structure better.</details></think>
+
+---
+
+I'll implement these changes to enhance the expense tracker with income tracking and better visual feedback. Let me update the dashboard page:
+
+---
+
+Tool use: **read_file**
+
+Read file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx
+
+---
+
+<think><details><summary>Thought Process</summary>Now I need to make the following changes:
+
+1. Add a state for "Is it an Income" checkbox
+2. Make category a dropdown with popular categories
+3. When "Is it an Income" is checked:
+   - Hide the category field
+   - Send amount as positive value
+4. When unchecked (expense):
+   - Show category dropdown
+   - Send amount as negative value
+5. Color positive balances green and negative balances red
+
+Let me update the index.tsx file.</details></think>
+
+---
+
+Now I'll implement all the requested changes:
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -20,4 +20,5 @@
+          Amount: '',
+      });
++     const [isIncome, setIsIncome] = useState(false);
+      const [submitting, setSubmitting] = useState(false);
+  
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Good! Now I need to update the handleSubmit function to handle the positive/negative values based on isIncome.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 12, lines removed: 2
+
+```diff
+@@ -62,15 +62,25 @@
+  
+          try {
++             // Prepare data with correct amount sign
++             const amount = parseFloat(formData.Amount);
++             const signedAmount = isIncome ? Math.abs(amount) : -Math.abs(amount);
++             
++             const dataToSend = {
++                 ...formData,
++                 Amount: signedAmount.toString(),
++                 Category: isIncome ? 'Income' : formData.Category,
++             };
++ 
+              const response = await fetch('/api/expenses/add', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+-                 body: JSON.stringify(formData),
++                 body: JSON.stringify(dataToSend),
+              });
+  
+              if (!response.ok) {
+                  const errorData = await response.json();
+-                 throw new Error(errorData.error || 'Failed to add expense');
++                 throw new Error(errorData.error || 'Failed to add transaction');
+              }
+  
+```
+
+**Chunk 2**
+Lines added: 2, lines removed: 1
+
+```diff
+@@ -83,9 +93,10 @@
+                  Amount: '',
+              });
++             setIsIncome(false);
+  
+              // Refresh expenses list
+              await fetchExpenses();
+          } catch (err) {
+-             setError(err instanceof Error ? err.message : 'Failed to add expense');
++             setError(err instanceof Error ? err.message : 'Failed to add transaction');
+          } finally {
+              setSubmitting(false);
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Good! Now I need to:
+1. Update the account balances section to show green for positive and red for negative
+2. Update the form to have a checkbox for "Is it an Income" and make category a dropdown that only shows when it's not income
+3. Update the table to show amounts in green for positive and red for negative</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: 1
+
+```diff
+@@ -181,5 +181,5 @@
+                                  <div className="px-4 py-5 sm:p-6">
+                                      <dt className="text-sm font-medium text-gray-500 truncate">{account}</dt>
+-                                     <dd className="mt-1 text-2xl font-semibold text-gray-900">
++                                     <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          ₹{balance.toFixed(2)}
+                                      </dd>
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Good! Now I need to update the form to have the checkbox and the category dropdown. Let me update the form section.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 16, lines removed: 2
+
+```diff
+@@ -198,9 +198,23 @@
+  
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+-                         {/* Add Expense Form */}
++                         {/* Add Transaction Form */}
+                          <div className="lg:col-span-1">
+                              <div className="bg-white shadow rounded-lg p-6">
+-                                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Expense</h2>
++                                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
+                                  <form onSubmit={handleSubmit} className="space-y-4">
++                                     {/* Is it Income Checkbox */}
++                                     <div className="flex items-center">
++                                         <input
++                                             type="checkbox"
++                                             id="isIncome"
++                                             checked={isIncome}
++                                             onChange={(e) => setIsIncome(e.target.checked)}
++                                             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
++                                         />
++                                         <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-700">
++                                             Is it an Income
++                                         </label>
++                                     </div>
++ 
+                                      <div>
+                                          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+```
+
+**Chunk 2**
+Lines added: 32, lines removed: 14
+
+```diff
+@@ -235,18 +249,36 @@
+                                      </div>
+  
+-                                     <div>
+-                                         <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+-                                             Category
+-                                         </label>
+-                                         <input
+-                                             type="text"
+-                                             id="category"
+-                                             required
+-                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+-                                             value={formData.Category}
+-                                             onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+-                                             placeholder="e.g., Food, Transport, Bills"
+-                                         />
+-                                     </div>
++                                     {/* Category - Only show if NOT income */}
++                                     {!isIncome && (
++                                         <div>
++                                             <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
++                                                 Category
++                                             </label>
++                                             <select
++                                                 id="category"
++                                                 required
++                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
++                                                 value={formData.Category}
++                                                 onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
++                                             >
++                                                 <option value="">Select a category</option>
++                                                 <option value="Food & Dining">Food & Dining</option>
++                                                 <option value="Transportation">Transportation</option>
++                                                 <option value="Shopping">Shopping</option>
++                                                 <option value="Entertainment">Entertainment</option>
++                                                 <option value="Bills & Utilities">Bills & Utilities</option>
++                                                 <option value="Healthcare">Healthcare</option>
++                                                 <option value="Education">Education</option>
++                                                 <option value="Groceries">Groceries</option>
++                                                 <option value="Rent">Rent</option>
++                                                 <option value="Insurance">Insurance</option>
++                                                 <option value="Personal Care">Personal Care</option>
++                                                 <option value="Travel">Travel</option>
++                                                 <option value="Subscriptions">Subscriptions</option>
++                                                 <option value="Gifts & Donations">Gifts & Donations</option>
++                                                 <option value="Other">Other</option>
++                                             </select>
++                                         </div>
++                                     )}
+  
+                                      <div>
+```
+
+**Chunk 3**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -273,4 +305,5 @@
+                                              required
+                                              step="0.01"
++                                             min="0"
+                                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                              value={formData.Amount}
+```
+
+**Chunk 4**
+Lines added: 1, lines removed: 1
+
+```diff
+@@ -285,5 +318,5 @@
+                                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+-                                         {submitting ? 'Adding...' : 'Add Expense'}
++                                         {submitting ? 'Adding...' : (isIncome ? 'Add Income' : 'Add Expense')}
+                                      </button>
+                                  </form>
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Great! Now I need to update the table to show amounts with green for positive (income) and red for negative (expense).</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/index.tsx</summary>
+
+**Chunk 1**
+Lines added: 24, lines removed: 20
+
+```diff
+@@ -355,27 +355,31 @@
+                                                  <tr>
+                                                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+-                                                         No expenses found. Add your first expense to get started!
++                                                         No transactions found. Add your first transaction to get started!
+                                                      </td>
+                                                  </tr>
+                                              ) : (
+-                                                 expenses.slice().reverse().map((expense, index) => (
+-                                                     <tr key={index} className="hover:bg-gray-50">
+-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+-                                                             {expense.Date}
+-                                                         </td>
+-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+-                                                             {expense.Account}
+-                                                         </td>
+-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+-                                                             {expense.Category}
+-                                                         </td>
+-                                                         <td className="px-6 py-4 text-sm text-gray-900">
+-                                                             {expense.Description}
+-                                                         </td>
+-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+-                                                             ₹{parseFloat(expense.Amount || '0').toFixed(2)}
+-                                                         </td>
+-                                                     </tr>
+-                                                 ))
++                                                 expenses.slice().reverse().map((expense, index) => {
++                                                     const amount = parseFloat(expense.Amount || '0');
++                                                     const isPositive = amount >= 0;
++                                                     return (
++                                                         <tr key={index} className="hover:bg-gray-50">
++                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
++                                                                 {expense.Date}
++                                                             </td>
++                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
++                                                                 {expense.Account}
++                                                             </td>
++                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
++                                                                 {expense.Category}
++                                                             </td>
++                                                             <td className="px-6 py-4 text-sm text-gray-900">
++                                                                 {expense.Description}
++                                                             </td>
++                                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
++                                                                 ₹{Math.abs(amount).toFixed(2)}
++                                                             </td>
++                                                         </tr>
++                                                     );
++                                                 })
+                                              )}
+                                          </tbody>
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! Now I need to also update the API route to allow category to be optional (since income transactions won't have a category in the validation). Let me update the add.ts API route.</details></think>
+
+---
+
+Now let me update the API route to handle income transactions without requiring a category:
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages/api/expenses/add.ts</summary>
+
+**Chunk 1**
+Lines added: 35, lines removed: 22
+
+```diff
+@@ -19,29 +19,42 @@
+      }
+  
+-     try {
+-         const expenseData: ExpenseData = req.body;
++   try {
++     const expenseData: ExpenseData = req.body;
+  
+-         // Validate required fields
+-         if (!expenseData.Date || !expenseData.Account || !expenseData.Category || !expenseData.Amount) {
+-             return res.status(400).json({
+-                 error: 'Missing required fields',
+-                 required: ['Date', 'Account', 'Category', 'Amount']
+-             });
+-         }
++     // Validate required fields
++     if (!expenseData.Date || !expenseData.Account || !expenseData.Amount) {
++       return res.status(400).json({ 
++         error: 'Missing required fields',
++         required: ['Date', 'Account', 'Amount']
++       });
++     }
++ 
++     // Category is required only for expenses (when amount is negative)
++     const amount = parseFloat(expenseData.Amount);
++     if (amount < 0 && !expenseData.Category) {
++       return res.status(400).json({ 
++         error: 'Category is required for expenses'
++       });
++     }
+  
+-         // Validate amount is a number
+-         if (isNaN(Number(expenseData.Amount))) {
+-             return res.status(400).json({ error: 'Amount must be a valid number' });
+-         }
++     // Validate amount is a number
++     if (isNaN(amount)) {
++       return res.status(400).json({ error: 'Amount must be a valid number' });
++     }
++ 
++     // Ensure category is set to 'Income' if amount is positive and category is not provided
++     if (amount >= 0 && !expenseData.Category) {
++       expenseData.Category = 'Income';
++     }
+  
+-         await addExpense(expenseData);
+-         return res.status(200).json({ message: 'Expense added successfully' });
+-     } catch (error) {
+-         console.error('Error adding expense:', error);
+-         return res.status(500).json({
+-             error: 'Failed to add expense',
+-             message: error instanceof Error ? error.message : 'Unknown error'
+-         });
+-     }
++     await addExpense(expenseData);
++     return res.status(200).json({ message: 'Transaction added successfully' });
++   } catch (error) {
++     console.error('Error adding transaction:', error);
++     return res.status(500).json({ 
++       error: 'Failed to add transaction',
++       message: error instanceof Error ? error.message : 'Unknown error'
++     });
++   }
+  }
+  
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Great! Now let me check for any linter errors to make sure everything is working correctly.</details></think>
+
+---
+
+Tool use: **read_lints**
+
+<details>
+          <summary>Read lints for 1 file</summary>
+      
+Lint paths:
+
+- `/Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/pages`
+
+Lint results
+
+Lint errors for `pages/login.tsx`
+
+
+| Message | Range | Severity |
+|-------|-------|----------|
+| 'session' is declared but its value is never read. | 8:19-8:26 | DIAGNOSTIC_SEVERITY_HINT |
+
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! No linter errors. Now let me create a quick summary of the changes I made and maybe update the README to reflect the new features.</details></think>
+
+---
+
+Excellent! All the changes have been implemented successfully. Let me update the README to reflect the new features:
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 5, lines removed: 2
+
+```diff
+@@ -6,9 +6,12 @@
+  
+  - 🔐 Secure single-user authentication with NextAuth.js
+- - 📊 Real-time expense tracking with Google Sheets integration
++ - 📊 Real-time expense and income tracking with Google Sheets integration
+  - 💰 Account balance summaries (AXIS Bank, SBI Bank, Credit Card, Cash)
+- - 📝 Add expenses with date, account, category, description, and amount
++ - 💚❤️ Color-coded balances (green for positive, red for negative)
++ - 📝 Add expenses with category selection from popular categories
++ - 💵 Income tracking with automatic category assignment
+  - 📱 Responsive design with Tailwind CSS
+  - 🔄 Automatic data synchronization with Google Sheets
++ - 🎨 Visual indicators for income (positive/green) vs expenses (negative/red)
+  
+  ## Tech Stack
+```
+
+</details>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 13, lines removed: 3
+
+```diff
+@@ -108,10 +108,20 @@
+  ## Usage
+  
+- ### Adding Expenses
++ ### Adding Transactions
+  
+- 1. Fill out the form on the left side of the dashboard
+- 2. Select the date, account, category, and enter the amount
++ #### Adding Expenses
++ 1. Leave "Is it an Income" checkbox unchecked
++ 2. Fill out the form: date, account, category (from dropdown), and amount
+  3. Optionally add a description
+  4. Click "Add Expense" to save to Google Sheets
++ 5. Amount will be stored as negative and displayed in red
++ 
++ #### Adding Income
++ 1. Check the "Is it an Income" checkbox
++ 2. The category field will hide automatically
++ 3. Fill out the form: date, account, and amount
++ 4. Optionally add a description
++ 5. Click "Add Income" to save to Google Sheets
++ 6. Amount will be stored as positive and displayed in green
+  
+  ### Viewing Expenses
+```
+
+</details>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 4, lines removed: 2
+
+```diff
+@@ -125,9 +125,11 @@
+  6. Amount will be stored as positive and displayed in green
+  
+- ### Viewing Expenses
++ ### Viewing Transactions
+  
+- - All expenses are displayed in the table on the right
++ - All transactions (expenses and income) are displayed in the table on the right
+  - Most recent transactions appear at the top
++ - Income appears in green, expenses in red
+  - Account balances are shown in cards at the top of the page
++ - Positive balances are green, negative balances are red
+  
+  ### Account Balances
+```
+
+</details>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: /Users/swoyamsiddharthnayak/Desktop/Expense-Tracker/README.md</summary>
+
+**Chunk 1**
+Lines added: 15, lines removed: 4
+
+```diff
+@@ -177,15 +177,26 @@
+  ### POST `/api/expenses/add`
+  - **Authentication**: Required
+- - **Description**: Adds a new expense to Google Sheets
+- - **Body**: 
++ - **Description**: Adds a new transaction (expense or income) to Google Sheets
++ - **Body for Expense**: 
+    ```json
+    {
+      "Date": "2025-10-03",
+      "Account": "AXIS Bank",
+-     "Category": "Food",
++     "Category": "Food & Dining",
+      "Description": "Lunch",
+-     "Amount": "500"
++     "Amount": "-500"
++   }
++   ```
++ - **Body for Income**: 
++   ```json
++   {
++     "Date": "2025-10-03",
++     "Account": "AXIS Bank",
++     "Category": "Income",
++     "Description": "Salary",
++     "Amount": "50000"
+    }
+    ```
++ - **Note**: Positive amounts are income, negative amounts are expenses
+  
+  ## Deployment
+```
+
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Great! All the changes are complete. Let me provide a summary of what was implemented.</details></think>
+
+---
+
+Perfect! All changes have been successfully implemented. Let me create a quick summary document:
+
+---
+
+Tool use: **write**
+
+---
+
+<think><details><summary>Thought Process</summary>Great! Now let me provide a summary for the user about what was changed.</details></think>
+
+---
+
+Perfect! All the requested changes have been successfully implemented. Here's a summary of what was done:
+
+## ✅ Changes Completed
+
+### 1. **Category Dropdown with Popular Categories** ✓
+- Changed category from text input to a dropdown menu
+- Added 15 popular expense categories:
+  - Food & Dining, Transportation, Shopping, Entertainment
+  - Bills & Utilities, Healthcare, Education, Groceries
+  - Rent, Insurance, Personal Care, Travel
+  - Subscriptions, Gifts & Donations, Other
+
+### 2. **"Is it an Income" Checkbox** ✓
+- Added a checkbox at the top of the form
+- When **checked** (Income):
+  - Category field automatically hides
+  - Amount is sent to Google Sheets as **positive value**
+  - Category is auto-set to "Income"
+  - Button text changes to "Add Income"
+- When **unchecked** (Expense):
+  - Category dropdown is shown
+  - Amount is sent to Google Sheets as **negative value**
+  - Button text shows "Add Expense"
+
+### 3. **Color-Coded Balances** ✓
+- **Account balance cards**: 
+  - 🟢 Green for positive balances
+  - 🔴 Red for negative balances
+- **Transaction table amounts**:
+  - 🟢 Green for income (positive amounts)
+  - 🔴 Red for expenses (negative amounts)
+  - Amounts display as absolute values
+
+### 4. **API Updates** ✓
+- Modified validation to allow category to be optional for income
+- Updated error messages to reflect "transactions" instead of just "expenses"
+- Automatic category assignment for income transactions
+
+### 5. **Documentation Updates** ✓
+- Updated `README.md` with new features and usage instructions
+- Created `CHANGELOG.md` to document version history
+- Added clear examples for both expense and income transactions
+
+## 🎯 How It Works Now
+
+**Adding an Expense:**
+1. Leave checkbox unchecked
+2. Select category from dropdown (e.g., "Food & Dining")
+3. Enter amount (e.g., 500)
+4. Amount is stored as `-500` (negative) in Google Sheets
+5. Displays in red in the table
+
+**Adding Income:**
+1. Check "Is it an Income" ✓
+2. Category field disappears
+3. Enter amount (e.g., 50000)
+4. Amount is stored as `50000` (positive) in Google Sheets
+5. Displays in green in the table
+
+All changes are ready to use! Just run `npm run dev` to test the enhanced features. 🚀
+
+---
+
