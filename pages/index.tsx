@@ -422,10 +422,10 @@ export default function Home() {
 
     if (status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0)) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-400">Loading...</p>
                 </div>
             </div>
         );
@@ -440,13 +440,13 @@ export default function Home() {
             <Head>
                 <title>Dashboard - Expense Tracker</title>
             </Head>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-gray-900">
                 {/* Header */}
-                <header className="bg-white shadow">
+                <header className="bg-gray-800 shadow-lg border-b border-gray-700">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                        <h1 className="text-2xl font-bold text-gray-900">Expense Tracker</h1>
+                        <h1 className="text-2xl font-bold text-gray-100">Expense Tracker</h1>
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-600">{session?.user?.email}</span>
+                            <span className="text-sm text-gray-400">{session?.user?.email}</span>
                             <button
                                 onClick={() => signOut()}
                                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -460,13 +460,13 @@ export default function Home() {
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     {/* Tab Navigation */}
                     <div className="mb-6">
-                        <div className="border-b border-gray-200">
+                        <div className="border-b border-gray-700">
                             <nav className="-mb-px flex space-x-8">
                                 <button
                                     onClick={() => setActiveTab('transactions')}
                                     className={`${activeTab === 'transactions'
                                         ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                                 >
                                     Transactions
@@ -475,7 +475,7 @@ export default function Home() {
                                     onClick={() => setActiveTab('analytics')}
                                     className={`${activeTab === 'analytics'
                                         ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                                 >
                                     Analytics
@@ -484,7 +484,7 @@ export default function Home() {
                                     onClick={() => setActiveTab('loans')}
                                     className={`${activeTab === 'loans'
                                         ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                                 >
                                     Loans
@@ -495,7 +495,7 @@ export default function Home() {
 
                     {/* Error Message */}
                     {error && (
-                        <div className="mb-6 rounded-md bg-red-50 p-4">
+                        <div className="mb-6 rounded-md bg-red-900/50 border border-red-700 p-4">
                             <div className="flex">
                                 <div className="flex-shrink-0">
                                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -503,7 +503,7 @@ export default function Home() {
                                     </svg>
                                 </div>
                                 <div className="ml-3">
-                                    <p className="text-sm font-medium text-red-800">{error}</p>
+                                    <p className="text-sm font-medium text-red-200">{error}</p>
                                 </div>
                             </div>
                         </div>
@@ -514,9 +514,9 @@ export default function Home() {
                             {/* Account Balances */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                                 {Object.entries(balances).map(([account, balance]) => (
-                                    <div key={account} className="bg-white overflow-hidden shadow rounded-lg">
+                                    <div key={account} className="bg-gray-800 overflow-hidden shadow rounded-lg">
                                         <div className="px-4 py-5 sm:p-6">
-                                            <dt className="text-sm font-medium text-gray-500 truncate">{account}</dt>
+                                            <dt className="text-sm font-medium text-gray-400 truncate">{account}</dt>
                                             <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                 ₹{balance.toFixed(2)}
                                             </dd>
@@ -539,8 +539,8 @@ export default function Home() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Add Transaction Form */}
                             <div className="lg:col-span-1">
-                                <div className="bg-white shadow rounded-lg p-6">
-                                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
+                                <div className="bg-gray-800 shadow rounded-lg p-6">
+                                    <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Transaction</h2>
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         {/* Is it Income Checkbox */}
                                         <div className="flex items-center">
@@ -549,35 +549,35 @@ export default function Home() {
                                                 id="isIncome"
                                                 checked={isIncome}
                                                 onChange={(e) => setIsIncome(e.target.checked)}
-                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded"
                                             />
-                                            <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-700">
+                                            <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-300">
                                                 Is it an Income
                                             </label>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-1">
                                                 Date
                                             </label>
                                             <input
                                                 type="date"
                                                 id="date"
                                                 required
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 value={formData.Date}
                                                 onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="account" className="block text-sm font-medium text-gray-300 mb-1">
                                                 Account
                                             </label>
                                             <select
                                                 id="account"
                                                 required
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 value={formData.Account}
                                                 onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
                                             >
@@ -591,13 +591,13 @@ export default function Home() {
                                         {/* Category - Only show if NOT income */}
                                         {!isIncome && (
                                             <div>
-                                                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Category
                                                 </label>
                                                 <select
                                                     id="category"
                                                     required
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                     value={formData.Category}
                                                     onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
                                                 >
@@ -622,13 +622,13 @@ export default function Home() {
                                         )}
 
                                         <div>
-                                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
                                                 Description
                                             </label>
                                             <input
                                                 type="text"
                                                 id="description"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 value={formData.Description}
                                                 onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
                                                 placeholder="Optional details"
@@ -636,7 +636,7 @@ export default function Home() {
                                         </div>
 
                                         <div>
-                                            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-1">
                                                 Amount
                                             </label>
                                             <input
@@ -645,7 +645,7 @@ export default function Home() {
                                                 required
                                                 step="0.01"
                                                 min="0"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 value={formData.Amount}
                                                 onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
                                                 placeholder="0.00"
@@ -665,38 +665,38 @@ export default function Home() {
 
                             {/* Expenses List */}
                             <div className="lg:col-span-2">
-                                <div className="bg-white shadow rounded-lg overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-gray-200">
-                                        <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+                                <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-gray-700">
+                                        <h2 className="text-lg font-semibold text-gray-100">Recent Transactions</h2>
                                     </div>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
+                                            <thead className="bg-gray-900">
                                                 <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Date
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Account
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Category
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Description
                                                     </th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Amount
                                                     </th>
-                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Actions
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            <tbody className="bg-gray-800 divide-y divide-gray-200">
                                                 {expenses.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
                                                             No transactions found. Add your first transaction to get started!
                                                         </td>
                                                     </tr>
@@ -705,17 +705,17 @@ export default function Home() {
                                                         const amount = parseFloat(expense.Amount || '0');
                                                         const isPositive = amount >= 0;
                                                         return (
-                                                            <tr key={index} className="hover:bg-gray-50">
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            <tr key={index} className="hover:bg-gray-900">
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
                                                                     {expense.Date}
                                                                 </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
                                                                     {expense.Account}
                                                                 </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
                                                                     {expense.Category}
                                                                 </td>
-                                                                <td className="px-6 py-4 text-sm text-gray-900">
+                                                                <td className="px-6 py-4 text-sm text-gray-100">
                                                                     {expense.Description}
                                                                 </td>
                                                                 <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
@@ -725,7 +725,7 @@ export default function Home() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => openEditModal(expense)}
-                                                                        className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                                                                        className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-100"
                                                                         aria-label="Edit"
                                                                         title="Edit"
                                                                     >
@@ -752,16 +752,16 @@ export default function Home() {
                         <div className="space-y-6">
                             {/* Period Selector */}
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-gray-900">Expenditure Analysis</h2>
+                                <h2 className="text-xl font-semibold text-gray-100">Expenditure Analysis</h2>
                                 <div>
-                                    <label htmlFor="period" className="mr-2 text-sm font-medium text-gray-700">
+                                    <label htmlFor="period" className="mr-2 text-sm font-medium text-gray-300">
                                         Period:
                                     </label>
                                     <select
                                         id="period"
                                         value={selectedPeriod}
                                         onChange={(e) => setSelectedPeriod(e.target.value)}
-                                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     >
                                         <option value="overall">Overall</option>
                                         {availableMonths.map(month => {
@@ -780,25 +780,25 @@ export default function Home() {
 
                             {/* Summary Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
                                     <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Income</dt>
+                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Income</dt>
                                         <dd className="mt-1 text-2xl font-semibold text-green-600">
                                             ₹{summary.totalIncome.toFixed(2)}
                                         </dd>
                                     </div>
                                 </div>
-                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
                                     <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
+                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Expenses</dt>
                                         <dd className="mt-1 text-2xl font-semibold text-red-600">
                                             ₹{summary.totalExpenses.toFixed(2)}
                                         </dd>
                                     </div>
                                 </div>
-                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
                                     <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Net Savings</dt>
+                                        <dt className="text-sm font-medium text-gray-400 truncate">Net Savings</dt>
                                         <dd className={`mt-1 text-2xl font-semibold ${summary.netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             ₹{summary.netSavings.toFixed(2)}
                                         </dd>
@@ -815,17 +815,17 @@ export default function Home() {
                             </div>
 
                             {/* Category Distribution */}
-                            <div className="bg-white shadow rounded-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h3>
+                            <div className="bg-gray-800 shadow rounded-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-100 mb-4">Expenses by Category</h3>
                                 {categoryDistribution.length === 0 ? (
-                                    <p className="text-gray-500 text-center py-8">No expense data for this period</p>
+                                    <p className="text-gray-400 text-center py-8">No expense data for this period</p>
                                 ) : (
                                     <div className="space-y-4">
                                         {categoryDistribution.map(cat => (
                                             <div key={cat.category}>
                                                 <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-sm font-medium text-gray-700">{cat.category}</span>
-                                                    <span className="text-sm font-semibold text-gray-900">
+                                                    <span className="text-sm font-medium text-gray-300">{cat.category}</span>
+                                                    <span className="text-sm font-semibold text-gray-100">
                                                         ₹{cat.amount.toFixed(2)} ({cat.percentage.toFixed(1)}%)
                                                     </span>
                                                 </div>
@@ -842,39 +842,39 @@ export default function Home() {
                             </div>
 
                             {/* Account Distribution */}
-                            <div className="bg-white shadow rounded-lg overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-200">
-                                    <h3 className="text-lg font-semibold text-gray-900">Account Breakdown</h3>
+                            <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
+                                <div className="px-6 py-4 border-b border-gray-700">
+                                    <h3 className="text-lg font-semibold text-gray-100">Account Breakdown</h3>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
+                                        <thead className="bg-gray-900">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                     Account
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                     Income
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                     Expenses
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                     Net
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className="bg-gray-800 divide-y divide-gray-200">
                                             {accountDistribution.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
                                                         No account data for this period
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 accountDistribution.map(acc => (
-                                                    <tr key={acc.account} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    <tr key={acc.account} className="hover:bg-gray-900">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
                                                             {acc.account}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
@@ -909,32 +909,32 @@ export default function Home() {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Add Loan Transaction Form */}
                                 <div className="lg:col-span-1">
-                                    <div className="bg-white shadow rounded-lg p-6">
-                                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Loan Transaction</h2>
+                                    <div className="bg-gray-800 shadow rounded-lg p-6">
+                                        <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Loan Transaction</h2>
                                         <form onSubmit={handleLoanSubmit} className="space-y-4">
                                             <div>
-                                                <label htmlFor="loanDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="loanDate" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Date
                                                 </label>
                                                 <input
                                                     type="date"
                                                     id="loanDate"
                                                     required
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                     value={loanFormData.Date}
                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
                                                 />
                                             </div>
 
                                             <div>
-                                                <label htmlFor="personName" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="personName" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Person Name
                                                 </label>
                                                 {uniquePersons.length > 0 ? (
                                                     <div className="space-y-2">
                                                         <select
                                                             id="personName"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             value={selectedPerson}
                                                             onChange={(e) => {
                                                                 setSelectedPerson(e.target.value);
@@ -949,7 +949,7 @@ export default function Home() {
                                                         <input
                                                             type="text"
                                                             placeholder="Or enter new name"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             value={selectedPerson === '' ? loanFormData.PersonName : ''}
                                                             onChange={(e) => {
                                                                 setSelectedPerson('');
@@ -962,7 +962,7 @@ export default function Home() {
                                                         type="text"
                                                         id="personName"
                                                         required
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                         value={loanFormData.PersonName}
                                                         onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
                                                         placeholder="Enter person's name"
@@ -971,13 +971,13 @@ export default function Home() {
                                             </div>
 
                                             <div>
-                                                <label htmlFor="transactionType" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="transactionType" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Transaction Type
                                                 </label>
                                                 <select
                                                     id="transactionType"
                                                     required
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                     value={loanFormData.TransactionType}
                                                     onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
                                                 >
@@ -988,7 +988,7 @@ export default function Home() {
                                             </div>
 
                                             <div>
-                                                <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Amount
                                                 </label>
                                                 <input
@@ -997,7 +997,7 @@ export default function Home() {
                                                     required
                                                     step="0.01"
                                                     min="0"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                     value={loanFormData.Amount}
                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
                                                     placeholder="0.00"
@@ -1005,13 +1005,13 @@ export default function Home() {
                                             </div>
 
                                             <div>
-                                                <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-300 mb-1">
                                                     Description
                                                 </label>
                                                 <input
                                                     type="text"
                                                     id="loanDescription"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                     value={loanFormData.Description}
                                                     onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
                                                     placeholder="Optional details"
@@ -1032,44 +1032,44 @@ export default function Home() {
                                 {/* People List and Transactions */}
                                 <div className="lg:col-span-2 space-y-6">
                                     {loansSummary.length === 0 ? (
-                                        <div className="bg-white shadow rounded-lg p-8 text-center">
-                                            <p className="text-gray-500">No loan records yet. Add your first loan transaction to get started!</p>
+                                        <div className="bg-gray-800 shadow rounded-lg p-8 text-center">
+                                            <p className="text-gray-400">No loan records yet. Add your first loan transaction to get started!</p>
                                         </div>
                                     ) : (
                                         loansSummary.map(({ person, balance }) => {
                                             const personTransactions = getPersonTransactions(person);
                                             return (
-                                                <div key={person} className="bg-white shadow rounded-lg overflow-hidden">
-                                                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                                                        <h3 className="text-lg font-semibold text-gray-900">{person}</h3>
-                                                        <span className={`text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                                <div key={person} className="bg-gray-800 shadow rounded-lg overflow-hidden">
+                                                    <div className="px-6 py-4 bg-gray-900 border-b border-gray-700 flex justify-between items-center">
+                                                        <h3 className="text-lg font-semibold text-gray-100">{person}</h3>
+                                                        <span className={`text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-400'}`}>
                                                             ₹{Math.abs(balance).toFixed(2)} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
                                                         </span>
                                                     </div>
                                                     <div className="overflow-x-auto">
                                                         <table className="min-w-full divide-y divide-gray-200">
-                                                            <thead className="bg-gray-50">
+                                                            <thead className="bg-gray-900">
                                                                 <tr>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
                                                                         Date
                                                                     </th>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
                                                                         Type
                                                                     </th>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
                                                                         Description
                                                                     </th>
-                                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">
                                                                         Amount
                                                                     </th>
                                                                 </tr>
                                                             </thead>
-                                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                            <tbody className="bg-gray-800 divide-y divide-gray-200">
                                                                 {personTransactions.map((tx, idx) => {
                                                                     const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
                                                                     return (
-                                                                        <tr key={idx} className="hover:bg-gray-50">
-                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                        <tr key={idx} className="hover:bg-gray-900">
+                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
                                                                                 {tx.Date}
                                                                             </td>
                                                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -1082,7 +1082,7 @@ export default function Home() {
                                                                                             'Received'}
                                                                                 </span>
                                                                             </td>
-                                                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                                                            <td className="px-6 py-4 text-sm text-gray-100">
                                                                                 {tx.Description || '-'}
                                                                             </td>
                                                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
@@ -1106,11 +1106,11 @@ export default function Home() {
                     {/* Edit Modal */}
                     {editOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-black/50" onClick={closeEditModal} />
-                            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+                            <div className="absolute inset-0 bg-black/70" onClick={closeEditModal} />
+                            <div className="relative bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-900">Edit Transaction</h3>
-                                    <button onClick={closeEditModal} className="text-gray-500 hover:text-gray-700" aria-label="Close">
+                                    <h3 className="text-lg font-semibold text-gray-100">Edit Transaction</h3>
+                                    <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-300" aria-label="Close">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                                             <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 11-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
                                         </svg>
@@ -1125,35 +1125,35 @@ export default function Home() {
                                             id="editIsIncome"
                                             checked={editIsIncome}
                                             onChange={(e) => setEditIsIncome(e.target.checked)}
-                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded"
                                         />
-                                        <label htmlFor="editIsIncome" className="ml-2 block text-sm font-medium text-gray-700">
+                                        <label htmlFor="editIsIncome" className="ml-2 block text-sm font-medium text-gray-300">
                                             Is it an Income
                                         </label>
                                     </div>
 
                                     <div>
-                                        <label htmlFor="editDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="editDate" className="block text-sm font-medium text-gray-300 mb-1">
                                             Date
                                         </label>
                                         <input
                                             type="date"
                                             id="editDate"
                                             required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             value={editData.Date}
                                             onChange={(e) => setEditData({ ...editData, Date: e.target.value })}
                                         />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="editAccount" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="editAccount" className="block text-sm font-medium text-gray-300 mb-1">
                                             Account
                                         </label>
                                         <select
                                             id="editAccount"
                                             required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             value={editData.Account}
                                             onChange={(e) => setEditData({ ...editData, Account: e.target.value })}
                                         >
@@ -1166,13 +1166,13 @@ export default function Home() {
 
                                     {!editIsIncome && (
                                         <div>
-                                            <label htmlFor="editCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="editCategory" className="block text-sm font-medium text-gray-300 mb-1">
                                                 Category
                                             </label>
                                             <select
                                                 id="editCategory"
                                                 required
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 value={editData.Category}
                                                 onChange={(e) => setEditData({ ...editData, Category: e.target.value })}
                                             >
@@ -1197,13 +1197,13 @@ export default function Home() {
                                     )}
 
                                     <div>
-                                        <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="editDescription" className="block text-sm font-medium text-gray-300 mb-1">
                                             Description
                                         </label>
                                         <input
                                             type="text"
                                             id="editDescription"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             value={editData.Description}
                                             onChange={(e) => setEditData({ ...editData, Description: e.target.value })}
                                             placeholder="Optional details"
@@ -1211,7 +1211,7 @@ export default function Home() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="editAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="editAmount" className="block text-sm font-medium text-gray-300 mb-1">
                                             Amount
                                         </label>
                                         <input
@@ -1220,7 +1220,7 @@ export default function Home() {
                                             required
                                             step="0.01"
                                             min="0"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             value={editData.Amount}
                                             onChange={(e) => setEditData({ ...editData, Amount: e.target.value })}
                                             placeholder="0.00"
@@ -1228,7 +1228,7 @@ export default function Home() {
                                     </div>
 
                                     <div className="flex items-center justify-end gap-3 pt-2">
-                                        <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-800">
+                                        <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-200">
                                             Cancel
                                         </button>
                                         <button type="submit" disabled={updating} className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">

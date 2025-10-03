@@ -1,5 +1,65 @@
 # Changelog
 
+## Version 1.5.0 - Dark Theme
+
+### New Features
+
+#### 1. **Complete Dark Theme Implementation**
+- Converted entire application to modern dark theme
+- Easy on eyes for extended use
+- Professional, modern appearance
+
+#### 2. **Dark Theme Colors**
+- **Backgrounds**: Gray-900 (main), Gray-800 (cards), Gray-700 (inputs)
+- **Text**: Gray-100 (primary), Gray-300 (labels), Gray-400 (muted)
+- **Borders**: Gray-700 (primary), Gray-600 (inputs)
+- **Accents**: Indigo (primary), Green (positive), Red (negative)
+
+#### 3. **Styled Components**
+- Login page with dark gradient background
+- Dashboard with dark header and navigation
+- Dark themed forms and inputs
+- Dark tables with hover effects
+- Dark modals with semi-transparent overlays
+- Dark analytics charts and cards
+- Dark loans tracking interface
+
+#### 4. **Maintained Color Coding**
+- Green for positive values/income
+- Red for negative values/expenses
+- Blue for money lent
+- Color-coded transaction badges
+- All maintain high contrast for accessibility
+
+#### 5. **Enhanced Visuals**
+- Shadow and border highlights
+- Smooth hover effects
+- Focus indicators with dark-aware ring offsets
+- Gradient accents on special cards
+
+### Technical Implementation
+
+- Updated `styles/globals.css` with dark base styles
+- Systematic color replacement across all components
+- Dark backgrounds for all form inputs and selects
+- Error messages with dark red styling
+- Modal overlays with 70% opacity
+- Maintained all existing functionality
+
+### Accessibility
+
+- WCAG AA compliant contrast ratios
+- Visible focus indicators
+- High contrast for critical information
+- Color coding supplemented with text indicators
+
+### Documentation
+
+- Created `DARK_THEME_GUIDE.md` with full documentation
+- Updated README with dark theme feature
+
+---
+
 ## Version 1.4.0 - Loans Tracking System
 
 ### New Features

@@ -18,6 +18,7 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 - 💰 Loans tracking system to monitor money lent to people
 - 👥 Track loans per person with transaction history
 - 💸 Record money lent, additional loans, and repayments
+- 🌙 Modern dark theme for comfortable viewing
 - 📱 Responsive design with Tailwind CSS
 - 🔄 Automatic data synchronization with Google Sheets
 - 🎨 Visual indicators for income (positive/green) vs expenses (negative/red)
