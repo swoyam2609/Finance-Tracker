@@ -37,6 +37,10 @@ export default function Home() {
     const [editRowIndex, setEditRowIndex] = useState<number | null>(null);
     const [updating, setUpdating] = useState(false);
 
+    // Analytics tab state
+    const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
+    const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
+
     // Redirect to login if not authenticated
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -135,6 +139,108 @@ export default function Home() {
     const balances = calculateBalances();
     const totalBalance = Object.values(balances).reduce((sum, val) => sum + val, 0);
 
+    // Get available months from expenses
+    const getAvailableMonths = () => {
+        const months = new Set<string>();
+        expenses.forEach(exp => {
+            if (exp.Date) {
+                const date = new Date(exp.Date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                months.add(monthKey);
+            }
+        });
+        return Array.from(months).sort().reverse();
+    };
+
+    // Filter expenses by selected period
+    const getFilteredExpenses = () => {
+        if (selectedPeriod === 'overall') {
+            return expenses;
+        }
+        return expenses.filter(exp => {
+            if (!exp.Date) return false;
+            const date = new Date(exp.Date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            return monthKey === selectedPeriod;
+        });
+    };
+
+    // Calculate category distribution
+    const getCategoryDistribution = () => {
+        const filtered = getFilteredExpenses();
+        const categoryTotals: { [key: string]: number } = {};
+        let totalExpenses = 0;
+
+        filtered.forEach(exp => {
+            const amount = parseFloat(exp.Amount || '0');
+            if (amount < 0 && exp.Category && exp.Category !== 'Income') {
+                categoryTotals[exp.Category] = (categoryTotals[exp.Category] || 0) + Math.abs(amount);
+                totalExpenses += Math.abs(amount);
+            }
+        });
+
+        return Object.entries(categoryTotals)
+            .map(([category, amount]) => ({
+                category,
+                amount,
+                percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
+            }))
+            .sort((a, b) => b.amount - a.amount);
+    };
+
+    // Calculate account distribution
+    const getAccountDistribution = () => {
+        const filtered = getFilteredExpenses();
+        const accountTotals: { [key: string]: { income: number; expenses: number } } = {};
+
+        filtered.forEach(exp => {
+            const amount = parseFloat(exp.Amount || '0');
+            if (!accountTotals[exp.Account]) {
+                accountTotals[exp.Account] = { income: 0, expenses: 0 };
+            }
+            if (amount >= 0) {
+                accountTotals[exp.Account].income += amount;
+            } else {
+                accountTotals[exp.Account].expenses += Math.abs(amount);
+            }
+        });
+
+        return Object.entries(accountTotals).map(([account, data]) => ({
+            account,
+            income: data.income,
+            expenses: data.expenses,
+            net: data.income - data.expenses,
+        }));
+    };
+
+    // Calculate income vs expenses summary
+    const getSummary = () => {
+        const filtered = getFilteredExpenses();
+        let totalIncome = 0;
+        let totalExpenses = 0;
+
+        filtered.forEach(exp => {
+            const amount = parseFloat(exp.Amount || '0');
+            if (amount >= 0) {
+                totalIncome += amount;
+            } else {
+                totalExpenses += Math.abs(amount);
+            }
+        });
+
+        return {
+            totalIncome,
+            totalExpenses,
+            netSavings: totalIncome - totalExpenses,
+            savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
+        };
+    };
+
+    const availableMonths = getAvailableMonths();
+    const categoryDistribution = getCategoryDistribution();
+    const accountDistribution = getAccountDistribution();
+    const summary = getSummary();
+
     // Open edit modal with selected transaction
     const openEditModal = (tx: Transaction) => {
         const numericAmount = parseFloat(tx.Amount || '0');
@@ -232,6 +338,32 @@ export default function Home() {
                 </header>
 
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {/* Tab Navigation */}
+                    <div className="mb-6">
+                        <div className="border-b border-gray-200">
+                            <nav className="-mb-px flex space-x-8">
+                                <button
+                                    onClick={() => setActiveTab('transactions')}
+                                    className={`${activeTab === 'transactions'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                >
+                                    Transactions
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('analytics')}
+                                    className={`${activeTab === 'analytics'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                >
+                                    Analytics
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
                     {/* Error Message */}
                     {error && (
                         <div className="mb-6 rounded-md bg-red-50 p-4">
@@ -248,237 +380,392 @@ export default function Home() {
                         </div>
                     )}
 
-                    {/* Account Balances */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                        {Object.entries(balances).map(([account, balance]) => (
-                            <div key={account} className="bg-white overflow-hidden shadow rounded-lg">
-                                <div className="px-4 py-5 sm:p-6">
-                                    <dt className="text-sm font-medium text-gray-500 truncate">{account}</dt>
-                                    <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ₹{balance.toFixed(2)}
-                                    </dd>
+                    {activeTab === 'transactions' && (
+                        <>
+                            {/* Account Balances */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                                {Object.entries(balances).map(([account, balance]) => (
+                                    <div key={account} className="bg-white overflow-hidden shadow rounded-lg">
+                                        <div className="px-4 py-5 sm:p-6">
+                                            <dt className="text-sm font-medium text-gray-500 truncate">{account}</dt>
+                                            <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                ₹{balance.toFixed(2)}
+                                            </dd>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="bg-indigo-600 overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-indigo-100 truncate">Total Balance</dt>
+                                        <dd className="mt-1 text-2xl font-semibold text-white">
+                                            ₹{totalBalance.toFixed(2)}
+                                        </dd>
+                                    </div>
                                 </div>
                             </div>
-                        ))}
-                        <div className="bg-indigo-600 overflow-hidden shadow rounded-lg">
-                            <div className="px-4 py-5 sm:p-6">
-                                <dt className="text-sm font-medium text-indigo-100 truncate">Total Balance</dt>
-                                <dd className="mt-1 text-2xl font-semibold text-white">
-                                    ₹{totalBalance.toFixed(2)}
-                                </dd>
-                            </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Add Transaction Form */}
-                        <div className="lg:col-span-1">
-                            <div className="bg-white shadow rounded-lg p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    {/* Is it Income Checkbox */}
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id="isIncome"
-                                            checked={isIncome}
-                                            onChange={(e) => setIsIncome(e.target.checked)}
-                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        />
-                                        <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-700">
-                                            Is it an Income
-                                        </label>
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="date"
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={formData.Date}
-                                            onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Account
-                                        </label>
-                                        <select
-                                            id="account"
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={formData.Account}
-                                            onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
-                                        >
-                                            <option value="AXIS Bank">AXIS Bank</option>
-                                            <option value="SBI Bank">SBI Bank</option>
-                                            <option value="Credit Card">Credit Card</option>
-                                            <option value="Cash">Cash</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Category - Only show if NOT income */}
-                                    {!isIncome && (
-                                        <div>
-                                            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Category
+                    {activeTab === 'transactions' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Add Transaction Form */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white shadow rounded-lg p-6">
+                                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
+                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                        {/* Is it Income Checkbox */}
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                id="isIncome"
+                                                checked={isIncome}
+                                                onChange={(e) => setIsIncome(e.target.checked)}
+                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                            />
+                                            <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-700">
+                                                Is it an Income
                                             </label>
-                                            <select
-                                                id="category"
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Date
+                                            </label>
+                                            <input
+                                                type="date"
+                                                id="date"
                                                 required
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                value={formData.Category}
-                                                onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                value={formData.Date}
+                                                onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Account
+                                            </label>
+                                            <select
+                                                id="account"
+                                                required
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                value={formData.Account}
+                                                onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
                                             >
-                                                <option value="">Select a category</option>
-                                                <option value="Food & Dining">Food & Dining</option>
-                                                <option value="Transportation">Transportation</option>
-                                                <option value="Shopping">Shopping</option>
-                                                <option value="Entertainment">Entertainment</option>
-                                                <option value="Bills & Utilities">Bills & Utilities</option>
-                                                <option value="Healthcare">Healthcare</option>
-                                                <option value="Education">Education</option>
-                                                <option value="Groceries">Groceries</option>
-                                                <option value="Rent">Rent</option>
-                                                <option value="Insurance">Insurance</option>
-                                                <option value="Personal Care">Personal Care</option>
-                                                <option value="Travel">Travel</option>
-                                                <option value="Subscriptions">Subscriptions</option>
-                                                <option value="Gifts">Gifts</option>
-                                                <option value="Other">Other</option>
+                                                <option value="AXIS Bank">AXIS Bank</option>
+                                                <option value="SBI Bank">SBI Bank</option>
+                                                <option value="Credit Card">Credit Card</option>
+                                                <option value="Cash">Cash</option>
                                             </select>
                                         </div>
-                                    )}
 
-                                    <div>
-                                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Description
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="description"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={formData.Description}
-                                            onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                                            placeholder="Optional details"
-                                        />
+                                        {/* Category - Only show if NOT income */}
+                                        {!isIncome && (
+                                            <div>
+                                                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Category
+                                                </label>
+                                                <select
+                                                    id="category"
+                                                    required
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                    value={formData.Category}
+                                                    onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                >
+                                                    <option value="">Select a category</option>
+                                                    <option value="Food & Dining">Food & Dining</option>
+                                                    <option value="Transportation">Transportation</option>
+                                                    <option value="Shopping">Shopping</option>
+                                                    <option value="Entertainment">Entertainment</option>
+                                                    <option value="Bills & Utilities">Bills & Utilities</option>
+                                                    <option value="Healthcare">Healthcare</option>
+                                                    <option value="Education">Education</option>
+                                                    <option value="Groceries">Groceries</option>
+                                                    <option value="Rent">Rent</option>
+                                                    <option value="Insurance">Insurance</option>
+                                                    <option value="Personal Care">Personal Care</option>
+                                                    <option value="Travel">Travel</option>
+                                                    <option value="Subscriptions">Subscriptions</option>
+                                                    <option value="Gifts">Gifts</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Description
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="description"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                value={formData.Description}
+                                                onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+                                                placeholder="Optional details"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Amount
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="amount"
+                                                required
+                                                step="0.01"
+                                                min="0"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                value={formData.Amount}
+                                                onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {submitting ? 'Adding...' : (isIncome ? 'Add Income' : 'Add Expense')}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            {/* Expenses List */}
+                            <div className="lg:col-span-2">
+                                <div className="bg-white shadow rounded-lg overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-gray-200">
+                                        <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
                                     </div>
-
-                                    <div>
-                                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Amount
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="amount"
-                                            required
-                                            step="0.01"
-                                            min="0"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={formData.Amount}
-                                            onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
-                                            placeholder="0.00"
-                                        />
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Date
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Account
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Category
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Description
+                                                    </th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Amount
+                                                    </th>
+                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {expenses.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                                            No transactions found. Add your first transaction to get started!
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    expenses.slice().reverse().map((expense, index) => {
+                                                        const amount = parseFloat(expense.Amount || '0');
+                                                        const isPositive = amount >= 0;
+                                                        return (
+                                                            <tr key={index} className="hover:bg-gray-50">
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                    {expense.Date}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                    {expense.Account}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                    {expense.Category}
+                                                                </td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900">
+                                                                    {expense.Description}
+                                                                </td>
+                                                                <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                                                    ₹{Math.abs(amount).toFixed(2)}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => openEditModal(expense)}
+                                                                        className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                                                                        aria-label="Edit"
+                                                                        title="Edit"
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                                                            <path d="M21.731 2.269a2.625 2.625 0 00-3.714 0l-1.157 1.157 3.714 3.714 1.157-1.157a2.625 2.625 0 000-3.714z" />
+                                                                            <path d="M3 17.25V21h3.75L19.31 8.44l-3.714-3.714L3 17.25z" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {submitting ? 'Adding...' : (isIncome ? 'Add Income' : 'Add Expense')}
-                                    </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        {/* Expenses List */}
-                        <div className="lg:col-span-2">
+                    {/* Analytics Tab */}
+                    {activeTab === 'analytics' && (
+                        <div className="space-y-6">
+                            {/* Period Selector */}
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semibold text-gray-900">Expenditure Analysis</h2>
+                                <div>
+                                    <label htmlFor="period" className="mr-2 text-sm font-medium text-gray-700">
+                                        Period:
+                                    </label>
+                                    <select
+                                        id="period"
+                                        value={selectedPeriod}
+                                        onChange={(e) => setSelectedPeriod(e.target.value)}
+                                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="overall">Overall</option>
+                                        {availableMonths.map(month => {
+                                            const [year, monthNum] = month.split('-');
+                                            const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+                                            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                                            return (
+                                                <option key={month} value={month}>
+                                                    {monthName}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Income</dt>
+                                        <dd className="mt-1 text-2xl font-semibold text-green-600">
+                                            ₹{summary.totalIncome.toFixed(2)}
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
+                                        <dd className="mt-1 text-2xl font-semibold text-red-600">
+                                            ₹{summary.totalExpenses.toFixed(2)}
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div className="bg-white overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Net Savings</dt>
+                                        <dd className={`mt-1 text-2xl font-semibold ${summary.netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            ₹{summary.netSavings.toFixed(2)}
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div className="bg-indigo-600 overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-indigo-100 truncate">Savings Rate</dt>
+                                        <dd className="mt-1 text-2xl font-semibold text-white">
+                                            {summary.savingsRate.toFixed(1)}%
+                                        </dd>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Category Distribution */}
+                            <div className="bg-white shadow rounded-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h3>
+                                {categoryDistribution.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-8">No expense data for this period</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {categoryDistribution.map(cat => (
+                                            <div key={cat.category}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-sm font-medium text-gray-700">{cat.category}</span>
+                                                    <span className="text-sm font-semibold text-gray-900">
+                                                        ₹{cat.amount.toFixed(2)} ({cat.percentage.toFixed(1)}%)
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                    <div
+                                                        className="bg-indigo-600 h-2.5 rounded-full"
+                                                        style={{ width: `${cat.percentage}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Account Distribution */}
                             <div className="bg-white shadow rounded-lg overflow-hidden">
                                 <div className="px-6 py-4 border-b border-gray-200">
-                                    <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+                                    <h3 className="text-lg font-semibold text-gray-900">Account Breakdown</h3>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Date
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Account
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Category
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Description
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Income
                                                 </th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Amount
+                                                    Expenses
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Actions
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Net
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {expenses.length === 0 ? (
+                                            {accountDistribution.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                                                        No transactions found. Add your first transaction to get started!
+                                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                                        No account data for this period
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                expenses.slice().reverse().map((expense, index) => {
-                                                    const amount = parseFloat(expense.Amount || '0');
-                                                    const isPositive = amount >= 0;
-                                                    return (
-                                                        <tr key={index} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                                {expense.Date}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                                {expense.Account}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                                {expense.Category}
-                                                            </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-900">
-                                                                {expense.Description}
-                                                            </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                                                ₹{Math.abs(amount).toFixed(2)}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => openEditModal(expense)}
-                                                                    className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900"
-                                                                    aria-label="Edit"
-                                                                    title="Edit"
-                                                                >
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                                                        <path d="M21.731 2.269a2.625 2.625 0 00-3.714 0l-1.157 1.157 3.714 3.714 1.157-1.157a2.625 2.625 0 000-3.714z" />
-                                                                        <path d="M3 17.25V21h3.75L19.31 8.44l-3.714-3.714L3 17.25z" />
-                                                                    </svg>
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })
+                                                accountDistribution.map(acc => (
+                                                    <tr key={acc.account} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {acc.account}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
+                                                            ₹{acc.income.toFixed(2)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">
+                                                            ₹{acc.expenses.toFixed(2)}
+                                                        </td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            ₹{acc.net.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))
                                             )}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Edit Modal */}
                     {editOpen && (

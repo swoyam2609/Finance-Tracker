@@ -10,6 +10,11 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 - 💚❤️ Color-coded balances (green for positive, red for negative)
 - 📝 Add expenses with category selection from popular categories
 - 💵 Income tracking with automatic category assignment
+- ✏️ Edit existing transactions with modal popup
+- 📈 Analytics dashboard with expenditure distribution
+- 📅 Month-wise and overall expense analysis
+- 📊 Category-wise expense breakdown with visual charts
+- 💳 Account-wise income/expense breakdown
 - 📱 Responsive design with Tailwind CSS
 - 🔄 Automatic data synchronization with Google Sheets
 - 🎨 Visual indicators for income (positive/green) vs expenses (negative/red)
@@ -131,6 +136,18 @@ Use the email and password you configured in `.env.local` to sign in.
 - Income appears in green, expenses in red
 - Account balances are shown in cards at the top of the page
 - Positive balances are green, negative balances are red
+- Click the edit icon (pencil) on any transaction to modify it
+
+### Analytics Dashboard
+
+1. Click the "Analytics" tab at the top of the page
+2. Use the period dropdown to select:
+   - **Overall**: View all-time statistics
+   - **Specific Month**: View data for any month with recorded transactions
+3. View key metrics:
+   - Total Income, Total Expenses, Net Savings, Savings Rate
+4. Expense breakdown by category with visual percentage bars
+5. Account breakdown showing income, expenses, and net per account
 
 ### Account Balances
 

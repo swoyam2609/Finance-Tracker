@@ -1,5 +1,84 @@
 # Changelog
 
+## Version 1.3.0 - Analytics Dashboard
+
+### New Features
+
+#### 1. **Analytics Tab with Expenditure Distribution**
+- Added new "Analytics" tab alongside "Transactions" tab
+- Comprehensive expenditure analysis dashboard
+- Visual representation of spending patterns
+
+#### 2. **Period Selection**
+- Dropdown to filter data by time period:
+  - **Overall**: All-time statistics
+  - **Month-specific**: Individual months with available data
+- Automatically detects available months from transaction history
+- Displays months in human-readable format (e.g., "October 2025")
+
+#### 3. **Summary Metrics**
+- Four key metric cards:
+  - **Total Income**: Sum of all income for selected period (green)
+  - **Total Expenses**: Sum of all expenses for selected period (red)
+  - **Net Savings**: Income minus expenses with color coding
+  - **Savings Rate**: Percentage of income saved
+
+#### 4. **Category Distribution**
+- Visual breakdown of expenses by category
+- Horizontal bar charts showing percentage distribution
+- Shows amount and percentage for each category
+- Categories sorted by highest to lowest spending
+- Excludes income from category analysis
+
+#### 5. **Account Breakdown Table**
+- Detailed table showing per-account statistics:
+  - Income received per account
+  - Expenses from each account
+  - Net amount per account (income - expenses)
+- Color-coded net values (green for positive, red for negative)
+
+### Technical Implementation
+
+#### Frontend
+- Tab navigation using React state management
+- Dynamic calculations based on selected period
+- Responsive grid layouts for metrics and charts
+- Conditional rendering for transactions vs analytics views
+
+#### Analytics Functions
+- `getAvailableMonths()`: Extracts unique months from transaction dates
+- `getFilteredExpenses()`: Filters transactions by selected period
+- `getCategoryDistribution()`: Calculates category-wise expense breakdown
+- `getAccountDistribution()`: Calculates per-account income/expense/net
+- `getSummary()`: Computes overall income, expenses, and savings metrics
+
+### User Experience
+
+1. **Easy Navigation**: Tab-based interface for switching between views
+2. **Period Flexibility**: Analyze overall trends or focus on specific months
+3. **Visual Insights**: Bar charts make it easy to identify top spending categories
+4. **Comprehensive Data**: View both category and account perspectives
+5. **Color Coding**: Consistent green (positive) and red (negative) indicators
+
+---
+
+## Version 1.2.0 - Transaction Editing
+
+### New Features
+
+#### 1. **Edit Transaction Modal**
+- Click pencil icon on any transaction to edit
+- Modal popup with pre-populated transaction data
+- Full editing capability for all fields
+- Income/Expense toggle automatically adjusts form
+
+#### 2. **Backend Update Support**
+- New API endpoint: `PUT /api/expenses/update`
+- Google Sheets integration for row updates
+- Row index tracking for precise updates
+
+---
+
 ## Version 1.1.0 - Enhanced Income/Expense Tracking
 
 ### New Features
