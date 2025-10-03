@@ -35,7 +35,7 @@ async function getSheetsDoc() {
 }
 
 // Fetch all expense data from the sheet
-export async function fetchData(): Promise<ExpenseData[]> {
+export async function fetchData(): Promise<(ExpenseData & { RowIndex: number })[]> {
     try {
         const doc = await getSheetsDoc();
         const sheet = doc.sheetsByIndex[0]; // Use the first sheet
@@ -47,12 +47,13 @@ export async function fetchData(): Promise<ExpenseData[]> {
         await sheet.loadHeaderRow();
         const rows = await sheet.getRows();
 
-        const data: ExpenseData[] = rows.map((row) => ({
+        const data = rows.map((row, index) => ({
             Date: row.get('Date') || '',
             Account: row.get('Account') || '',
             Category: row.get('Category') || '',
             Description: row.get('Description') || '',
             Amount: row.get('Amount') || '',
+            RowIndex: index,
         }));
 
         return data;
@@ -82,6 +83,47 @@ export async function addExpense(expenseData: ExpenseData): Promise<void> {
         });
     } catch (error) {
         console.error('Error adding expense to Google Sheets:', error);
+        throw error;
+    }
+}
+
+// Update an existing expense row in the sheet
+export async function updateExpense(rowIndex: number, expenseData: ExpenseData): Promise<void> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByIndex[0];
+
+        if (!sheet) {
+            throw new Error('No sheets found in the document');
+        }
+
+        await sheet.loadHeaderRow();
+        const rows = await sheet.getRows();
+
+        if (rowIndex < 0 || rowIndex >= rows.length) {
+            throw new Error('Invalid row index');
+        }
+
+        const row = rows[rowIndex];
+        const nextValues = {
+            Date: expenseData.Date,
+            Account: expenseData.Account,
+            Category: expenseData.Category,
+            Description: expenseData.Description,
+            Amount: expenseData.Amount,
+        } as Record<string, string | number>;
+
+        // If amount is numeric-like, store as number to avoid string formatting issues
+        const amt = Number(expenseData.Amount);
+        if (!Number.isNaN(amt)) {
+            nextValues.Amount = amt;
+        }
+
+        // Prefer set() to ensure proper dirty state tracking
+        (row as any).set(nextValues);
+        await (row as any).save();
+    } catch (error) {
+        console.error('Error updating expense in Google Sheets:', error);
         throw error;
     }
 }

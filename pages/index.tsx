@@ -4,10 +4,12 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData } from '@/lib/google-sheet';
 
+type Transaction = ExpenseData & { RowIndex?: number };
+
 export default function Home() {
     const router = useRouter();
     const { data: session, status } = useSession();
-    const [expenses, setExpenses] = useState<ExpenseData[]>([]);
+    const [expenses, setExpenses] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -21,6 +23,19 @@ export default function Home() {
     });
     const [isIncome, setIsIncome] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    // Edit modal state
+    const [editOpen, setEditOpen] = useState(false);
+    const [editData, setEditData] = useState<ExpenseData>({
+        Date: '',
+        Account: '',
+        Category: '',
+        Description: '',
+        Amount: '',
+    });
+    const [editIsIncome, setEditIsIncome] = useState(false);
+    const [editRowIndex, setEditRowIndex] = useState<number | null>(null);
+    const [updating, setUpdating] = useState(false);
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -119,6 +134,65 @@ export default function Home() {
 
     const balances = calculateBalances();
     const totalBalance = Object.values(balances).reduce((sum, val) => sum + val, 0);
+
+    // Open edit modal with selected transaction
+    const openEditModal = (tx: Transaction) => {
+        const numericAmount = parseFloat(tx.Amount || '0');
+        setEditRowIndex(typeof tx.RowIndex === 'number' ? tx.RowIndex : null);
+        setEditData({
+            Date: tx.Date,
+            Account: tx.Account,
+            Category: tx.Category,
+            Description: tx.Description,
+            Amount: Math.abs(numericAmount).toString(),
+        });
+        setEditIsIncome(numericAmount >= 0);
+        setEditOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditOpen(false);
+        setUpdating(false);
+    };
+
+    const handleUpdate = async (e: FormEvent) => {
+        e.preventDefault();
+        if (editRowIndex === null) return;
+        setUpdating(true);
+        setError('');
+
+        try {
+            const amount = parseFloat(editData.Amount);
+            const signedAmount = editIsIncome ? Math.abs(amount) : -Math.abs(amount);
+
+            const payload = {
+                rowIndex: editRowIndex,
+                expenseData: {
+                    ...editData,
+                    Amount: signedAmount.toString(),
+                    Category: editIsIncome ? 'Income' : editData.Category,
+                },
+            };
+
+            const response = await fetch('/api/expenses/update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update transaction');
+            }
+
+            closeEditModal();
+            await fetchExpenses();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update transaction');
+        } finally {
+            setUpdating(false);
+        }
+    };
 
     if (status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0)) {
         return (
@@ -348,12 +422,15 @@ export default function Home() {
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Amount
                                                 </th>
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {expenses.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                                         No transactions found. Add your first transaction to get started!
                                                     </td>
                                                 </tr>
@@ -378,6 +455,20 @@ export default function Home() {
                                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                                                                 ₹{Math.abs(amount).toFixed(2)}
                                                             </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openEditModal(expense)}
+                                                                    className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                                                                    aria-label="Edit"
+                                                                    title="Edit"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                                                        <path d="M21.731 2.269a2.625 2.625 0 00-3.714 0l-1.157 1.157 3.714 3.714 1.157-1.157a2.625 2.625 0 000-3.714z" />
+                                                                        <path d="M3 17.25V21h3.75L19.31 8.44l-3.714-3.714L3 17.25z" />
+                                                                    </svg>
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     );
                                                 })
@@ -388,6 +479,143 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Edit Modal */}
+                    {editOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/50" onClick={closeEditModal} />
+                            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-900">Edit Transaction</h3>
+                                    <button onClick={closeEditModal} className="text-gray-500 hover:text-gray-700" aria-label="Close">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                            <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 11-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleUpdate} className="space-y-4">
+                                    {/* Is it Income Checkbox */}
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            id="editIsIncome"
+                                            checked={editIsIncome}
+                                            onChange={(e) => setEditIsIncome(e.target.checked)}
+                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                        />
+                                        <label htmlFor="editIsIncome" className="ml-2 block text-sm font-medium text-gray-700">
+                                            Is it an Income
+                                        </label>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="editDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Date
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="editDate"
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            value={editData.Date}
+                                            onChange={(e) => setEditData({ ...editData, Date: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="editAccount" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Account
+                                        </label>
+                                        <select
+                                            id="editAccount"
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            value={editData.Account}
+                                            onChange={(e) => setEditData({ ...editData, Account: e.target.value })}
+                                        >
+                                            <option value="AXIS Bank">AXIS Bank</option>
+                                            <option value="SBI Bank">SBI Bank</option>
+                                            <option value="Credit Card">Credit Card</option>
+                                            <option value="Cash">Cash</option>
+                                        </select>
+                                    </div>
+
+                                    {!editIsIncome && (
+                                        <div>
+                                            <label htmlFor="editCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Category
+                                            </label>
+                                            <select
+                                                id="editCategory"
+                                                required
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                value={editData.Category}
+                                                onChange={(e) => setEditData({ ...editData, Category: e.target.value })}
+                                            >
+                                                <option value="">Select a category</option>
+                                                <option value="Food & Dining">Food & Dining</option>
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Shopping">Shopping</option>
+                                                <option value="Entertainment">Entertainment</option>
+                                                <option value="Bills & Utilities">Bills & Utilities</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Groceries">Groceries</option>
+                                                <option value="Rent">Rent</option>
+                                                <option value="Insurance">Insurance</option>
+                                                <option value="Personal Care">Personal Care</option>
+                                                <option value="Travel">Travel</option>
+                                                <option value="Subscriptions">Subscriptions</option>
+                                                <option value="Gifts">Gifts</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Description
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="editDescription"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            value={editData.Description}
+                                            onChange={(e) => setEditData({ ...editData, Description: e.target.value })}
+                                            placeholder="Optional details"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="editAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Amount
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="editAmount"
+                                            required
+                                            step="0.01"
+                                            min="0"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            value={editData.Amount}
+                                            onChange={(e) => setEditData({ ...editData, Amount: e.target.value })}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-end gap-3 pt-2">
+                                        <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-800">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" disabled={updating} className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                            {updating ? 'Saving...' : 'Save Changes'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </main>
             </div>
         </>
