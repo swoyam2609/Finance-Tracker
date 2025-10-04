@@ -6262,3 +6262,28 @@ All documentation (README.md and CHANGELOG.md) has been updated to reflect these
 
 ---
 
+_**User (2025-10-04 18:32Z)**_
+
+can we change the UI for mobile version, i want to show minilmal clean UI without horizontal scrolling when viewing on mobile
+
+---
+
+_**Assistant (claude-4.5-sonnet-thinking)**_
+
+<think><details><summary>Thought Process</summary>The user wants to make the transaction table mobile-friendly. Currently, they have a table with multiple columns (Date, Account, Category, Description, Amount) which likely causes horizontal scrolling on mobile devices. 
+
+I should create a card-based layout for mobile devices that stacks the information vertically instead of using a table. This is a common pattern for making data tables responsive.
+
+I'll need to:
+1. Keep the existing table for desktop/larger screens
+2. Add a mobile-optimized card layout that shows on small screens
+3. Use Tailwind's responsive classes to hide/show the appropriate layout
+
+Let me read the current index.tsx to see the transaction table structure.</details></think>
+
+---
+
+I'll redesign the transactions table to be mobile-friendly with a clean card-based layout that eliminates horizontal scrolling on small screens.
+
+---
+

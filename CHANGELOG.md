@@ -1,5 +1,57 @@
 # Changelog
 
+## Version 1.7.0 - Mobile Responsive Design
+
+### New Features
+
+#### 1. **Mobile-Optimized UI**
+- Complete mobile-responsive design across all tabs
+- Card-based layouts for better mobile viewing
+- Eliminated horizontal scrolling on mobile devices
+- Clean and minimal UI for small screens
+
+#### 2. **Responsive Components**
+
+**Transactions Tab:**
+- Desktop: Traditional table view
+- Mobile: Compact card view with stacked information
+- Shows date, account badge, category, description, and amount
+
+**Analytics Tab:**
+- Mobile-optimized summary cards
+- Responsive daily expenses chart
+- Mobile card view for account breakdown
+- Touch-friendly category distribution
+
+**Loans Tab:**
+- Mobile card layout for person transactions
+- Stacked header information
+- Compact transaction cards with badges
+
+#### 3. **Mobile-First Improvements**
+- Reduced padding on mobile for better space utilization
+- Smaller gaps between grid items on mobile
+- Responsive tab navigation with adjusted spacing
+- Better touch targets for buttons and forms
+
+### Technical Implementation
+
+- Used Tailwind's responsive breakpoints (`md:`, `sm:`)
+- `hidden md:block` for desktop table views
+- `md:hidden` for mobile card views
+- Flexbox and grid layouts for responsive behavior
+- Conditional rendering based on screen size
+
+### User Experience
+
+1. **No Horizontal Scrolling**: All content fits within mobile viewport
+2. **Easy Reading**: Larger text and better spacing on mobile
+3. **Clean Layout**: Minimal design without clutter
+4. **Consistent Experience**: Same dark theme across all devices
+5. **Touch-Friendly**: Optimized button sizes and spacing
+
+---
+
 ## Version 1.6.0 - Daily Expenses Chart
 
 ### New Features

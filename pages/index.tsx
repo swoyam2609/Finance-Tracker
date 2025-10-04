@@ -497,7 +497,7 @@ export default function Home() {
                     {/* Tab Navigation */}
                     <div className="mb-6">
                         <div className="border-b border-gray-700">
-                            <nav className="-mb-px flex space-x-8">
+                            <nav className="-mb-px flex space-x-4 sm:space-x-8">
                                 <button
                                     onClick={() => setActiveTab('transactions')}
                                     className={`${activeTab === 'transactions'
@@ -572,10 +572,10 @@ export default function Home() {
                     )}
 
                     {activeTab === 'transactions' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                             {/* Add Transaction Form */}
                             <div className="lg:col-span-1">
-                                <div className="bg-gray-800 shadow rounded-lg p-6">
+                                <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
                                     <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Transaction</h2>
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         {/* Is it Income Checkbox */}
@@ -701,7 +701,8 @@ export default function Home() {
 
                             {/* Expenses List */}
                             <div className="lg:col-span-2">
-                                <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block bg-gray-800 shadow rounded-lg overflow-hidden">
                                     <div className="px-6 py-4 border-b border-gray-700">
                                         <h2 className="text-lg font-semibold text-gray-100">Recent Transactions</h2>
                                     </div>
@@ -761,6 +762,52 @@ export default function Home() {
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="md:hidden">
+                                    <div className="bg-gray-800 shadow rounded-lg overflow-hidden mb-4">
+                                        <div className="px-4 py-3 border-b border-gray-700">
+                                            <h2 className="text-base font-semibold text-gray-100">Recent Transactions</h2>
+                                        </div>
+                                    </div>
+                                    {expenses.length === 0 ? (
+                                        <div className="bg-gray-800 shadow rounded-lg p-6 text-center text-gray-400">
+                                            No transactions found. Add your first transaction to get started!
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {expenses.slice().reverse().map((expense, index) => {
+                                                const amount = parseFloat(expense.Amount || '0');
+                                                const isPositive = amount >= 0;
+                                                return (
+                                                    <div key={index} className="bg-gray-800 shadow rounded-lg p-4">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="text-xs font-medium text-gray-400">{expense.Date}</span>
+                                                                    <span className="text-xs px-2 py-0.5 bg-gray-700 text-gray-300 rounded">
+                                                                        {expense.Account}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-sm font-medium text-gray-100 mb-1">
+                                                                    {expense.Category}
+                                                                </div>
+                                                                {expense.Description && (
+                                                                    <div className="text-xs text-gray-400">
+                                                                        {expense.Description}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className={`text-lg font-bold ml-3 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                                                ₹{Math.abs(amount).toFixed(2)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -834,7 +881,7 @@ export default function Home() {
                             </div>
 
                             {/* Daily Expenses Chart */}
-                            <div className="bg-gray-800 shadow rounded-lg p-6">
+                            <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
                                 <h3 className="text-lg font-semibold text-gray-100 mb-4">Daily Expenses Trend</h3>
                                 {dailyExpensesData.length === 0 ? (
                                     <p className="text-gray-400 text-center py-8">No transaction data for this period</p>
@@ -882,7 +929,7 @@ export default function Home() {
                             </div>
 
                             {/* Category Distribution */}
-                            <div className="bg-gray-800 shadow rounded-lg p-6">
+                            <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
                                 <h3 className="text-lg font-semibold text-gray-100 mb-4">Expenses by Category</h3>
                                 {categoryDistribution.length === 0 ? (
                                     <p className="text-gray-400 text-center py-8">No expense data for this period</p>
@@ -910,10 +957,12 @@ export default function Home() {
 
                             {/* Account Distribution */}
                             <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-700">
+                                <div className="px-4 sm:px-6 py-4 border-b border-gray-700">
                                     <h3 className="text-lg font-semibold text-gray-100">Account Breakdown</h3>
                                 </div>
-                                <div className="overflow-x-auto">
+
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-900">
                                             <tr>
@@ -959,6 +1008,35 @@ export default function Home() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Mobile Card View */}
+                                <div className="md:hidden p-4 space-y-3">
+                                    {accountDistribution.length === 0 ? (
+                                        <p className="text-center text-gray-400 py-4">No account data for this period</p>
+                                    ) : (
+                                        accountDistribution.map(acc => (
+                                            <div key={acc.account} className="bg-gray-900 rounded-lg p-4">
+                                                <div className="font-medium text-gray-100 mb-3">{acc.account}</div>
+                                                <div className="grid grid-cols-3 gap-2 text-xs">
+                                                    <div>
+                                                        <div className="text-gray-400 mb-1">Income</div>
+                                                        <div className="text-green-600 font-semibold">₹{acc.income.toFixed(2)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-gray-400 mb-1">Expenses</div>
+                                                        <div className="text-red-600 font-semibold">₹{acc.expenses.toFixed(2)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-gray-400 mb-1">Net</div>
+                                                        <div className={`font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            ₹{acc.net.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -973,10 +1051,10 @@ export default function Home() {
                                 <p className="text-indigo-100 mt-2">Amount owed to you by {loansSummary.filter(p => p.balance > 0).length} people</p>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                                 {/* Add Loan Transaction Form */}
                                 <div className="lg:col-span-1">
-                                    <div className="bg-gray-800 shadow rounded-lg p-6">
+                                    <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
                                         <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Loan Transaction</h2>
                                         <form onSubmit={handleLoanSubmit} className="space-y-4">
                                             <div>
@@ -1107,13 +1185,15 @@ export default function Home() {
                                             const personTransactions = getPersonTransactions(person);
                                             return (
                                                 <div key={person} className="bg-gray-800 shadow rounded-lg overflow-hidden">
-                                                    <div className="px-6 py-4 bg-gray-900 border-b border-gray-700 flex justify-between items-center">
+                                                    <div className="px-4 sm:px-6 py-4 bg-gray-900 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                                         <h3 className="text-lg font-semibold text-gray-100">{person}</h3>
-                                                        <span className={`text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                                                        <span className={`text-xl sm:text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-400'}`}>
                                                             ₹{Math.abs(balance).toFixed(2)} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
                                                         </span>
                                                     </div>
-                                                    <div className="overflow-x-auto">
+
+                                                    {/* Desktop Table View */}
+                                                    <div className="hidden md:block overflow-x-auto">
                                                         <table className="min-w-full divide-y divide-gray-200">
                                                             <thead className="bg-gray-900">
                                                                 <tr>
@@ -1160,6 +1240,40 @@ export default function Home() {
                                                                 })}
                                                             </tbody>
                                                         </table>
+                                                    </div>
+
+                                                    {/* Mobile Card View */}
+                                                    <div className="md:hidden p-4 space-y-3">
+                                                        {personTransactions.map((tx, idx) => {
+                                                            const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
+                                                            return (
+                                                                <div key={idx} className="bg-gray-900 rounded-lg p-3">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div className="flex-1">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className="text-xs text-gray-400">{tx.Date}</span>
+                                                                                <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${tx.TransactionType === 'LENT' ? 'bg-blue-900 text-blue-200' :
+                                                                                    tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-purple-900 text-purple-200' :
+                                                                                        'bg-green-900 text-green-200'
+                                                                                    }`}>
+                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
+                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
+                                                                                            'Received'}
+                                                                                </span>
+                                                                            </div>
+                                                                            {tx.Description && (
+                                                                                <div className="text-xs text-gray-400">
+                                                                                    {tx.Description}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className={`text-base font-bold ml-3 ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
+                                                                            {isLent ? '+' : '-'}₹{parseFloat(tx.Amount || '0').toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             );
