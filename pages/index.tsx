@@ -724,15 +724,12 @@ export default function Home() {
                                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                                                         Amount
                                                     </th>
-                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Actions
-                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-gray-800 divide-y divide-gray-200">
                                                 {expenses.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
                                                             No transactions found. Add your first transaction to get started!
                                                         </td>
                                                     </tr>
@@ -756,20 +753,6 @@ export default function Home() {
                                                                 </td>
                                                                 <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                                                                     ₹{Math.abs(amount).toFixed(2)}
-                                                                </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => openEditModal(expense)}
-                                                                        className="inline-flex items-center p-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-100"
-                                                                        aria-label="Edit"
-                                                                        title="Edit"
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                                                            <path d="M21.731 2.269a2.625 2.625 0 00-3.714 0l-1.157 1.157 3.714 3.714 1.157-1.157a2.625 2.625 0 000-3.714z" />
-                                                                            <path d="M3 17.25V21h3.75L19.31 8.44l-3.714-3.714L3 17.25z" />
-                                                                        </svg>
-                                                                    </button>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -860,8 +843,8 @@ export default function Home() {
                                         <AreaChart data={dailyExpensesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                             <defs>
                                                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
+                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -878,7 +861,7 @@ export default function Home() {
                                             <Tooltip
                                                 contentStyle={{
                                                     backgroundColor: '#1f2937',
-                                                    border: '1px solid #374151',
+                                                    border: '1px solid #6366f1',
                                                     borderRadius: '8px',
                                                     color: '#f3f4f6'
                                                 }}
@@ -888,7 +871,7 @@ export default function Home() {
                                             <Area
                                                 type="monotone"
                                                 dataKey="expenses"
-                                                stroke="#ef4444"
+                                                stroke="#6366f1"
                                                 strokeWidth={2}
                                                 fillOpacity={1}
                                                 fill="url(#colorExpenses)"

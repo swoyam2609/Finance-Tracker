@@ -10,7 +10,6 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 - 💚❤️ Color-coded balances (green for positive, red for negative)
 - 📝 Add expenses with category selection from popular categories
 - 💵 Income tracking with automatic category assignment
-- ✏️ Edit existing transactions with modal popup
 - 📈 Analytics dashboard with expenditure distribution
 - 📅 Month-wise and overall expense analysis
 - 📉 Daily expenses trend chart with beautiful area visualization
@@ -141,7 +140,6 @@ Use the email and password you configured in `.env.local` to sign in.
 - Income appears in green, expenses in red
 - Account balances are shown in cards at the top of the page
 - Positive balances are green, negative balances are red
-- Click the edit icon (pencil) on any transaction to modify it
 
 ### Analytics Dashboard
 

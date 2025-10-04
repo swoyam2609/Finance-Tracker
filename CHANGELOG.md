@@ -18,10 +18,11 @@
 - **Currency Format**: All amounts shown with ₹ symbol
 
 #### 3. **Visual Design**
-- Red gradient area fill for expenses
+- Indigo-to-purple gradient area fill matching UI theme
 - Dark theme compatible styling
 - Professional axis labels
 - Smooth curve interpolation
+- Indigo border on tooltip for consistency
 
 ### Technical Implementation
 
@@ -37,6 +38,11 @@
 2. **Time Analysis**: Identify high-spending days
 3. **Trend Detection**: Spot spending trends over time
 4. **Period Comparison**: Switch between overall and monthly views
+
+### Changes
+
+- **Removed**: Transaction edit functionality for data integrity
+- **Updated**: Chart colors from red to indigo/purple gradient for better UI consistency
 
 ---
 
