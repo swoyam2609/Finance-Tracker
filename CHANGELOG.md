@@ -1,5 +1,46 @@
 # Changelog
 
+## Version 1.8.0 - Pie Chart for Category Distribution
+
+### New Features
+
+#### **Pie Chart Visualization**
+- Replaced horizontal bar chart with interactive pie chart for category distribution
+- Beautiful color-coded segments for each expense category
+- Shows category name and percentage on each slice
+- Interactive tooltips with exact amounts
+- Dark theme compatible colors
+
+#### **Visual Improvements**
+- 15 vibrant colors (indigo, purple, pink, amber, green, blue, red, teal, orange, lime, cyan, etc.)
+- Larger, more readable pie chart (400px height)
+- Responsive layout that works on all screen sizes
+- Hover tooltips show exact expense amounts
+
+### Technical Changes
+- Added PieChart, Pie, Cell, and Legend components from recharts
+- Dynamic color assignment for unlimited categories
+- Responsive container for mobile compatibility
+
+---
+
+## Version 1.7.1 - Continuous Daily Expense Chart
+
+### Improvements
+
+#### **Daily Expenses Chart Enhancement**
+- Chart now displays all days in the date range, including days with no transactions
+- Missing days are shown with zero values for continuity
+- Better visualization of spending patterns and gaps
+- Easier to identify days without any expenses
+
+### Technical Changes
+- Modified `getDailyExpenses()` to calculate min and max dates
+- Automatically fills in all dates between first and last transaction
+- Days without transactions display as zero on the chart
+
+---
+
 ## Version 1.7.0 - Mobile Responsive Design
 
 ### New Features

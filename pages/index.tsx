@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
@@ -319,8 +319,11 @@ export default function Home() {
     // Calculate daily expenses for chart
     const getDailyExpenses = () => {
         const filtered = getFilteredExpenses();
+        if (filtered.length === 0) return [];
+
         const dailyData: { [key: string]: { date: string; expenses: number; income: number } } = {};
 
+        // Collect all transaction data
         filtered.forEach(exp => {
             if (!exp.Date) return;
 
@@ -338,15 +341,32 @@ export default function Home() {
             }
         });
 
-        // Sort by date and format for chart
-        return Object.values(dailyData)
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(item => ({
-                date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                fullDate: item.date,
-                expenses: item.expenses,
-                income: item.income,
-            }));
+        // Find min and max dates
+        const dates = Object.keys(dailyData).sort();
+        if (dates.length === 0) return [];
+
+        const minDate = new Date(dates[0]);
+        const maxDate = new Date(dates[dates.length - 1]);
+
+        // Fill in missing dates
+        const allDates: { date: string; fullDate: string; expenses: number; income: number }[] = [];
+        const currentDate = new Date(minDate);
+
+        while (currentDate <= maxDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const data = dailyData[dateStr];
+
+            allDates.push({
+                date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                fullDate: dateStr,
+                expenses: data ? data.expenses : 0,
+                income: data ? data.income : 0,
+            });
+
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        return allDates;
     };
 
     const dailyExpensesData = getDailyExpenses();
@@ -934,23 +954,45 @@ export default function Home() {
                                 {categoryDistribution.length === 0 ? (
                                     <p className="text-gray-400 text-center py-8">No expense data for this period</p>
                                 ) : (
-                                    <div className="space-y-4">
-                                        {categoryDistribution.map(cat => (
-                                            <div key={cat.category}>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-sm font-medium text-gray-300">{cat.category}</span>
-                                                    <span className="text-sm font-semibold text-gray-100">
-                                                        ₹{cat.amount.toFixed(2)} ({cat.percentage.toFixed(1)}%)
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                                    <div
-                                                        className="bg-indigo-600 h-2.5 rounded-full"
-                                                        style={{ width: `${cat.percentage}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+                                        <ResponsiveContainer width="100%" height={400}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={categoryDistribution.map(cat => ({
+                                                        name: cat.category,
+                                                        value: cat.amount,
+                                                        percentage: cat.percentage
+                                                    }))}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    labelLine={false}
+                                                    label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
+                                                    outerRadius={120}
+                                                    fill="#8884d8"
+                                                    dataKey="value"
+                                                >
+                                                    {categoryDistribution.map((entry, index) => {
+                                                        const colors = [
+                                                            '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+                                                            '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
+                                                            '#f97316', '#84cc16', '#06b6d4', '#a855f7',
+                                                            '#6366f1', '#8b5cf6', '#ec4899'
+                                                        ];
+                                                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                                    })}
+                                                </Pie>
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        backgroundColor: '#1f2937',
+                                                        border: '1px solid #374151',
+                                                        borderRadius: '8px',
+                                                        color: '#f3f4f6'
+                                                    }}
+                                                    formatter={(value: number) => `₹${value.toFixed(2)}`}
+                                                    labelStyle={{ color: '#9ca3af' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
                                     </div>
                                 )}
                             </div>
