@@ -1,5 +1,45 @@
 # Changelog
 
+## Version 1.6.0 - Daily Expenses Chart
+
+### New Features
+
+#### 1. **Daily Expenses Trend Chart**
+- Beautiful area chart showing daily expense patterns
+- Smooth gradient fill (red for expenses)
+- Interactive tooltip showing exact amounts
+- Responsive design adapts to screen size
+
+#### 2. **Chart Features**
+- **Date Range**: Shows all dates with transactions
+- **Period Filter**: Respects overall/month selection
+- **Grid Lines**: Subtle dark theme grid for easy reading
+- **Hover Info**: Tooltip displays date and exact expense amount
+- **Currency Format**: All amounts shown with ₹ symbol
+
+#### 3. **Visual Design**
+- Red gradient area fill for expenses
+- Dark theme compatible styling
+- Professional axis labels
+- Smooth curve interpolation
+
+### Technical Implementation
+
+- Added `recharts` library for charting
+- Created `getDailyExpenses()` function to aggregate data by date
+- Area chart with gradient definition
+- Custom dark theme tooltip styling
+- Responsive container for mobile compatibility
+
+### User Experience
+
+1. **Easy Visualization**: See spending patterns at a glance
+2. **Time Analysis**: Identify high-spending days
+3. **Trend Detection**: Spot spending trends over time
+4. **Period Comparison**: Switch between overall and monthly views
+
+---
+
 ## Version 1.5.0 - Dark Theme
 
 ### New Features

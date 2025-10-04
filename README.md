@@ -13,6 +13,7 @@ A personal expense tracking application built with Next.js, NextAuth.js, and Goo
 - ✏️ Edit existing transactions with modal popup
 - 📈 Analytics dashboard with expenditure distribution
 - 📅 Month-wise and overall expense analysis
+- 📉 Daily expenses trend chart with beautiful area visualization
 - 📊 Category-wise expense breakdown with visual charts
 - 💳 Account-wise income/expense breakdown
 - 💰 Loans tracking system to monitor money lent to people
@@ -150,8 +151,9 @@ Use the email and password you configured in `.env.local` to sign in.
    - **Specific Month**: View data for any month with recorded transactions
 3. View key metrics:
    - Total Income, Total Expenses, Net Savings, Savings Rate
-4. Expense breakdown by category with visual percentage bars
-5. Account breakdown showing income, expenses, and net per account
+4. **Daily Expenses Chart**: Beautiful area chart showing your daily spending trends over time
+5. Expense breakdown by category with visual percentage bars
+6. Account breakdown showing income, expenses, and net per account
 
 ### Loans Tracking
 

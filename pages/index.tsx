@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
@@ -314,6 +315,41 @@ export default function Home() {
     const categoryDistribution = getCategoryDistribution();
     const accountDistribution = getAccountDistribution();
     const summary = getSummary();
+
+    // Calculate daily expenses for chart
+    const getDailyExpenses = () => {
+        const filtered = getFilteredExpenses();
+        const dailyData: { [key: string]: { date: string; expenses: number; income: number } } = {};
+
+        filtered.forEach(exp => {
+            if (!exp.Date) return;
+
+            const date = exp.Date;
+            const amount = parseFloat(exp.Amount || '0');
+
+            if (!dailyData[date]) {
+                dailyData[date] = { date, expenses: 0, income: 0 };
+            }
+
+            if (amount < 0) {
+                dailyData[date].expenses += Math.abs(amount);
+            } else {
+                dailyData[date].income += amount;
+            }
+        });
+
+        // Sort by date and format for chart
+        return Object.values(dailyData)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .map(item => ({
+                date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                fullDate: item.date,
+                expenses: item.expenses,
+                income: item.income,
+            }));
+    };
+
+    const dailyExpensesData = getDailyExpenses();
 
     // Calculate loans summary per person
     const getLoansSummary = () => {
@@ -812,6 +848,54 @@ export default function Home() {
                                         </dd>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Daily Expenses Chart */}
+                            <div className="bg-gray-800 shadow rounded-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-100 mb-4">Daily Expenses Trend</h3>
+                                {dailyExpensesData.length === 0 ? (
+                                    <p className="text-gray-400 text-center py-8">No transaction data for this period</p>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <AreaChart data={dailyExpensesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                            <XAxis
+                                                dataKey="date"
+                                                stroke="#9ca3af"
+                                                style={{ fontSize: '12px' }}
+                                            />
+                                            <YAxis
+                                                stroke="#9ca3af"
+                                                style={{ fontSize: '12px' }}
+                                                tickFormatter={(value) => `₹${value}`}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor: '#1f2937',
+                                                    border: '1px solid #374151',
+                                                    borderRadius: '8px',
+                                                    color: '#f3f4f6'
+                                                }}
+                                                formatter={(value: number) => [`₹${value.toFixed(2)}`, 'Expenses']}
+                                                labelStyle={{ color: '#9ca3af' }}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="expenses"
+                                                stroke="#ef4444"
+                                                strokeWidth={2}
+                                                fillOpacity={1}
+                                                fill="url(#colorExpenses)"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                )}
                             </div>
 
                             {/* Category Distribution */}
