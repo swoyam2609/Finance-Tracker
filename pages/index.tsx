@@ -694,96 +694,112 @@ export default function Home() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                             {/* Add Transaction Form */}
                             <div className="lg:col-span-1">
-                                <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
-                                    <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Transaction</h2>
-                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50">
+                                    <h2 className="text-2xl font-bold text-white mb-6">Add Transaction</h2>
+                                    <form onSubmit={handleSubmit} className="space-y-5">
                                         {/* Is it Income Checkbox */}
-                                        <div className="flex items-center">
+                                        <div className="flex items-center p-4 bg-gray-700/30 rounded-xl border border-gray-600/50 hover:border-indigo-500/50 transition-colors">
                                             <input
                                                 type="checkbox"
                                                 id="isIncome"
                                                 checked={isIncome}
                                                 onChange={(e) => setIsIncome(e.target.checked)}
-                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded"
+                                                className="h-5 w-5 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 border-gray-600 rounded cursor-pointer"
                                             />
-                                            <label htmlFor="isIncome" className="ml-2 block text-sm font-medium text-gray-300">
+                                            <label htmlFor="isIncome" className="ml-3 block text-base font-medium text-gray-200 cursor-pointer select-none">
                                                 Is it an Income
                                             </label>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-1">
+                                            <label htmlFor="date" className="block text-sm font-semibold text-gray-300 mb-2">
                                                 Date
                                             </label>
-                                            <input
-                                                type="date"
-                                                id="date"
-                                                required
-                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                value={formData.Date}
-                                                onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="date"
+                                                    id="date"
+                                                    required
+                                                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500"
+                                                    value={formData.Date}
+                                                    onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="account" className="block text-sm font-medium text-gray-300 mb-1">
+                                            <label htmlFor="account" className="block text-sm font-semibold text-gray-300 mb-2">
                                                 Account
                                             </label>
-                                            <select
-                                                id="account"
-                                                required
-                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                value={formData.Account}
-                                                onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
-                                            >
-                                                <option value="AXIS Bank">AXIS Bank</option>
-                                                <option value="SBI Bank">SBI Bank</option>
-                                                <option value="Credit Card">Credit Card</option>
-                                                <option value="Cash">Cash</option>
-                                            </select>
+                                            <div className="relative">
+                                                <select
+                                                    id="account"
+                                                    required
+                                                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                                                    value={formData.Account}
+                                                    onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
+                                                >
+                                                    <option value="AXIS Bank">AXIS Bank</option>
+                                                    <option value="SBI Bank">SBI Bank</option>
+                                                    <option value="Credit Card">Credit Card</option>
+                                                    <option value="Cash">Cash</option>
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Category - Only show if NOT income */}
                                         {!isIncome && (
                                             <div>
-                                                <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-1">
+                                                <label htmlFor="category" className="block text-sm font-semibold text-gray-300 mb-2">
                                                     Category
                                                 </label>
-                                                <select
-                                                    id="category"
-                                                    required
-                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                    value={formData.Category}
-                                                    onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
-                                                >
-                                                    <option value="">Select a category</option>
-                                                    <option value="Food & Dining">Food & Dining</option>
-                                                    <option value="Transportation">Transportation</option>
-                                                    <option value="Shopping">Shopping</option>
-                                                    <option value="Entertainment">Entertainment</option>
-                                                    <option value="Bills & Utilities">Bills & Utilities</option>
-                                                    <option value="Healthcare">Healthcare</option>
-                                                    <option value="Education">Education</option>
-                                                    <option value="Groceries">Groceries</option>
-                                                    <option value="Rent">Rent</option>
-                                                    <option value="Insurance">Insurance</option>
-                                                    <option value="Personal Care">Personal Care</option>
-                                                    <option value="Travel">Travel</option>
-                                                    <option value="Subscriptions">Subscriptions</option>
-                                                    <option value="Gifts">Gifts</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
+                                                <div className="relative">
+                                                    <select
+                                                        id="category"
+                                                        required
+                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                                                        value={formData.Category}
+                                                        onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                    >
+                                                        <option value="">Select a category</option>
+                                                        <option value="Food & Dining">Food & Dining</option>
+                                                        <option value="Transportation">Transportation</option>
+                                                        <option value="Shopping">Shopping</option>
+                                                        <option value="Entertainment">Entertainment</option>
+                                                        <option value="Bills & Utilities">Bills & Utilities</option>
+                                                        <option value="Healthcare">Healthcare</option>
+                                                        <option value="Education">Education</option>
+                                                        <option value="Groceries">Groceries</option>
+                                                        <option value="Rent">Rent</option>
+                                                        <option value="Insurance">Insurance</option>
+                                                        <option value="Personal Care">Personal Care</option>
+                                                        <option value="Travel">Travel</option>
+                                                        <option value="Subscriptions">Subscriptions</option>
+                                                        <option value="Gifts">Gifts</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
                                         <div>
-                                            <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
+                                            <label htmlFor="description" className="block text-sm font-semibold text-gray-300 mb-2">
                                                 Description
                                             </label>
                                             <input
                                                 type="text"
                                                 id="description"
-                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500"
                                                 value={formData.Description}
                                                 onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
                                                 placeholder="Optional details"
@@ -791,28 +807,59 @@ export default function Home() {
                                         </div>
 
                                         <div>
-                                            <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-1">
+                                            <label htmlFor="amount" className="block text-sm font-semibold text-gray-300 mb-2">
                                                 Amount
                                             </label>
-                                            <input
-                                                type="number"
-                                                id="amount"
-                                                required
-                                                step="0.01"
-                                                min="0"
-                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                value={formData.Amount}
-                                                onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
-                                                placeholder="0.00"
-                                            />
+                                            <div className="relative">
+                                                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 text-lg font-semibold">
+                                                    ₹
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    id="amount"
+                                                    required
+                                                    step="0.01"
+                                                    min="0"
+                                                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500 text-lg font-medium"
+                                                    value={formData.Amount}
+                                                    onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
                                         </div>
 
                                         <button
                                             type="submit"
                                             disabled={submitting}
-                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-indigo-500/50 mt-6"
                                         >
-                                            {submitting ? 'Adding...' : (isIncome ? 'Add Income' : 'Add Expense')}
+                                            {submitting ? (
+                                                <span className="flex items-center justify-center">
+                                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Adding...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center">
+                                                    {isIncome ? (
+                                                        <>
+                                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            Add Income
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            Add Expense
+                                                        </>
+                                                    )}
+                                                </span>
+                                            )}
                                         </button>
                                     </form>
                                 </div>
