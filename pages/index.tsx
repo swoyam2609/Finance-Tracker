@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
@@ -956,20 +956,47 @@ export default function Home() {
                                 ) : (
                                     <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
                                         <ResponsiveContainer width="100%" height={400}>
-                                            <PieChart>
-                                                <Pie
-                                                    data={categoryDistribution.map(cat => ({
-                                                        name: cat.category,
-                                                        value: cat.amount,
-                                                        percentage: cat.percentage
-                                                    }))}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
-                                                    outerRadius={120}
-                                                    fill="#8884d8"
+                                            <BarChart
+                                                data={categoryDistribution.map(cat => ({
+                                                    name: cat.category,
+                                                    value: cat.amount,
+                                                    percentage: cat.percentage
+                                                }))}
+                                                margin={{
+                                                    top: 20,
+                                                    right: 30,
+                                                    left: 20,
+                                                    bottom: 60
+                                                }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                <XAxis
+                                                    dataKey="name"
+                                                    angle={-45}
+                                                    textAnchor="end"
+                                                    height={100}
+                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                                />
+                                                <YAxis
+                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                                    tickFormatter={(value) => `₹${value}`}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        backgroundColor: '#1f2937',
+                                                        border: '1px solid #374151',
+                                                        borderRadius: '8px',
+                                                        color: '#f3f4f6'
+                                                    }}
+                                                    formatter={(value: number, name: string, props: any) => [
+                                                        `₹${value.toFixed(2)} (${props.payload.percentage.toFixed(1)}%)`,
+                                                        'Amount'
+                                                    ]}
+                                                    labelStyle={{ color: '#9ca3af' }}
+                                                />
+                                                <Bar
                                                     dataKey="value"
+                                                    radius={[4, 4, 0, 0]}
                                                 >
                                                     {categoryDistribution.map((entry, index) => {
                                                         const colors = [
@@ -980,18 +1007,8 @@ export default function Home() {
                                                         ];
                                                         return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                                                     })}
-                                                </Pie>
-                                                <Tooltip
-                                                    contentStyle={{
-                                                        backgroundColor: '#1f2937',
-                                                        border: '1px solid #374151',
-                                                        borderRadius: '8px',
-                                                        color: '#f3f4f6'
-                                                    }}
-                                                    formatter={(value: number) => `₹${value.toFixed(2)}`}
-                                                    labelStyle={{ color: '#9ca3af' }}
-                                                />
-                                            </PieChart>
+                                                </Bar>
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 )}
