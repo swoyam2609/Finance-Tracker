@@ -727,9 +727,10 @@ export default function Home() {
                                                     type="date"
                                                     id="date"
                                                     required
-                                                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500"
+                                                    className="w-full px-3 sm:px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 text-sm sm:text-base rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
                                                     value={formData.Date}
                                                     onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
+                                                    style={{ colorScheme: 'dark' }}
                                                 />
                                             </div>
                                         </div>
@@ -877,15 +878,15 @@ export default function Home() {
                             {/* Latest Transactions */}
                             <div className="lg:col-span-2">
                                 <div className="bg-gray-800 rounded-xl border border-gray-700">
-                                    <div className="px-6 py-4 border-b border-gray-700">
+                                    <div className="px-4 sm:px-6 py-4 border-b border-gray-700">
                                         <div className="flex items-center justify-between">
-                                            <h2 className="text-xl font-semibold text-white">Latest transactions</h2>
-                                            <button className="text-indigo-400 text-sm hover:text-indigo-300 transition-colors">
+                                            <h2 className="text-lg sm:text-xl font-semibold text-white">Latest transactions</h2>
+                                            <button className="text-indigo-400 text-xs sm:text-sm hover:text-indigo-300 transition-colors">
                                                 View all
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="p-6">
+                                    <div className="p-4 sm:p-6">
                                         {loading ? (
                                             <div className="flex justify-center py-8">
                                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -893,14 +894,14 @@ export default function Home() {
                                         ) : expenses.length === 0 ? (
                                             <p className="text-gray-400 text-center py-8">No transactions yet</p>
                                         ) : (
-                                            <div className="space-y-4">
+                                            <div className="space-y-3">
                                                 {expenses.slice().reverse().slice(0, 10).map((expense, index) => {
                                                     const amount = parseFloat(expense.Amount || '0');
                                                     const isPositive = amount >= 0;
                                                     return (
-                                                        <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-700/50 rounded-lg transition-colors group">
-                                                            <div className="flex items-center space-x-4">
-                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPositive
+                                                        <div key={index} className="flex items-start gap-3 p-3 sm:p-4 hover:bg-gray-700/50 rounded-lg transition-colors group">
+                                                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center ${isPositive
                                                                     ? 'bg-green-500/20'
                                                                     : expense.Category === 'Food & Dining' ? 'bg-orange-500/20'
                                                                         : expense.Category === 'Shopping' ? 'bg-pink-500/20'
@@ -930,32 +931,31 @@ export default function Home() {
                                                                         </svg>
                                                                     )}
                                                                 </div>
-                                                                <div>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <p className="font-medium text-white">
-                                                                            {isPositive ? 'Income payment' : expense.Description || expense.Category}
-                                                                        </p>
-                                                                        <span className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded-full">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="font-medium text-white text-sm sm:text-base truncate">
+                                                                        {isPositive ? 'Income payment' : expense.Description || expense.Category}
+                                                                    </p>
+                                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                                        <span className="px-2 py-0.5 text-xs bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
                                                                             {expense.Account}
                                                                         </span>
+                                                                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                                            {new Date(expense.Date).toLocaleDateString('en-IN', {
+                                                                                day: 'numeric',
+                                                                                month: 'short'
+                                                                            })}
+                                                                        </span>
                                                                     </div>
-                                                                    <p className="text-sm text-gray-400 mt-1">
-                                                                        {new Date(expense.Date).toLocaleDateString('en-IN', {
-                                                                            day: 'numeric',
-                                                                            month: 'short',
-                                                                            year: 'numeric'
-                                                                        })}
-                                                                    </p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center space-x-2">
-                                                                <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-white'
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                <p className={`font-semibold text-sm sm:text-base whitespace-nowrap ${isPositive ? 'text-green-500' : 'text-white'
                                                                     }`}>
                                                                     {isPositive ? '+' : '-'}{formatIndianCurrency(Math.abs(amount))}
                                                                 </p>
                                                                 <button
                                                                     onClick={() => openEditModal(expense)}
-                                                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-400 transition-all"
+                                                                    className="hidden sm:block opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-400 transition-all p-1"
                                                                 >
                                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
