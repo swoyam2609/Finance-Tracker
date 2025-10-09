@@ -697,18 +697,25 @@ export default function Home() {
                                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50">
                                     <h2 className="text-2xl font-bold text-white mb-6">Add Transaction</h2>
                                     <form onSubmit={handleSubmit} className="space-y-5">
-                                        {/* Is it Income Checkbox */}
-                                        <div className="flex items-center p-4 bg-gray-700/30 rounded-xl border border-gray-600/50 hover:border-indigo-500/50 transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                id="isIncome"
-                                                checked={isIncome}
-                                                onChange={(e) => setIsIncome(e.target.checked)}
-                                                className="h-5 w-5 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 border-gray-600 rounded cursor-pointer"
-                                            />
-                                            <label htmlFor="isIncome" className="ml-3 block text-base font-medium text-gray-200 cursor-pointer select-none">
+                                        {/* Is it Income Toggle */}
+                                        <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl border border-gray-600/50">
+                                            <label htmlFor="isIncome" className="text-base font-medium text-gray-200 select-none">
                                                 Is it an Income
                                             </label>
+                                            <button
+                                                type="button"
+                                                id="isIncome"
+                                                role="switch"
+                                                aria-checked={isIncome}
+                                                onClick={() => setIsIncome(!isIncome)}
+                                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${isIncome ? 'bg-green-500' : 'bg-gray-600'
+                                                    }`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${isIncome ? 'translate-x-7' : 'translate-x-1'
+                                                        }`}
+                                                />
+                                            </button>
                                         </div>
 
                                         <div>
@@ -727,61 +734,23 @@ export default function Home() {
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label htmlFor="account" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                Account
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    id="account"
-                                                    required
-                                                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                                    value={formData.Account}
-                                                    onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
-                                                >
-                                                    <option value="AXIS Bank">AXIS Bank</option>
-                                                    <option value="SBI Bank">SBI Bank</option>
-                                                    <option value="Credit Card">Credit Card</option>
-                                                    <option value="Cash">Cash</option>
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Category - Only show if NOT income */}
-                                        {!isIncome && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label htmlFor="category" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                    Category
+                                                <label htmlFor="account" className="block text-sm font-semibold text-gray-300 mb-2">
+                                                    Account
                                                 </label>
                                                 <div className="relative">
                                                     <select
-                                                        id="category"
+                                                        id="account"
                                                         required
                                                         className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                                        value={formData.Category}
-                                                        onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                        value={formData.Account}
+                                                        onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
                                                     >
-                                                        <option value="">Select a category</option>
-                                                        <option value="Food & Dining">Food & Dining</option>
-                                                        <option value="Transportation">Transportation</option>
-                                                        <option value="Shopping">Shopping</option>
-                                                        <option value="Entertainment">Entertainment</option>
-                                                        <option value="Bills & Utilities">Bills & Utilities</option>
-                                                        <option value="Healthcare">Healthcare</option>
-                                                        <option value="Education">Education</option>
-                                                        <option value="Groceries">Groceries</option>
-                                                        <option value="Rent">Rent</option>
-                                                        <option value="Insurance">Insurance</option>
-                                                        <option value="Personal Care">Personal Care</option>
-                                                        <option value="Travel">Travel</option>
-                                                        <option value="Subscriptions">Subscriptions</option>
-                                                        <option value="Gifts">Gifts</option>
-                                                        <option value="Other">Other</option>
+                                                        <option value="AXIS Bank">AXIS Bank</option>
+                                                        <option value="SBI Bank">SBI Bank</option>
+                                                        <option value="Credit Card">Credit Card</option>
+                                                        <option value="Cash">Cash</option>
                                                     </select>
                                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
                                                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -790,7 +759,47 @@ export default function Home() {
                                                     </div>
                                                 </div>
                                             </div>
-                                        )}
+
+                                            {/* Category - Only show if NOT income */}
+                                            {!isIncome && (
+                                                <div>
+                                                    <label htmlFor="category" className="block text-sm font-semibold text-gray-300 mb-2">
+                                                        Category
+                                                    </label>
+                                                    <div className="relative">
+                                                        <select
+                                                            id="category"
+                                                            required
+                                                            className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                                                            value={formData.Category}
+                                                            onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                        >
+                                                            <option value="">Select a category</option>
+                                                            <option value="Food & Dining">Food & Dining</option>
+                                                            <option value="Transportation">Transportation</option>
+                                                            <option value="Shopping">Shopping</option>
+                                                            <option value="Entertainment">Entertainment</option>
+                                                            <option value="Bills & Utilities">Bills & Utilities</option>
+                                                            <option value="Healthcare">Healthcare</option>
+                                                            <option value="Education">Education</option>
+                                                            <option value="Groceries">Groceries</option>
+                                                            <option value="Rent">Rent</option>
+                                                            <option value="Insurance">Insurance</option>
+                                                            <option value="Personal Care">Personal Care</option>
+                                                            <option value="Travel">Travel</option>
+                                                            <option value="Subscriptions">Subscriptions</option>
+                                                            <option value="Gifts">Gifts</option>
+                                                            <option value="Other">Other</option>
+                                                        </select>
+                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div>
                                             <label htmlFor="description" className="block text-sm font-semibold text-gray-300 mb-2">
