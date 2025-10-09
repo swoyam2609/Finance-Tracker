@@ -8,6 +8,29 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
 
+// Indian currency formatting utility
+const formatIndianCurrency = (amount: number): string => {
+    const isNegative = amount < 0;
+    const absoluteAmount = Math.abs(amount);
+
+    // Convert to string and split by decimal
+    const [integerPart, decimalPart] = absoluteAmount.toFixed(2).split('.');
+
+    // Add Indian comma formatting (last 3 digits, then every 2 digits)
+    let formattedInteger = integerPart;
+    if (integerPart.length > 3) {
+        const lastThree = integerPart.slice(-3);
+        const remaining = integerPart.slice(0, -3);
+
+        // Add commas every 2 digits for the remaining part
+        const formattedRemaining = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+        formattedInteger = formattedRemaining + ',' + lastThree;
+    }
+
+    const formattedAmount = `₹${formattedInteger}.${decimalPart}`;
+    return isNegative ? `-${formattedAmount}` : formattedAmount;
+};
+
 export default function Home() {
     const router = useRouter();
     const { data: session, status } = useSession();
@@ -567,24 +590,100 @@ export default function Home() {
 
                     {activeTab === 'transactions' && (
                         <>
-                            {/* Account Balances */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                                {Object.entries(balances).map(([account, balance]) => (
-                                    <div key={account} className="bg-gray-800 overflow-hidden shadow rounded-lg">
-                                        <div className="px-4 py-5 sm:p-6">
-                                            <dt className="text-sm font-medium text-gray-400 truncate">{account}</dt>
-                                            <dd className={`mt-1 text-2xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                ₹{balance.toFixed(2)}
-                                            </dd>
+                            {/* Dashboard Header */}
+                            <div className="mb-8">
+                                {/* Large Balance Display */}
+                                <div className="text-left mb-6">
+                                    <h1 className="text-5xl font-bold text-white mb-2">
+                                        {formatIndianCurrency(totalBalance)}
+                                    </h1>
+                                    <p className="text-gray-400 text-lg">Total Balance</p>
+                                    <div className="flex items-center mt-2">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                        <span className="text-sm text-gray-400">Open an account or deposit</span>
+                                    </div>
+                                </div>
+
+                                {/* Income/Expenses Summary Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <p className="text-gray-400 text-sm mb-1">Income</p>
+                                                <p className="text-green-500 text-2xl font-semibold">
+                                                    {formatIndianCurrency(
+                                                        expenses
+                                                            .filter(expense => parseFloat(expense.Amount) > 0)
+                                                            .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
+                                                    )}
+                                                </p>
+                                                <p className="text-gray-500 text-xs mt-1">
+                                                    {expenses.filter(expense => parseFloat(expense.Amount) > 0).length} Transactions
+                                                </p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 flex items-center text-xs">
+                                            <span className="text-green-500">↑ +0.8%</span>
+                                            <span className="text-gray-500 ml-2">vs last period</span>
                                         </div>
                                     </div>
-                                ))}
-                                <div className="bg-indigo-600 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-indigo-100 truncate">Total Balance</dt>
-                                        <dd className="mt-1 text-2xl font-semibold text-white">
-                                            ₹{totalBalance.toFixed(2)}
-                                        </dd>
+
+                                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <p className="text-gray-400 text-sm mb-1">Spending</p>
+                                                <p className="text-red-500 text-2xl font-semibold">
+                                                    {formatIndianCurrency(
+                                                        Math.abs(expenses
+                                                            .filter(expense => parseFloat(expense.Amount) < 0)
+                                                            .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0))
+                                                    )}
+                                                </p>
+                                                <p className="text-gray-500 text-xs mt-1">
+                                                    {expenses.filter(expense => parseFloat(expense.Amount) < 0).length} Transactions
+                                                </p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 flex items-center text-xs">
+                                            <span className="text-red-500">↓ -3.1%</span>
+                                            <span className="text-gray-500 ml-2">vs last period</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Your Assets Section */}
+                                <div className="mb-8">
+                                    <h2 className="text-xl font-semibold text-white mb-4">Your Assets</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {Object.entries(balances).map(([account, balance]) => (
+                                            <div key={account} className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className={`w-2 h-2 rounded-full ${balance >= 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                    </div>
+                                                </div>
+                                                <h3 className="text-gray-300 text-sm font-medium mb-1">{account}</h3>
+                                                <p className={`text-lg font-semibold ${balance >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                                    {formatIndianCurrency(balance)}
+                                                </p>
+                                                <p className="text-gray-500 text-xs mt-1">Account Balance</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -719,115 +818,100 @@ export default function Home() {
                                 </div>
                             </div>
 
-                            {/* Expenses List */}
+                            {/* Latest Transactions */}
                             <div className="lg:col-span-2">
-                                {/* Desktop Table View */}
-                                <div className="hidden md:block bg-gray-800 shadow rounded-lg overflow-hidden">
+                                <div className="bg-gray-800 rounded-xl border border-gray-700">
                                     <div className="px-6 py-4 border-b border-gray-700">
-                                        <h2 className="text-lg font-semibold text-gray-100">Recent Transactions</h2>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-900">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Date
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Account
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Category
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Description
-                                                    </th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                        Amount
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-gray-800 divide-y divide-gray-200">
-                                                {expenses.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                                                            No transactions found. Add your first transaction to get started!
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    expenses.slice().reverse().map((expense, index) => {
-                                                        const amount = parseFloat(expense.Amount || '0');
-                                                        const isPositive = amount >= 0;
-                                                        return (
-                                                            <tr key={index} className="hover:bg-gray-900">
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
-                                                                    {expense.Date}
-                                                                </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
-                                                                    {expense.Account}
-                                                                </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
-                                                                    {expense.Category}
-                                                                </td>
-                                                                <td className="px-6 py-4 text-sm text-gray-100">
-                                                                    {expense.Description}
-                                                                </td>
-                                                                <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                                                    ₹{Math.abs(amount).toFixed(2)}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {/* Mobile Card View */}
-                                <div className="md:hidden">
-                                    <div className="bg-gray-800 shadow rounded-lg overflow-hidden mb-4">
-                                        <div className="px-4 py-3 border-b border-gray-700">
-                                            <h2 className="text-base font-semibold text-gray-100">Recent Transactions</h2>
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-semibold text-white">Latest transactions</h2>
+                                            <button className="text-indigo-400 text-sm hover:text-indigo-300 transition-colors">
+                                                View all
+                                            </button>
                                         </div>
                                     </div>
-                                    {expenses.length === 0 ? (
-                                        <div className="bg-gray-800 shadow rounded-lg p-6 text-center text-gray-400">
-                                            No transactions found. Add your first transaction to get started!
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {expenses.slice().reverse().map((expense, index) => {
-                                                const amount = parseFloat(expense.Amount || '0');
-                                                const isPositive = amount >= 0;
-                                                return (
-                                                    <div key={index} className="bg-gray-800 shadow rounded-lg p-4">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="text-xs font-medium text-gray-400">{expense.Date}</span>
-                                                                    <span className="text-xs px-2 py-0.5 bg-gray-700 text-gray-300 rounded">
-                                                                        {expense.Account}
-                                                                    </span>
+                                    <div className="p-6">
+                                        {loading ? (
+                                            <div className="flex justify-center py-8">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                            </div>
+                                        ) : expenses.length === 0 ? (
+                                            <p className="text-gray-400 text-center py-8">No transactions yet</p>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {expenses.slice().reverse().slice(0, 10).map((expense, index) => {
+                                                    const amount = parseFloat(expense.Amount || '0');
+                                                    const isPositive = amount >= 0;
+                                                    return (
+                                                        <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-700/50 rounded-lg transition-colors group">
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPositive
+                                                                    ? 'bg-green-500/20'
+                                                                    : expense.Category === 'Food & Dining' ? 'bg-orange-500/20'
+                                                                        : expense.Category === 'Shopping' ? 'bg-pink-500/20'
+                                                                            : expense.Category === 'Transportation' ? 'bg-blue-500/20'
+                                                                                : expense.Category === 'Bills & Utilities' ? 'bg-purple-500/20'
+                                                                                    : 'bg-gray-500/20'
+                                                                    }`}>
+                                                                    {isPositive ? (
+                                                                        <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                                        </svg>
+                                                                    ) : expense.Category === 'Food & Dining' ? (
+                                                                        <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                                                        </svg>
+                                                                    ) : expense.Category === 'Shopping' ? (
+                                                                        <svg className="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z" />
+                                                                        </svg>
+                                                                    ) : expense.Category === 'Transportation' ? (
+                                                                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                                        </svg>
+                                                                    )}
                                                                 </div>
-                                                                <div className="text-sm font-medium text-gray-100 mb-1">
-                                                                    {expense.Category}
-                                                                </div>
-                                                                {expense.Description && (
-                                                                    <div className="text-xs text-gray-400">
-                                                                        {expense.Description}
+                                                                <div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <p className="font-medium text-white">
+                                                                            {isPositive ? 'Income payment' : expense.Description || expense.Category}
+                                                                        </p>
+                                                                        <span className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded-full">
+                                                                            {expense.Account}
+                                                                        </span>
                                                                     </div>
-                                                                )}
+                                                                    <p className="text-sm text-gray-400 mt-1">
+                                                                        {new Date(expense.Date).toLocaleDateString('en-IN', {
+                                                                            day: 'numeric',
+                                                                            month: 'short',
+                                                                            year: 'numeric'
+                                                                        })}
+                                                                    </p>
+                                                                </div>
                                                             </div>
-                                                            <div className={`text-lg font-bold ml-3 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                                                ₹{Math.abs(amount).toFixed(2)}
+                                                            <div className="flex items-center space-x-2">
+                                                                <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-white'
+                                                                    }`}>
+                                                                    {isPositive ? '+' : '-'}{formatIndianCurrency(Math.abs(amount))}
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => openEditModal(expense)}
+                                                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-400 transition-all"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                    </svg>
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -870,7 +954,7 @@ export default function Home() {
                                     <div className="px-4 py-5 sm:p-6">
                                         <dt className="text-sm font-medium text-gray-400 truncate">Total Income</dt>
                                         <dd className="mt-1 text-2xl font-semibold text-green-600">
-                                            ₹{summary.totalIncome.toFixed(2)}
+                                            {formatIndianCurrency(summary.totalIncome)}
                                         </dd>
                                     </div>
                                 </div>
@@ -878,7 +962,7 @@ export default function Home() {
                                     <div className="px-4 py-5 sm:p-6">
                                         <dt className="text-sm font-medium text-gray-400 truncate">Total Expenses</dt>
                                         <dd className="mt-1 text-2xl font-semibold text-red-600">
-                                            ₹{summary.totalExpenses.toFixed(2)}
+                                            {formatIndianCurrency(summary.totalExpenses)}
                                         </dd>
                                     </div>
                                 </div>
@@ -886,7 +970,7 @@ export default function Home() {
                                     <div className="px-4 py-5 sm:p-6">
                                         <dt className="text-sm font-medium text-gray-400 truncate">Net Savings</dt>
                                         <dd className={`mt-1 text-2xl font-semibold ${summary.netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            ₹{summary.netSavings.toFixed(2)}
+                                            {formatIndianCurrency(summary.netSavings)}
                                         </dd>
                                     </div>
                                 </div>
@@ -932,7 +1016,7 @@ export default function Home() {
                                                     borderRadius: '8px',
                                                     color: '#f3f4f6'
                                                 }}
-                                                formatter={(value: number) => [`₹${value.toFixed(2)}`, 'Expenses']}
+                                                formatter={(value: number) => [formatIndianCurrency(value), 'Expenses']}
                                                 labelStyle={{ color: '#9ca3af' }}
                                             />
                                             <Area
@@ -989,7 +1073,7 @@ export default function Home() {
                                                         color: '#f3f4f6'
                                                     }}
                                                     formatter={(value: number, name: string, props: any) => [
-                                                        `₹${value.toFixed(2)} (${props.payload.percentage.toFixed(1)}%)`,
+                                                        `${formatIndianCurrency(value)} (${props.payload.percentage.toFixed(1)}%)`,
                                                         'Amount'
                                                     ]}
                                                     labelStyle={{ color: '#9ca3af' }}
@@ -1053,13 +1137,13 @@ export default function Home() {
                                                             {acc.account}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
-                                                            ₹{acc.income.toFixed(2)}
+                                                            {formatIndianCurrency(acc.income)}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">
-                                                            ₹{acc.expenses.toFixed(2)}
+                                                            {formatIndianCurrency(acc.expenses)}
                                                         </td>
                                                         <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            ₹{acc.net.toFixed(2)}
+                                                            {formatIndianCurrency(acc.net)}
                                                         </td>
                                                     </tr>
                                                 ))
@@ -1079,16 +1163,16 @@ export default function Home() {
                                                 <div className="grid grid-cols-3 gap-2 text-xs">
                                                     <div>
                                                         <div className="text-gray-400 mb-1">Income</div>
-                                                        <div className="text-green-600 font-semibold">₹{acc.income.toFixed(2)}</div>
+                                                        <div className="text-green-600 font-semibold">{formatIndianCurrency(acc.income)}</div>
                                                     </div>
                                                     <div>
                                                         <div className="text-gray-400 mb-1">Expenses</div>
-                                                        <div className="text-red-600 font-semibold">₹{acc.expenses.toFixed(2)}</div>
+                                                        <div className="text-red-600 font-semibold">{formatIndianCurrency(acc.expenses)}</div>
                                                     </div>
                                                     <div>
                                                         <div className="text-gray-400 mb-1">Net</div>
                                                         <div className={`font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            ₹{acc.net.toFixed(2)}
+                                                            {formatIndianCurrency(acc.net)}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1106,7 +1190,7 @@ export default function Home() {
                             {/* Summary Card */}
                             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
                                 <h2 className="text-2xl font-bold mb-2">Total Money Lent</h2>
-                                <p className="text-4xl font-bold">₹{totalLent.toFixed(2)}</p>
+                                <p className="text-4xl font-bold">{formatIndianCurrency(totalLent)}</p>
                                 <p className="text-indigo-100 mt-2">Amount owed to you by {loansSummary.filter(p => p.balance > 0).length} people</p>
                             </div>
 
@@ -1247,7 +1331,7 @@ export default function Home() {
                                                     <div className="px-4 sm:px-6 py-4 bg-gray-900 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                                         <h3 className="text-lg font-semibold text-gray-100">{person}</h3>
                                                         <span className={`text-xl sm:text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                                                            ₹{Math.abs(balance).toFixed(2)} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
+                                                            {formatIndianCurrency(Math.abs(balance))} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
                                                         </span>
                                                     </div>
 
@@ -1292,7 +1376,7 @@ export default function Home() {
                                                                                 {tx.Description || '-'}
                                                                             </td>
                                                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
-                                                                                {isLent ? '+' : '-'}₹{parseFloat(tx.Amount || '0').toFixed(2)}
+                                                                                {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
                                                                             </td>
                                                                         </tr>
                                                                     );
@@ -1327,7 +1411,7 @@ export default function Home() {
                                                                             )}
                                                                         </div>
                                                                         <div className={`text-base font-bold ml-3 ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
-                                                                            {isLent ? '+' : '-'}₹{parseFloat(tx.Amount || '0').toFixed(2)}
+                                                                            {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
                                                                         </div>
                                                                     </div>
                                                                 </div>
