@@ -255,6 +255,10 @@ export default function Home() {
     });
     const [transferSubmitting, setTransferSubmitting] = useState(false);
 
+    // Transaction display state
+    const [showAllTransactions, setShowAllTransactions] = useState(false);
+    const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>('All Accounts');
+
     // Redirect to login if not authenticated
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -432,6 +436,20 @@ export default function Home() {
         } finally {
             setTransferSubmitting(false);
         }
+    };
+
+    // Filter transactions by account
+    const getFilteredTransactions = () => {
+        let filtered = expenses;
+
+        // Apply account filter
+        if (selectedAccountFilter !== 'All Accounts') {
+            filtered = filtered.filter(expense => expense.Account === selectedAccountFilter);
+        }
+
+        // Apply view limit
+        const sortedTransactions = filtered.slice().reverse();
+        return showAllTransactions ? sortedTransactions : sortedTransactions.slice(0, 10);
     };
 
     // Calculate account balances
@@ -1112,11 +1130,44 @@ export default function Home() {
                             <div className="lg:col-span-2">
                                 <div className="bg-gray-800 rounded-xl border border-gray-700">
                                     <div className="px-4 sm:px-6 py-4 border-b border-gray-700">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between mb-3">
                                             <h2 className="text-lg sm:text-xl font-semibold text-white">Latest transactions</h2>
-                                            <button className="text-indigo-400 text-xs sm:text-sm hover:text-indigo-300 transition-colors">
-                                                View all
+                                            <button
+                                                onClick={() => setShowAllTransactions(!showAllTransactions)}
+                                                className="text-indigo-400 text-xs sm:text-sm hover:text-indigo-300 transition-colors"
+                                            >
+                                                {showAllTransactions ? 'Show less' : 'View all'}
                                             </button>
+                                        </div>
+
+                                        {/* Account Filter */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-gray-400">Filter by account:</span>
+                                                <select
+                                                    value={selectedAccountFilter}
+                                                    onChange={(e) => {
+                                                        setSelectedAccountFilter(e.target.value);
+                                                        setShowAllTransactions(false); // Reset to limited view when filter changes
+                                                    }}
+                                                    className="text-xs bg-gray-700 border border-gray-600 text-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                >
+                                                    <option value="All Accounts">All Accounts</option>
+                                                    <option value="AXIS Bank">AXIS Bank</option>
+                                                    <option value="SBI Bank">SBI Bank</option>
+                                                    <option value="Credit Card">Credit Card</option>
+                                                    <option value="Cash">Cash</option>
+                                                </select>
+                                            </div>
+                                            {!loading && getFilteredTransactions().length > 0 && (
+                                                <span className="text-xs text-gray-400">
+                                                    Showing {getFilteredTransactions().length}
+                                                    {selectedAccountFilter === 'All Accounts'
+                                                        ? ` of ${expenses.length} transactions`
+                                                        : ` transactions for ${selectedAccountFilter}`
+                                                    }
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="p-4 sm:p-6">
@@ -1124,11 +1175,16 @@ export default function Home() {
                                             <div className="flex justify-center py-8">
                                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                                             </div>
-                                        ) : expenses.length === 0 ? (
-                                            <p className="text-gray-400 text-center py-8">No transactions yet</p>
+                                        ) : getFilteredTransactions().length === 0 ? (
+                                            <p className="text-gray-400 text-center py-8">
+                                                {selectedAccountFilter === 'All Accounts'
+                                                    ? 'No transactions yet'
+                                                    : `No transactions found for ${selectedAccountFilter}`
+                                                }
+                                            </p>
                                         ) : (
                                             <div className="space-y-3">
-                                                {expenses.slice().reverse().slice(0, 10).map((expense, index) => {
+                                                {getFilteredTransactions().map((expense, index) => {
                                                     const amount = parseFloat(expense.Amount || '0');
                                                     const isPositive = amount >= 0;
                                                     return (
