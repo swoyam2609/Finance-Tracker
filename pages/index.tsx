@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { ExpenseData, LoanTransaction } from '@/lib/google-sheet';
+import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 
 type Transaction = ExpenseData & { RowIndex?: number };
@@ -63,7 +63,7 @@ export default function Home() {
     const [updating, setUpdating] = useState(false);
 
     // Analytics tab state
-    const [activeTab, setActiveTab] = useState<'transactions' | 'analytics' | 'loans'>('transactions');
+    const [activeTab, setActiveTab] = useState<'transactions' | 'transfers' | 'analytics' | 'loans'>('transactions');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
 
     // Loans state
@@ -78,6 +78,16 @@ export default function Home() {
     });
     const [loanSubmitting, setLoanSubmitting] = useState(false);
     const [selectedPerson, setSelectedPerson] = useState<string>('');
+
+    // Transfer state
+    const [transferFormData, setTransferFormData] = useState<TransferData>({
+        Date: new Date().toISOString().split('T')[0],
+        FromAccount: 'AXIS Bank',
+        ToAccount: 'SBI Bank',
+        Amount: '',
+        Description: '',
+    });
+    const [transferSubmitting, setTransferSubmitting] = useState(false);
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -220,6 +230,44 @@ export default function Home() {
         }
     };
 
+    // Handle transfer form submission
+    const handleTransferSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setTransferSubmitting(true);
+        setError('');
+
+        try {
+            const response = await fetch('/api/transfers/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(transferFormData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to record transfer');
+            }
+
+            // Reset form
+            setTransferFormData({
+                Date: new Date().toISOString().split('T')[0],
+                FromAccount: 'AXIS Bank',
+                ToAccount: 'SBI Bank',
+                Amount: '',
+                Description: '',
+            });
+
+            // Refresh transactions list
+            await fetchExpenses();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to record transfer');
+        } finally {
+            setTransferSubmitting(false);
+        }
+    };
+
     // Calculate account balances
     const calculateBalances = () => {
         const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash'];
@@ -271,7 +319,11 @@ export default function Home() {
 
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            if (amount < 0 && exp.Category && exp.Category !== 'Income') {
+            // Exclude income, transfers, and only count negative amounts (actual expenses)
+            if (amount < 0 && exp.Category &&
+                exp.Category !== 'Income' &&
+                exp.Category !== 'Transfer Out' &&
+                exp.Category !== 'Transfer In') {
                 categoryTotals[exp.Category] = (categoryTotals[exp.Category] || 0) + Math.abs(amount);
                 totalExpenses += Math.abs(amount);
             }
@@ -319,10 +371,13 @@ export default function Home() {
 
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            if (amount >= 0) {
-                totalIncome += amount;
-            } else {
-                totalExpenses += Math.abs(amount);
+            // Exclude transfer transactions from income/expense calculations
+            if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
+                if (amount >= 0) {
+                    totalIncome += amount;
+                } else {
+                    totalExpenses += Math.abs(amount);
+                }
             }
         });
 
@@ -353,14 +408,17 @@ export default function Home() {
             const date = exp.Date;
             const amount = parseFloat(exp.Amount || '0');
 
-            if (!dailyData[date]) {
-                dailyData[date] = { date, expenses: 0, income: 0 };
-            }
+            // Exclude transfer transactions from daily chart
+            if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
+                if (!dailyData[date]) {
+                    dailyData[date] = { date, expenses: 0, income: 0 };
+                }
 
-            if (amount < 0) {
-                dailyData[date].expenses += Math.abs(amount);
-            } else {
-                dailyData[date].income += amount;
+                if (amount < 0) {
+                    dailyData[date].expenses += Math.abs(amount);
+                } else {
+                    dailyData[date].income += amount;
+                }
             }
         });
 
@@ -549,6 +607,15 @@ export default function Home() {
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                                 >
                                     Transactions
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('transfers')}
+                                    className={`${activeTab === 'transfers'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                >
+                                    Transfers
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('analytics')}
@@ -968,6 +1035,175 @@ export default function Home() {
                                             </div>
                                         )}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Transfer Tab */}
+                    {activeTab === 'transfers' && (
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50">
+                                <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+                                    <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    </svg>
+                                    Transfer Between Accounts
+                                </h2>
+
+                                {error && (
+                                    <div className="mb-4 p-3 bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleTransferSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Date */}
+                                        <div>
+                                            <label htmlFor="transferDate" className="block text-sm font-medium text-gray-300 mb-1">
+                                                Date
+                                            </label>
+                                            <input
+                                                type="date"
+                                                id="transferDate"
+                                                value={transferFormData.Date}
+                                                onChange={(e) => setTransferFormData({ ...transferFormData, Date: e.target.value })}
+                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        {/* Amount */}
+                                        <div>
+                                            <label htmlFor="transferAmount" className="block text-sm font-medium text-gray-300 mb-1">
+                                                Amount (₹)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="transferAmount"
+                                                step="0.01"
+                                                min="0.01"
+                                                value={transferFormData.Amount}
+                                                onChange={(e) => setTransferFormData({ ...transferFormData, Amount: e.target.value })}
+                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                placeholder="0.00"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* From Account */}
+                                        <div>
+                                            <label htmlFor="fromAccount" className="block text-sm font-medium text-gray-300 mb-1">
+                                                From Account
+                                            </label>
+                                            <select
+                                                id="fromAccount"
+                                                value={transferFormData.FromAccount}
+                                                onChange={(e) => setTransferFormData({ ...transferFormData, FromAccount: e.target.value })}
+                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="AXIS Bank">AXIS Bank</option>
+                                                <option value="SBI Bank">SBI Bank</option>
+                                                <option value="Credit Card">Credit Card</option>
+                                                <option value="Cash">Cash</option>
+                                            </select>
+                                        </div>
+
+                                        {/* To Account */}
+                                        <div>
+                                            <label htmlFor="toAccount" className="block text-sm font-medium text-gray-300 mb-1">
+                                                To Account
+                                            </label>
+                                            <select
+                                                id="toAccount"
+                                                value={transferFormData.ToAccount}
+                                                onChange={(e) => setTransferFormData({ ...transferFormData, ToAccount: e.target.value })}
+                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="AXIS Bank">AXIS Bank</option>
+                                                <option value="SBI Bank">SBI Bank</option>
+                                                <option value="Credit Card">Credit Card</option>
+                                                <option value="Cash">Cash</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div>
+                                        <label htmlFor="transferDescription" className="block text-sm font-medium text-gray-300 mb-1">
+                                            Description (Optional)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="transferDescription"
+                                            value={transferFormData.Description}
+                                            onChange={(e) => setTransferFormData({ ...transferFormData, Description: e.target.value })}
+                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            placeholder="Optional description for this transfer"
+                                        />
+                                    </div>
+
+                                    {/* Transfer Direction Indicator */}
+                                    <div className="bg-gray-700/50 rounded-lg p-4">
+                                        <div className="flex items-center justify-center space-x-4 text-sm text-gray-300">
+                                            <span className="font-medium">{transferFormData.FromAccount}</span>
+                                            <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                            </svg>
+                                            <span className="font-medium">{transferFormData.ToAccount}</span>
+                                        </div>
+                                        {transferFormData.Amount && (
+                                            <div className="text-center mt-2">
+                                                <span className="text-lg font-bold text-indigo-400">
+                                                    {formatIndianCurrency(parseFloat(transferFormData.Amount))}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={transferSubmitting || transferFormData.FromAccount === transferFormData.ToAccount}
+                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center"
+                                    >
+                                        {transferSubmitting ? (
+                                            <>
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Processing Transfer...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                                </svg>
+                                                Record Transfer
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {transferFormData.FromAccount === transferFormData.ToAccount && (
+                                        <p className="text-sm text-yellow-400 text-center">
+                                            ⚠️ Please select different accounts for the transfer
+                                        </p>
+                                    )}
+                                </form>
+
+                                <div className="mt-6 p-4 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                                    <h3 className="text-sm font-medium text-blue-300 mb-2">How transfers work:</h3>
+                                    <ul className="text-xs text-blue-200 space-y-1">
+                                        <li>• Creates two transactions: one debit from source account, one credit to destination account</li>
+                                        <li>• Both transactions are categorized as "Transfer Out" and "Transfer In"</li>
+                                        <li>• Account balances are automatically updated</li>
+                                        <li>• Transfer transactions appear in your transaction history</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>

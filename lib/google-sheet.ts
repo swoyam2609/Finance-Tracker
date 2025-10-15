@@ -17,6 +17,14 @@ export interface LoanTransaction {
     Description: string;
 }
 
+export interface TransferData {
+    Date: string;
+    FromAccount: string;
+    ToAccount: string;
+    Amount: string;
+    Description: string;
+}
+
 // Connect to Google Sheets
 async function getSheetsDoc() {
     const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -226,6 +234,49 @@ export async function updateLoanTransaction(rowIndex: number, loanData: LoanTran
         await (row as any).save();
     } catch (error) {
         console.error('Error updating loan transaction in Google Sheets:', error);
+        throw error;
+    }
+}
+
+// ==================== TRANSFER FUNCTIONS ====================
+
+// Add a transfer between accounts (creates two transactions: debit from source, credit to destination)
+export async function addTransfer(transferData: TransferData): Promise<void> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByIndex[0]; // Use the first sheet
+
+        if (!sheet) {
+            throw new Error('No sheets found in the document');
+        }
+
+        await sheet.loadHeaderRow();
+
+        const amount = parseFloat(transferData.Amount);
+        if (isNaN(amount) || amount <= 0) {
+            throw new Error('Transfer amount must be a positive number');
+        }
+
+        // Create debit transaction (negative amount) for the source account
+        await sheet.addRow({
+            Date: transferData.Date,
+            Account: transferData.FromAccount,
+            Category: 'Transfer Out',
+            Description: `Transfer to ${transferData.ToAccount}${transferData.Description ? ` - ${transferData.Description}` : ''}`,
+            Amount: (-amount).toString(),
+        });
+
+        // Create credit transaction (positive amount) for the destination account
+        await sheet.addRow({
+            Date: transferData.Date,
+            Account: transferData.ToAccount,
+            Category: 'Transfer In',
+            Description: `Transfer from ${transferData.FromAccount}${transferData.Description ? ` - ${transferData.Description}` : ''}`,
+            Amount: amount.toString(),
+        });
+
+    } catch (error) {
+        console.error('Error adding transfer to Google Sheets:', error);
         throw error;
     }
 }
