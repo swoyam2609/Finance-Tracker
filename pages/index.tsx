@@ -454,7 +454,7 @@ export default function Home() {
 
     // Calculate account balances
     const calculateBalances = () => {
-        const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash'];
+        const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
         const balances: { [key: string]: number } = {};
 
         accounts.forEach(account => {
@@ -915,7 +915,7 @@ export default function Home() {
                                 {/* Your Assets Section */}
                                 <div className="mb-8">
                                     <h2 className="text-xl font-semibold text-white mb-4">Your Assets</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                         {Object.entries(balances).map(([account, balance]) => (
                                             <div key={account} className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-colors">
                                                 <div className="flex items-center justify-between mb-3">
@@ -1003,6 +1003,7 @@ export default function Home() {
                                                         <option value="SBI Bank">SBI Bank</option>
                                                         <option value="Credit Card">Credit Card</option>
                                                         <option value="Cash">Cash</option>
+                                                        <option value="Mutual Fund">Mutual Fund</option>
                                                     </select>
                                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
                                                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1157,6 +1158,7 @@ export default function Home() {
                                                     <option value="SBI Bank">SBI Bank</option>
                                                     <option value="Credit Card">Credit Card</option>
                                                     <option value="Cash">Cash</option>
+                                                    <option value="Mutual Fund">Mutual Fund</option>
                                                 </select>
                                             </div>
                                             {!loading && getFilteredTransactions().length > 0 && (
@@ -1305,6 +1307,7 @@ export default function Home() {
                                                 <option value="SBI Bank">SBI Bank</option>
                                                 <option value="Credit Card">Credit Card</option>
                                                 <option value="Cash">Cash</option>
+                                                <option value="Mutual Fund">Mutual Fund</option>
                                             </select>
                                         </div>
 
@@ -1324,6 +1327,7 @@ export default function Home() {
                                                 <option value="SBI Bank">SBI Bank</option>
                                                 <option value="Credit Card">Credit Card</option>
                                                 <option value="Cash">Cash</option>
+                                                <option value="Mutual Fund">Mutual Fund</option>
                                             </select>
                                         </div>
                                     </div>
