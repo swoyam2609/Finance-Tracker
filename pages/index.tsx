@@ -4,6 +4,23 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
+import {
+    UtensilsCrossed,
+    Car,
+    ShoppingBag,
+    Film,
+    Zap,
+    Heart,
+    GraduationCap,
+    ShoppingCart,
+    Home as HomeIcon,
+    Shield,
+    Sparkles,
+    Plane,
+    RefreshCw,
+    Gift,
+    Wallet
+} from 'lucide-react';
 
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
@@ -71,125 +88,63 @@ const getCategoryIcon = (category: string, isPositive: boolean = false) => {
     // Category-specific icons
     const categoryMap: { [key: string]: { icon: JSX.Element; bgColor: string } } = {
         'Food & Dining': {
-            icon: (
-                <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            ),
+            icon: <UtensilsCrossed className="w-5 h-5 text-orange-500" />,
             bgColor: 'bg-orange-500/20'
         },
         'Transportation': {
-            icon: (
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                </svg>
-            ),
+            icon: <Car className="w-5 h-5 text-blue-500" />,
             bgColor: 'bg-blue-500/20'
         },
         'Shopping': {
-            icon: (
-                <svg className="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z" />
-                </svg>
-            ),
+            icon: <ShoppingBag className="w-5 h-5 text-pink-500" />,
             bgColor: 'bg-pink-500/20'
         },
         'Entertainment': {
-            icon: (
-                <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-            ),
+            icon: <Film className="w-5 h-5 text-purple-500" />,
             bgColor: 'bg-purple-500/20'
         },
         'Bills & Utilities': {
-            icon: (
-                <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            ),
+            icon: <Zap className="w-5 h-5 text-yellow-500" />,
             bgColor: 'bg-yellow-500/20'
         },
         'Healthcare': {
-            icon: (
-                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-            ),
+            icon: <Heart className="w-5 h-5 text-red-500" />,
             bgColor: 'bg-red-500/20'
         },
         'Education': {
-            icon: (
-                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                </svg>
-            ),
+            icon: <GraduationCap className="w-5 h-5 text-indigo-500" />,
             bgColor: 'bg-indigo-500/20'
         },
         'Groceries': {
-            icon: (
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293c-.63.63-.184 1.707.707 1.707H19M7 13v4a2 2 0 002 2h2m3-6v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-                </svg>
-            ),
+            icon: <ShoppingCart className="w-5 h-5 text-green-500" />,
             bgColor: 'bg-green-600/20'
         },
         'Rent': {
-            icon: (
-                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-            ),
+            icon: <HomeIcon className="w-5 h-5 text-amber-600" />,
             bgColor: 'bg-amber-600/20'
         },
         'Insurance': {
-            icon: (
-                <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-            ),
+            icon: <Shield className="w-5 h-5 text-teal-500" />,
             bgColor: 'bg-teal-500/20'
         },
         'Personal Care': {
-            icon: (
-                <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-            ),
+            icon: <Sparkles className="w-5 h-5 text-pink-400" />,
             bgColor: 'bg-pink-400/20'
         },
         'Travel': {
-            icon: (
-                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            ),
+            icon: <Plane className="w-5 h-5 text-cyan-500" />,
             bgColor: 'bg-cyan-500/20'
         },
         'Subscriptions': {
-            icon: (
-                <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-            ),
+            icon: <RefreshCw className="w-5 h-5 text-violet-500" />,
             bgColor: 'bg-violet-500/20'
         },
         'Gifts': {
-            icon: (
-                <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                </svg>
-            ),
+            icon: <Gift className="w-5 h-5 text-rose-500" />,
             bgColor: 'bg-rose-500/20'
         },
         'Other': {
-            icon: (
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-            ),
+            icon: <Wallet className="w-5 h-5 text-gray-500" />,
             bgColor: 'bg-gray-500/20'
         }
     };
@@ -857,57 +812,79 @@ export default function Home() {
 
                                 {/* Income/Expenses Summary Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <p className="text-gray-400 text-sm mb-1">Income</p>
-                                                <p className="text-green-500 text-2xl font-semibold">
-                                                    {formatIndianCurrency(
-                                                        expenses
-                                                            .filter(expense => parseFloat(expense.Amount) > 0)
-                                                            .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
-                                                    )}
-                                                </p>
-                                                <p className="text-gray-500 text-xs mt-1">
-                                                    {expenses.filter(expense => parseFloat(expense.Amount) > 0).length} Transactions
-                                                </p>
+                                    {/* Income Card */}
+                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-green-900/40 via-green-800/30 to-green-900/40 border border-green-700/30 backdrop-blur-sm">
+                                        <div className="relative z-10">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex-1">
+                                                    <p className="text-green-300/70 text-sm mb-2">Income</p>
+                                                    <p className="text-green-400 text-3xl font-bold">
+                                                        {formatIndianCurrency(
+                                                            expenses
+                                                                .filter(expense => parseFloat(expense.Amount) > 0)
+                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
+                                                        )}
+                                                    </p>
+                                                    <p className="text-green-300/50 text-xs mt-2">
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0).length} transactions
+                                                    </p>
+                                                </div>
+                                                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                    </svg>
+                                                </div>
                                             </div>
-                                            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                            {/* Sparkline placeholder */}
+                                            <div className="mt-6">
+                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                                    <path
+                                                        d="M 0 25 Q 20 20, 40 22 T 80 18 T 120 25 T 160 20 T 200 23"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        className="text-green-500/40"
+                                                    />
                                                 </svg>
                                             </div>
-                                        </div>
-                                        <div className="mt-4 flex items-center text-xs">
-                                            <span className="text-green-500">↑ +0.8%</span>
-                                            <span className="text-gray-500 ml-2">vs last period</span>
                                         </div>
                                     </div>
 
-                                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <p className="text-gray-400 text-sm mb-1">Spending</p>
-                                                <p className="text-red-500 text-2xl font-semibold">
-                                                    {formatIndianCurrency(
-                                                        Math.abs(expenses
-                                                            .filter(expense => parseFloat(expense.Amount) < 0)
-                                                            .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0))
-                                                    )}
-                                                </p>
-                                                <p className="text-gray-500 text-xs mt-1">
-                                                    {expenses.filter(expense => parseFloat(expense.Amount) < 0).length} Transactions
-                                                </p>
+                                    {/* Spending Card */}
+                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-red-900/40 via-red-800/30 to-red-900/40 border border-red-700/30 backdrop-blur-sm">
+                                        <div className="relative z-10">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex-1">
+                                                    <p className="text-red-300/70 text-sm mb-2">Spending</p>
+                                                    <p className="text-red-400 text-3xl font-bold">
+                                                        {formatIndianCurrency(
+                                                            Math.abs(expenses
+                                                                .filter(expense => parseFloat(expense.Amount) < 0)
+                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0))
+                                                        )}
+                                                    </p>
+                                                    <p className="text-red-300/50 text-xs mt-2">
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) < 0).length} transactions
+                                                    </p>
+                                                </div>
+                                                <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                                    </svg>
+                                                </div>
                                             </div>
-                                            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
-                                                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                            {/* Sparkline placeholder */}
+                                            <div className="mt-6">
+                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                                    <path
+                                                        d="M 0 30 Q 20 25, 40 28 T 80 23 T 120 30 T 160 25 T 200 27"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        className="text-red-500/40"
+                                                    />
                                                 </svg>
                                             </div>
-                                        </div>
-                                        <div className="mt-4 flex items-center text-xs">
-                                            <span className="text-red-500">↓ -3.1%</span>
-                                            <span className="text-gray-500 ml-2">vs last period</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1476,51 +1453,118 @@ export default function Home() {
                             </div>
 
                             {/* Daily Expenses Chart */}
-                            <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
-                                <h3 className="text-lg font-semibold text-gray-100 mb-4">Daily Expenses Trend</h3>
-                                {dailyExpensesData.length === 0 ? (
-                                    <p className="text-gray-400 text-center py-8">No transaction data for this period</p>
-                                ) : (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <AreaChart data={dailyExpensesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                            <XAxis
-                                                dataKey="date"
-                                                stroke="#9ca3af"
-                                                style={{ fontSize: '12px' }}
-                                            />
-                                            <YAxis
-                                                stroke="#9ca3af"
-                                                style={{ fontSize: '12px' }}
-                                                tickFormatter={(value) => `₹${value}`}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    backgroundColor: '#1f2937',
-                                                    border: '1px solid #6366f1',
-                                                    borderRadius: '8px',
-                                                    color: '#f3f4f6'
-                                                }}
-                                                formatter={(value: number) => [formatIndianCurrency(value), 'Expenses']}
-                                                labelStyle={{ color: '#9ca3af' }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="expenses"
-                                                stroke="#6366f1"
-                                                strokeWidth={2}
-                                                fillOpacity={1}
-                                                fill="url(#colorExpenses)"
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                )}
+                            <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 rounded-2xl p-6 border border-gray-700/50 shadow-2xl overflow-hidden">
+                                {/* Background decoration */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl"></div>
+
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white mb-1">Daily Expenses Trend</h3>
+                                            <p className="text-sm text-gray-400">Track your spending patterns over time</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                                                <span className="text-xs text-gray-400">Expenses</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {dailyExpensesData.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-16">
+                                            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+                                                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-gray-400 text-center">No transaction data for this period</p>
+                                            <p className="text-gray-500 text-sm text-center mt-1">Start adding expenses to see your trend</p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gray-900/30 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30">
+                                            <ResponsiveContainer width="100%" height={320}>
+                                                <AreaChart data={dailyExpensesData} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+                                                    <defs>
+                                                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
+                                                            <stop offset="50%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.05} />
+                                                        </linearGradient>
+                                                        <filter id="glow">
+                                                            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                                            <feMerge>
+                                                                <feMergeNode in="coloredBlur" />
+                                                                <feMergeNode in="SourceGraphic" />
+                                                            </feMerge>
+                                                        </filter>
+                                                    </defs>
+                                                    <CartesianGrid
+                                                        strokeDasharray="3 3"
+                                                        stroke="#374151"
+                                                        opacity={0.3}
+                                                        vertical={false}
+                                                    />
+                                                    <XAxis
+                                                        dataKey="date"
+                                                        stroke="#6b7280"
+                                                        style={{ fontSize: '11px', fontWeight: '500' }}
+                                                        tick={{ fill: '#9ca3af' }}
+                                                        axisLine={{ stroke: '#374151' }}
+                                                        tickLine={{ stroke: '#374151' }}
+                                                    />
+                                                    <YAxis
+                                                        stroke="#6b7280"
+                                                        style={{ fontSize: '11px', fontWeight: '500' }}
+                                                        tick={{ fill: '#9ca3af' }}
+                                                        tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                                                        axisLine={{ stroke: '#374151' }}
+                                                        tickLine={{ stroke: '#374151' }}
+                                                    />
+                                                    <Tooltip
+                                                        contentStyle={{
+                                                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                                                            borderRadius: '12px',
+                                                            padding: '12px',
+                                                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+                                                            backdropFilter: 'blur(10px)'
+                                                        }}
+                                                        labelStyle={{
+                                                            color: '#d1d5db',
+                                                            fontWeight: '600',
+                                                            marginBottom: '4px'
+                                                        }}
+                                                        itemStyle={{
+                                                            color: '#a5b4fc',
+                                                            fontWeight: '500'
+                                                        }}
+                                                        formatter={(value: number) => [formatIndianCurrency(value), 'Daily Expenses']}
+                                                        cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="expenses"
+                                                        stroke="url(#colorExpensesStroke)"
+                                                        strokeWidth={3}
+                                                        fillOpacity={1}
+                                                        fill="url(#colorExpenses)"
+                                                        strokeLinecap="round"
+                                                        filter="url(#glow)"
+                                                    />
+                                                    <defs>
+                                                        <linearGradient id="colorExpensesStroke" x1="0" y1="0" x2="1" y2="0">
+                                                            <stop offset="0%" stopColor="#6366f1" />
+                                                            <stop offset="50%" stopColor="#8b5cf6" />
+                                                            <stop offset="100%" stopColor="#a855f7" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Category Distribution */}
