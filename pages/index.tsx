@@ -1749,86 +1749,166 @@ export default function Home() {
                             </div>
 
                             {/* Account Distribution */}
-                            <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
-                                <div className="px-4 sm:px-6 py-4 border-b border-gray-700">
-                                    <h3 className="text-lg font-semibold text-gray-100">Account Breakdown</h3>
-                                </div>
+                            <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden">
+                                {/* Background decoration */}
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
 
-                                {/* Desktop Table View */}
-                                <div className="hidden md:block overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-900">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                    Account
-                                                </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                    Income
-                                                </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                    Expenses
-                                                </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                                    Net
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-gray-800 divide-y divide-gray-200">
-                                            {accountDistribution.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
-                                                        No account data for this period
-                                                    </td>
+                                <div className="relative z-10">
+                                    <div className="px-6 py-5 border-b border-gray-700/50">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white mb-1">Account Breakdown</h3>
+                                                <p className="text-sm text-gray-400">Income, expenses, and net balance per account</p>
+                                            </div>
+                                            <div className="hidden sm:flex items-center gap-4 text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                                    <span className="text-gray-400">Income</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                                    <span className="text-gray-400">Expenses</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Desktop Table View */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="min-w-full">
+                                            <thead>
+                                                <tr className="border-b border-gray-700/50">
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                        Account
+                                                    </th>
+                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <span>Income</span>
+                                                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                            </svg>
+                                                        </div>
+                                                    </th>
+                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <span>Expenses</span>
+                                                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                                            </svg>
+                                                        </div>
+                                                    </th>
+                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                        Net Balance
+                                                    </th>
                                                 </tr>
-                                            ) : (
-                                                accountDistribution.map(acc => (
-                                                    <tr key={acc.account} className="hover:bg-gray-900">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">
-                                                            {acc.account}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
-                                                            {formatIndianCurrency(acc.income)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">
-                                                            {formatIndianCurrency(acc.expenses)}
-                                                        </td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {formatIndianCurrency(acc.net)}
+                                            </thead>
+                                            <tbody>
+                                                {accountDistribution.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-6 py-12 text-center">
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
+                                                                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                                    </svg>
+                                                                </div>
+                                                                <p className="text-gray-400 font-medium">No account data for this period</p>
+                                                                <p className="text-gray-500 text-sm mt-1">Add transactions to see your breakdown</p>
+                                                            </div>
                                                         </td>
                                                     </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                ) : (
+                                                    accountDistribution.map((acc, index) => (
+                                                        <tr
+                                                            key={acc.account}
+                                                            className="border-b border-gray-700/30 hover:bg-gray-700/20 transition-colors group"
+                                                        >
+                                                            <td className="px-6 py-5">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center group-hover:from-indigo-500/30 group-hover:to-purple-500/30 transition-colors">
+                                                                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span className="text-base font-semibold text-white">{acc.account}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-5 text-right">
+                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                                                                    <span className="text-base font-bold text-green-400">
+                                                                        {formatIndianCurrency(acc.income)}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-5 text-right">
+                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                                                                    <span className="text-base font-bold text-red-400">
+                                                                        {formatIndianCurrency(acc.expenses)}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-5 text-right">
+                                                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-base ${acc.net >= 0
+                                                                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
+                                                                        : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
+                                                                    }`}>
+                                                                    {acc.net >= 0 ? '↑' : '↓'}
+                                                                    <span>{formatIndianCurrency(Math.abs(acc.net))}</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                {/* Mobile Card View */}
-                                <div className="md:hidden p-4 space-y-3">
-                                    {accountDistribution.length === 0 ? (
-                                        <p className="text-center text-gray-400 py-4">No account data for this period</p>
-                                    ) : (
-                                        accountDistribution.map(acc => (
-                                            <div key={acc.account} className="bg-gray-900 rounded-lg p-4">
-                                                <div className="font-medium text-gray-100 mb-3">{acc.account}</div>
-                                                <div className="grid grid-cols-3 gap-2 text-xs">
-                                                    <div>
-                                                        <div className="text-gray-400 mb-1">Income</div>
-                                                        <div className="text-green-600 font-semibold">{formatIndianCurrency(acc.income)}</div>
+                                    {/* Mobile Card View */}
+                                    <div className="md:hidden p-4 space-y-3">
+                                        {accountDistribution.length === 0 ? (
+                                            <div className="flex flex-col items-center py-8">
+                                                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
+                                                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-gray-400 font-medium text-center">No account data for this period</p>
+                                                <p className="text-gray-500 text-sm mt-1 text-center">Add transactions to see your breakdown</p>
+                                            </div>
+                                        ) : (
+                                            accountDistribution.map(acc => (
+                                                <div key={acc.account} className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50 hover:border-gray-600/50 transition-colors">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                                                            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="font-bold text-white text-base">{acc.account}</span>
                                                     </div>
-                                                    <div>
-                                                        <div className="text-gray-400 mb-1">Expenses</div>
-                                                        <div className="text-red-600 font-semibold">{formatIndianCurrency(acc.expenses)}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-gray-400 mb-1">Net</div>
-                                                        <div className={`font-semibold ${acc.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {formatIndianCurrency(acc.net)}
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
+                                                            <div className="text-green-300/70 text-xs mb-1 font-medium">Income</div>
+                                                            <div className="text-green-400 font-bold text-sm">{formatIndianCurrency(acc.income)}</div>
+                                                        </div>
+                                                        <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+                                                            <div className="text-red-300/70 text-xs mb-1 font-medium">Expenses</div>
+                                                            <div className="text-red-400 font-bold text-sm">{formatIndianCurrency(acc.expenses)}</div>
+                                                        </div>
+                                                        <div className={`rounded-lg p-3 border ${acc.net >= 0
+                                                                ? 'bg-green-500/10 border-green-500/20'
+                                                                : 'bg-red-500/10 border-red-500/20'
+                                                            }`}>
+                                                            <div className={`text-xs mb-1 font-medium ${acc.net >= 0 ? 'text-green-300/70' : 'text-red-300/70'}`}>Net</div>
+                                                            <div className={`font-bold text-sm ${acc.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                                {formatIndianCurrency(acc.net)}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))
-                                    )}
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
