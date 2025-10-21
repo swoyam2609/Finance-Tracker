@@ -1555,7 +1555,56 @@ export default function Home() {
                                                             fontWeight: '600',
                                                             marginBottom: '8px'
                                                         }}
-                                                        formatter={(value: number) => formatIndianCurrency(value)}
+                                                        content={(props: any) => {
+                                                            if (!props.payload || props.payload.length === 0) return null;
+
+                                                            const data = props.payload[0].payload;
+                                                            const hasExpenses = data.total > 0;
+
+                                                            if (!hasExpenses) {
+                                                                return (
+                                                                    <div style={{
+                                                                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                                                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                                                                        borderRadius: '12px',
+                                                                        padding: '12px',
+                                                                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+                                                                        backdropFilter: 'blur(10px)'
+                                                                    }}>
+                                                                        <p style={{ color: '#d1d5db', fontWeight: '600', marginBottom: '4px' }}>
+                                                                            {props.label}
+                                                                        </p>
+                                                                        <p style={{ color: '#10b981', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                            <span style={{ fontSize: '18px' }}>🎉</span>
+                                                                            No expenses today!
+                                                                        </p>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return (
+                                                                <div style={{
+                                                                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                                                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                                                                    borderRadius: '12px',
+                                                                    padding: '12px',
+                                                                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+                                                                    backdropFilter: 'blur(10px)'
+                                                                }}>
+                                                                    <p style={{ color: '#d1d5db', fontWeight: '600', marginBottom: '8px' }}>
+                                                                        {props.label}
+                                                                    </p>
+                                                                    {props.payload.map((entry: any, index: number) => {
+                                                                        if (entry.value === 0) return null;
+                                                                        return (
+                                                                            <p key={index} style={{ color: entry.color, fontWeight: '500', marginBottom: '4px' }}>
+                                                                                {entry.name}: {formatIndianCurrency(entry.value)}
+                                                                            </p>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
+                                                        }}
                                                         cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
                                                     />
                                                     <Legend
