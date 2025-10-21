@@ -484,13 +484,16 @@ export default function Home() {
 
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            if (!accountTotals[exp.Account]) {
-                accountTotals[exp.Account] = { income: 0, expenses: 0 };
-            }
-            if (amount >= 0) {
-                accountTotals[exp.Account].income += amount;
-            } else {
-                accountTotals[exp.Account].expenses += Math.abs(amount);
+            // Exclude transfer transactions from account distribution
+            if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
+                if (!accountTotals[exp.Account]) {
+                    accountTotals[exp.Account] = { income: 0, expenses: 0 };
+                }
+                if (amount >= 0) {
+                    accountTotals[exp.Account].income += amount;
+                } else {
+                    accountTotals[exp.Account].expenses += Math.abs(amount);
+                }
             }
         });
 
@@ -528,10 +531,68 @@ export default function Home() {
         };
     };
 
+    // Generate sparkline data for income and expenses
+    const getSparklineData = (type: 'income' | 'expense') => {
+        const filtered = getFilteredExpenses();
+        if (filtered.length === 0) return '';
+
+        // Group by date
+        const dailyData: { [key: string]: number } = {};
+
+        filtered.forEach(exp => {
+            if (!exp.Date) return;
+            const amount = parseFloat(exp.Amount || '0');
+
+            // Exclude transfers
+            if (exp.Category === 'Transfer In' || exp.Category === 'Transfer Out') return;
+
+            if (!dailyData[exp.Date]) {
+                dailyData[exp.Date] = 0;
+            }
+
+            if (type === 'income' && amount > 0) {
+                dailyData[exp.Date] += amount;
+            } else if (type === 'expense' && amount < 0) {
+                dailyData[exp.Date] += Math.abs(amount);
+            }
+        });
+
+        // Sort dates and get values
+        const sortedDates = Object.keys(dailyData).sort();
+        if (sortedDates.length === 0) return '';
+
+        const values = sortedDates.map(date => dailyData[date]);
+
+        // Limit to last 30 days for better visualization
+        const recentValues = values.slice(-30);
+        if (recentValues.length === 0) return '';
+
+        // Find min and max for scaling
+        const max = Math.max(...recentValues);
+        const min = Math.min(...recentValues);
+        const range = max - min || 1;
+
+        // Generate SVG path
+        const width = 200;
+        const height = 50;
+        const padding = 5;
+        const step = width / (recentValues.length - 1 || 1);
+
+        const points = recentValues.map((value, index) => {
+            const x = index * step;
+            const y = height - padding - ((value - min) / range) * (height - 2 * padding);
+            return `${x},${y}`;
+        });
+
+        return `M ${points.join(' L ')}`;
+    };
+
     const availableMonths = getAvailableMonths();
     const categoryDistribution = getCategoryDistribution();
     const accountDistribution = getAccountDistribution();
     const summary = getSummary();
+    const incomeSparkline = getSparklineData('income');
+    const expenseSparkline = getSparklineData('expense');
 
     // Calculate daily expenses for chart with per-account breakdown
     const getDailyExpenses = () => {
@@ -833,12 +894,12 @@ export default function Home() {
                                                     <p className="text-green-400 text-3xl font-bold">
                                                         {formatIndianCurrency(
                                                             expenses
-                                                                .filter(expense => parseFloat(expense.Amount) > 0)
+                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
                                                                 .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
                                                         )}
                                                     </p>
                                                     <p className="text-green-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0).length} transactions
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
                                                     </p>
                                                 </div>
                                                 <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -847,16 +908,29 @@ export default function Home() {
                                                     </svg>
                                                 </div>
                                             </div>
-                                            {/* Sparkline placeholder */}
+                                            {/* Sparkline */}
                                             <div className="mt-6">
                                                 <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                                    <path
-                                                        d="M 0 25 Q 20 20, 40 22 T 80 18 T 120 25 T 160 20 T 200 23"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        className="text-green-500/40"
-                                                    />
+                                                    {incomeSparkline ? (
+                                                        <path
+                                                            d={incomeSparkline}
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-green-500/60"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    ) : (
+                                                        <path
+                                                            d="M 0 25 L 200 25"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-green-500/30"
+                                                            strokeDasharray="5,5"
+                                                        />
+                                                    )}
                                                 </svg>
                                             </div>
                                         </div>
@@ -871,12 +945,12 @@ export default function Home() {
                                                     <p className="text-red-400 text-3xl font-bold">
                                                         {formatIndianCurrency(
                                                             Math.abs(expenses
-                                                                .filter(expense => parseFloat(expense.Amount) < 0)
+                                                                .filter(expense => parseFloat(expense.Amount) < 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
                                                                 .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0))
                                                         )}
                                                     </p>
                                                     <p className="text-red-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) < 0).length} transactions
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) < 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
                                                     </p>
                                                 </div>
                                                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
@@ -885,16 +959,29 @@ export default function Home() {
                                                     </svg>
                                                 </div>
                                             </div>
-                                            {/* Sparkline placeholder */}
+                                            {/* Sparkline */}
                                             <div className="mt-6">
                                                 <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                                    <path
-                                                        d="M 0 30 Q 20 25, 40 28 T 80 23 T 120 30 T 160 25 T 200 27"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        className="text-red-500/40"
-                                                    />
+                                                    {expenseSparkline ? (
+                                                        <path
+                                                            d={expenseSparkline}
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-red-500/60"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    ) : (
+                                                        <path
+                                                            d="M 0 25 L 200 25"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-red-500/30"
+                                                            strokeDasharray="5,5"
+                                                        />
+                                                    )}
                                                 </svg>
                                             </div>
                                         </div>
