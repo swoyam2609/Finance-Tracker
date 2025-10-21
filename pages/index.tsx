@@ -1849,8 +1849,8 @@ export default function Home() {
                                                             </td>
                                                             <td className="px-6 py-5 text-right">
                                                                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-base ${acc.net >= 0
-                                                                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
-                                                                        : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
+                                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
+                                                                    : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
                                                                     }`}>
                                                                     {acc.net >= 0 ? '↑' : '↓'}
                                                                     <span>{formatIndianCurrency(Math.abs(acc.net))}</span>
@@ -1896,8 +1896,8 @@ export default function Home() {
                                                             <div className="text-red-400 font-bold text-sm">{formatIndianCurrency(acc.expenses)}</div>
                                                         </div>
                                                         <div className={`rounded-lg p-3 border ${acc.net >= 0
-                                                                ? 'bg-green-500/10 border-green-500/20'
-                                                                : 'bg-red-500/10 border-red-500/20'
+                                                            ? 'bg-green-500/10 border-green-500/20'
+                                                            : 'bg-red-500/10 border-red-500/20'
                                                             }`}>
                                                             <div className={`text-xs mb-1 font-medium ${acc.net >= 0 ? 'text-green-300/70' : 'text-red-300/70'}`}>Net</div>
                                                             <div className={`font-bold text-sm ${acc.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -1918,235 +1918,389 @@ export default function Home() {
                     {activeTab === 'loans' && (
                         <div className="space-y-6">
                             {/* Summary Card */}
-                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-                                <h2 className="text-2xl font-bold mb-2">Total Money Lent</h2>
-                                <p className="text-4xl font-bold">{formatIndianCurrency(totalLent)}</p>
-                                <p className="text-indigo-100 mt-2">Amount owed to you by {loansSummary.filter(p => p.balance > 0).length} people</p>
+                            <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 rounded-2xl shadow-2xl p-8 text-white overflow-hidden">
+                                {/* Background decoration */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
+
+                                <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-6">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                                                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-medium text-indigo-100">Total Money Lent</h2>
+                                                    <p className="text-5xl font-bold mt-1">{formatIndianCurrency(totalLent)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-4">
+                                                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                                    </svg>
+                                                    <span className="text-white font-semibold">{loansSummary.filter(p => p.balance > 0).length} people</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    <span className="text-white font-semibold">{loans.length} transactions</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                                 {/* Add Loan Transaction Form */}
                                 <div className="lg:col-span-1">
-                                    <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
-                                        <h2 className="text-lg font-semibold text-gray-100 mb-4">Add Loan Transaction</h2>
-                                        <form onSubmit={handleLoanSubmit} className="space-y-4">
-                                            <div>
-                                                <label htmlFor="loanDate" className="block text-sm font-medium text-gray-300 mb-1">
-                                                    Date
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    id="loanDate"
-                                                    required
-                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                    value={loanFormData.Date}
-                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
-                                                />
-                                            </div>
+                                    <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50 overflow-hidden">
+                                        {/* Background decoration */}
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
 
-                                            <div>
-                                                <label htmlFor="personName" className="block text-sm font-medium text-gray-300 mb-1">
-                                                    Person Name
-                                                </label>
-                                                {uniquePersons.length > 0 ? (
-                                                    <div className="space-y-2">
-                                                        <select
-                                                            id="personName"
-                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                            value={selectedPerson}
-                                                            onChange={(e) => {
-                                                                setSelectedPerson(e.target.value);
-                                                                setLoanFormData({ ...loanFormData, PersonName: e.target.value });
-                                                            }}
-                                                        >
-                                                            <option value="">-- Select or type new name --</option>
-                                                            {uniquePersons.map(person => (
-                                                                <option key={person} value={person}>{person}</option>
-                                                            ))}
-                                                        </select>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Or enter new name"
-                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                            value={selectedPerson === '' ? loanFormData.PersonName : ''}
-                                                            onChange={(e) => {
-                                                                setSelectedPerson('');
-                                                                setLoanFormData({ ...loanFormData, PersonName: e.target.value });
-                                                            }}
-                                                        />
-                                                    </div>
-                                                ) : (
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                </div>
+                                                <h2 className="text-xl font-bold text-white">Add Transaction</h2>
+                                            </div>
+                                            <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                                <div>
+                                                    <label htmlFor="loanDate" className="block text-sm font-medium text-gray-300 mb-1">
+                                                        Date
+                                                    </label>
                                                     <input
-                                                        type="text"
-                                                        id="personName"
+                                                        type="date"
+                                                        id="loanDate"
                                                         required
                                                         className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        value={loanFormData.PersonName}
-                                                        onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
-                                                        placeholder="Enter person's name"
+                                                        value={loanFormData.Date}
+                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
                                                     />
-                                                )}
-                                            </div>
+                                                </div>
 
-                                            <div>
-                                                <label htmlFor="transactionType" className="block text-sm font-medium text-gray-300 mb-1">
-                                                    Transaction Type
-                                                </label>
-                                                <select
-                                                    id="transactionType"
-                                                    required
-                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                    value={loanFormData.TransactionType}
-                                                    onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
+                                                <div>
+                                                    <label htmlFor="personName" className="block text-sm font-medium text-gray-300 mb-1">
+                                                        Person Name
+                                                    </label>
+                                                    {uniquePersons.length > 0 ? (
+                                                        <div className="space-y-2">
+                                                            <select
+                                                                id="personName"
+                                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                value={selectedPerson}
+                                                                onChange={(e) => {
+                                                                    setSelectedPerson(e.target.value);
+                                                                    setLoanFormData({ ...loanFormData, PersonName: e.target.value });
+                                                                }}
+                                                            >
+                                                                <option value="">-- Select or type new name --</option>
+                                                                {uniquePersons.map(person => (
+                                                                    <option key={person} value={person}>{person}</option>
+                                                                ))}
+                                                            </select>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Or enter new name"
+                                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                value={selectedPerson === '' ? loanFormData.PersonName : ''}
+                                                                onChange={(e) => {
+                                                                    setSelectedPerson('');
+                                                                    setLoanFormData({ ...loanFormData, PersonName: e.target.value });
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <input
+                                                            type="text"
+                                                            id="personName"
+                                                            required
+                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            value={loanFormData.PersonName}
+                                                            onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
+                                                            placeholder="Enter person's name"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="transactionType" className="block text-sm font-medium text-gray-300 mb-1">
+                                                        Transaction Type
+                                                    </label>
+                                                    <select
+                                                        id="transactionType"
+                                                        required
+                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        value={loanFormData.TransactionType}
+                                                        onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
+                                                    >
+                                                        <option value="LENT">Money Lent (New Loan)</option>
+                                                        <option value="ADDITIONAL_LOAN">Additional Loan</option>
+                                                        <option value="RECEIVED">Money Received (Repayment)</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-300 mb-1">
+                                                        Amount
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        id="loanAmount"
+                                                        required
+                                                        step="0.01"
+                                                        min="0"
+                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        value={loanFormData.Amount}
+                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-300 mb-1">
+                                                        Description
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        id="loanDescription"
+                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        value={loanFormData.Description}
+                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
+                                                        placeholder="Optional details"
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    type="submit"
+                                                    disabled={loanSubmitting}
+                                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                                 >
-                                                    <option value="LENT">Money Lent (New Loan)</option>
-                                                    <option value="ADDITIONAL_LOAN">Additional Loan</option>
-                                                    <option value="RECEIVED">Money Received (Repayment)</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-300 mb-1">
-                                                    Amount
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    id="loanAmount"
-                                                    required
-                                                    step="0.01"
-                                                    min="0"
-                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                    value={loanFormData.Amount}
-                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
-                                                    placeholder="0.00"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-300 mb-1">
-                                                    Description
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    id="loanDescription"
-                                                    className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                    value={loanFormData.Description}
-                                                    onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
-                                                    placeholder="Optional details"
-                                                />
-                                            </div>
-
-                                            <button
-                                                type="submit"
-                                                disabled={loanSubmitting}
-                                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                {loanSubmitting ? 'Adding...' : 'Add Transaction'}
-                                            </button>
-                                        </form>
+                                                    {loanSubmitting ? (
+                                                        <>
+                                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            Adding...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            Add Transaction
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* People List and Transactions */}
                                 <div className="lg:col-span-2 space-y-6">
                                     {loansSummary.length === 0 ? (
-                                        <div className="bg-gray-800 shadow rounded-lg p-8 text-center">
-                                            <p className="text-gray-400">No loan records yet. Add your first loan transaction to get started!</p>
+                                        <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-12 text-center border border-gray-700/50 overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                                            <div className="relative z-10">
+                                                <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <p className="text-gray-400 text-lg">No loan records yet. Add your first loan transaction to get started!</p>
+                                            </div>
                                         </div>
                                     ) : (
                                         loansSummary.map(({ person, balance }) => {
                                             const personTransactions = getPersonTransactions(person);
                                             return (
-                                                <div key={person} className="bg-gray-800 shadow rounded-lg overflow-hidden">
-                                                    <div className="px-4 sm:px-6 py-4 bg-gray-900 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                                        <h3 className="text-lg font-semibold text-gray-100">{person}</h3>
-                                                        <span className={`text-xl sm:text-2xl font-bold ${balance > 0 ? 'text-green-600' : balance < 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                                                            {formatIndianCurrency(Math.abs(balance))} {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
-                                                        </span>
-                                                    </div>
+                                                <div key={person} className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-700/50">
+                                                    {/* Background decoration */}
+                                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
 
-                                                    {/* Desktop Table View */}
-                                                    <div className="hidden md:block overflow-x-auto">
-                                                        <table className="min-w-full divide-y divide-gray-200">
-                                                            <thead className="bg-gray-900">
-                                                                <tr>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                                                        Date
-                                                                    </th>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                                                        Type
-                                                                    </th>
-                                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                                                        Description
-                                                                    </th>
-                                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">
-                                                                        Amount
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className="bg-gray-800 divide-y divide-gray-200">
-                                                                {personTransactions.map((tx, idx) => {
-                                                                    const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
-                                                                    return (
-                                                                        <tr key={idx} className="hover:bg-gray-900">
-                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
-                                                                                {tx.Date}
-                                                                            </td>
-                                                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${tx.TransactionType === 'LENT' ? 'bg-blue-100 text-blue-800' :
-                                                                                    tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-purple-100 text-purple-800' :
-                                                                                        'bg-green-100 text-green-800'
-                                                                                    }`}>
-                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
-                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
-                                                                                            'Received'}
-                                                                                </span>
-                                                                            </td>
-                                                                            <td className="px-6 py-4 text-sm text-gray-100">
-                                                                                {tx.Description || '-'}
-                                                                            </td>
-                                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
-                                                                                {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
-                                                                            </td>
-                                                                        </tr>
-                                                                    );
-                                                                })}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <div className="px-6 py-5 bg-gradient-to-r from-gray-900/80 to-gray-800/80 border-b border-gray-700/50 backdrop-blur-sm">
+                                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl flex items-center justify-center">
+                                                                        <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <h3 className="text-xl font-bold text-white">{person}</h3>
+                                                                </div>
+                                                                <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-lg ${balance > 0
+                                                                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
+                                                                        : balance < 0
+                                                                            ? 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
+                                                                            : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400'
+                                                                    }`}>
+                                                                    {balance > 0 ? '↑' : balance < 0 ? '↓' : '•'}
+                                                                    <span>{formatIndianCurrency(Math.abs(balance))}</span>
+                                                                    <span className="text-sm font-medium opacity-80">
+                                                                        {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
 
-                                                    {/* Mobile Card View */}
-                                                    <div className="md:hidden p-4 space-y-3">
-                                                        {personTransactions.map((tx, idx) => {
-                                                            const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
-                                                            return (
-                                                                <div key={idx} className="bg-gray-900 rounded-lg p-3">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <div className="flex-1">
-                                                                            <div className="flex items-center gap-2 mb-1">
-                                                                                <span className="text-xs text-gray-400">{tx.Date}</span>
-                                                                                <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${tx.TransactionType === 'LENT' ? 'bg-blue-900 text-blue-200' :
-                                                                                    tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-purple-900 text-purple-200' :
-                                                                                        'bg-green-900 text-green-200'
-                                                                                    }`}>
-                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
-                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
-                                                                                            'Received'}
-                                                                                </span>
+                                                        {/* Desktop Table View */}
+                                                        <div className="hidden md:block overflow-x-auto">
+                                                            <table className="min-w-full">
+                                                                <thead>
+                                                                    <tr className="border-b border-gray-700/30">
+                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                </svg>
+                                                                                Date
                                                                             </div>
-                                                                            {tx.Description && (
-                                                                                <div className="text-xs text-gray-400">
-                                                                                    {tx.Description}
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                                                                </svg>
+                                                                                Type
+                                                                            </div>
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                                </svg>
+                                                                                Description
+                                                                            </div>
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                                                            <div className="flex items-center justify-end gap-2">
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                </svg>
+                                                                                Amount
+                                                                            </div>
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {personTransactions.map((tx, idx) => {
+                                                                        const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
+                                                                        return (
+                                                                            <tr key={idx} className="border-b border-gray-700/20 hover:bg-gray-700/20 transition-colors group">
+                                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <div className="w-2 h-2 rounded-full bg-indigo-500/50"></div>
+                                                                                        <span className="text-sm font-medium text-gray-300">{tx.Date}</span>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
+                                                                                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                                                            : tx.TransactionType === 'ADDITIONAL_LOAN'
+                                                                                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                                                                : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                                                        }`}>
+                                                                                        {tx.TransactionType === 'LENT' && (
+                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                                                            </svg>
+                                                                                        )}
+                                                                                        {tx.TransactionType === 'ADDITIONAL_LOAN' && (
+                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                                                            </svg>
+                                                                                        )}
+                                                                                        {tx.TransactionType === 'RECEIVED' && (
+                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                                                                                            </svg>
+                                                                                        )}
+                                                                                        {tx.TransactionType === 'LENT' ? 'Lent' :
+                                                                                            tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
+                                                                                                'Received'}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td className="px-6 py-4">
+                                                                                    <span className="text-sm text-gray-300">{tx.Description || '-'}</span>
+                                                                                </td>
+                                                                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${isLent
+                                                                                            ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                                                                                            : 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                                                        }`}>
+                                                                                        {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+
+                                                        {/* Mobile Card View */}
+                                                        <div className="md:hidden p-4 space-y-3">
+                                                            {personTransactions.map((tx, idx) => {
+                                                                const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
+                                                                return (
+                                                                    <div key={idx} className="bg-gray-700/30 rounded-xl p-4 border border-gray-700/50 hover:bg-gray-700/40 transition-colors">
+                                                                        <div className="flex justify-between items-start gap-3">
+                                                                            <div className="flex-1 space-y-2">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-2 h-2 rounded-full bg-indigo-500/50"></div>
+                                                                                    <span className="text-xs font-medium text-gray-400">{tx.Date}</span>
                                                                                 </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className={`text-base font-bold ml-3 ${isLent ? 'text-blue-600' : 'text-green-600'}`}>
-                                                                            {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
+                                                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
+                                                                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                                                        : tx.TransactionType === 'ADDITIONAL_LOAN'
+                                                                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                                                    }`}>
+                                                                                    {tx.TransactionType === 'LENT' && (
+                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                    {tx.TransactionType === 'ADDITIONAL_LOAN' && (
+                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                    {tx.TransactionType === 'RECEIVED' && (
+                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
+                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
+                                                                                            'Received'}
+                                                                                </span>
+                                                                                {tx.Description && (
+                                                                                    <div className="text-xs text-gray-400 mt-1">
+                                                                                        {tx.Description}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-sm whitespace-nowrap ${isLent
+                                                                                    ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                                                                                    : 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                                                }`}>
+                                                                                {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
