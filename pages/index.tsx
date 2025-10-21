@@ -934,185 +934,239 @@ export default function Home() {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                             {/* Add Transaction Form */}
                             <div className="lg:col-span-1">
-                                <div className="bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50">
-                                    <h2 className="text-2xl font-bold text-white mb-6">Add Transaction</h2>
-                                    <form onSubmit={handleSubmit} className="space-y-5">
-                                        {/* Is it Income Toggle */}
-                                        <div className="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl border border-gray-600/50">
-                                            <label htmlFor="isIncome" className="text-base font-medium text-gray-200 select-none">
-                                                Is it an Income
-                                            </label>
-                                            <button
-                                                type="button"
-                                                id="isIncome"
-                                                role="switch"
-                                                aria-checked={isIncome}
-                                                onClick={() => setIsIncome(!isIncome)}
-                                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${isIncome ? 'bg-green-500' : 'bg-gray-600'
-                                                    }`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${isIncome ? 'translate-x-7' : 'translate-x-1'
-                                                        }`}
-                                                />
-                                            </button>
-                                        </div>
+                                <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50 overflow-hidden">
+                                    {/* Background decoration */}
+                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
 
-                                        <div>
-                                            <label htmlFor="date" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                Date
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="date"
-                                                    id="date"
-                                                    required
-                                                    className="w-full px-3 sm:px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 text-sm sm:text-base rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
-                                                    value={formData.Date}
-                                                    onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
-                                                    style={{ colorScheme: 'dark' }}
-                                                />
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                </svg>
                                             </div>
+                                            <h2 className="text-2xl font-bold text-white">Add Transaction</h2>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div>
-                                                <label htmlFor="account" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                    Account
-                                                </label>
-                                                <div className="relative">
-                                                    <select
-                                                        id="account"
-                                                        required
-                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                                        value={formData.Account}
-                                                        onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
-                                                    >
-                                                        <option value="AXIS Bank">AXIS Bank</option>
-                                                        <option value="SBI Bank">SBI Bank</option>
-                                                        <option value="Credit Card">Credit Card</option>
-                                                        <option value="Cash">Cash</option>
-                                                        <option value="Mutual Fund">Mutual Fund</option>
-                                                    </select>
-                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                        </svg>
+                                        <form onSubmit={handleSubmit} className="space-y-5">
+                                            {/* Is it Income Toggle */}
+                                            <div className="relative">
+                                                <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isIncome
+                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/40'
+                                                    : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border-red-500/40'
+                                                    }`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isIncome ? 'bg-green-500/30' : 'bg-red-500/30'
+                                                            }`}>
+                                                            {isIncome ? (
+                                                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                        <label htmlFor="isIncome" className={`text-base font-semibold select-none ${isIncome ? 'text-green-300' : 'text-red-300'
+                                                            }`}>
+                                                            {isIncome ? 'Income Transaction' : 'Expense Transaction'}
+                                                        </label>
                                                     </div>
+                                                    <button
+                                                        type="button"
+                                                        id="isIncome"
+                                                        role="switch"
+                                                        aria-checked={isIncome}
+                                                        onClick={() => setIsIncome(!isIncome)}
+                                                        className={`relative inline-flex h-9 w-16 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 shadow-lg ${isIncome ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'
+                                                            }`}
+                                                    >
+                                                        <span
+                                                            className={`inline-block h-7 w-7 transform rounded-full bg-white shadow-lg transition-transform ${isIncome ? 'translate-x-8' : 'translate-x-1'
+                                                                }`}
+                                                        />
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            {/* Category - Only show if NOT income */}
-                                            {!isIncome && (
+                                            <div>
+                                                <label htmlFor="date" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    Date
+                                                </label>
+                                                <div className="relative group">
+                                                    <input
+                                                        type="date"
+                                                        id="date"
+                                                        required
+                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 text-base rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 hover:border-gray-500/50 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                                                        value={formData.Date}
+                                                        onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
+                                                        style={{ colorScheme: 'dark' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label htmlFor="category" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                        Category
+                                                    <label htmlFor="account" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                                                        <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                        </svg>
+                                                        Account
                                                     </label>
-                                                    <div className="relative">
+                                                    <div className="relative group">
                                                         <select
-                                                            id="category"
+                                                            id="account"
                                                             required
-                                                            className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                                            value={formData.Category}
-                                                            onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                            className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer hover:border-gray-500/50"
+                                                            value={formData.Account}
+                                                            onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
                                                         >
-                                                            <option value="">Select a category</option>
-                                                            <option value="Food & Dining">Food & Dining</option>
-                                                            <option value="Transportation">Transportation</option>
-                                                            <option value="Shopping">Shopping</option>
-                                                            <option value="Entertainment">Entertainment</option>
-                                                            <option value="Bills & Utilities">Bills & Utilities</option>
-                                                            <option value="Healthcare">Healthcare</option>
-                                                            <option value="Education">Education</option>
-                                                            <option value="Groceries">Groceries</option>
-                                                            <option value="Rent">Rent</option>
-                                                            <option value="Insurance">Insurance</option>
-                                                            <option value="Personal Care">Personal Care</option>
-                                                            <option value="Travel">Travel</option>
-                                                            <option value="Subscriptions">Subscriptions</option>
-                                                            <option value="Gifts">Gifts</option>
-                                                            <option value="Other">Other</option>
+                                                            <option value="AXIS Bank">AXIS Bank</option>
+                                                            <option value="SBI Bank">SBI Bank</option>
+                                                            <option value="Credit Card">Credit Card</option>
+                                                            <option value="Cash">Cash</option>
+                                                            <option value="Mutual Fund">Mutual Fund</option>
                                                         </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-gray-300 transition-colors">
                                                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                             </svg>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
 
-                                        <div>
-                                            <label htmlFor="description" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                Description
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="description"
-                                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500"
-                                                value={formData.Description}
-                                                onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                                                placeholder="Optional details"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label htmlFor="amount" className="block text-sm font-semibold text-gray-300 mb-2">
-                                                Amount
-                                            </label>
-                                            <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 text-lg font-semibold">
-                                                    ₹
-                                                </span>
-                                                <input
-                                                    type="number"
-                                                    id="amount"
-                                                    required
-                                                    step="0.01"
-                                                    min="0"
-                                                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500 text-lg font-medium"
-                                                    value={formData.Amount}
-                                                    onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
-                                                    placeholder="0.00"
-                                                />
+                                                {/* Category - Only show if NOT income */}
+                                                {!isIncome && (
+                                                    <div>
+                                                        <label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                                            </svg>
+                                                            Category
+                                                        </label>
+                                                        <div className="relative group">
+                                                            <select
+                                                                id="category"
+                                                                required
+                                                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer hover:border-gray-500/50"
+                                                                value={formData.Category}
+                                                                onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                            >
+                                                                <option value="">Select a category</option>
+                                                                <option value="Food & Dining">Food & Dining</option>
+                                                                <option value="Transportation">Transportation</option>
+                                                                <option value="Shopping">Shopping</option>
+                                                                <option value="Entertainment">Entertainment</option>
+                                                                <option value="Bills & Utilities">Bills & Utilities</option>
+                                                                <option value="Healthcare">Healthcare</option>
+                                                                <option value="Education">Education</option>
+                                                                <option value="Groceries">Groceries</option>
+                                                                <option value="Rent">Rent</option>
+                                                                <option value="Insurance">Insurance</option>
+                                                                <option value="Personal Care">Personal Care</option>
+                                                                <option value="Travel">Travel</option>
+                                                                <option value="Subscriptions">Subscriptions</option>
+                                                                <option value="Gifts">Gifts</option>
+                                                                <option value="Other">Other</option>
+                                                            </select>
+                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-gray-300 transition-colors">
+                                                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
 
-                                        <button
-                                            type="submit"
-                                            disabled={submitting}
-                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-indigo-500/50 mt-6"
-                                        >
-                                            {submitting ? (
-                                                <span className="flex items-center justify-center">
-                                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            <div>
+                                                <label htmlFor="description" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                     </svg>
-                                                    Adding...
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center justify-center">
-                                                    {isIncome ? (
-                                                        <>
-                                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                            </svg>
-                                                            Add Income
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                            </svg>
-                                                            Add Expense
-                                                        </>
-                                                    )}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </form>
+                                                    Description
+                                                    <span className="text-xs text-gray-500 font-normal">(Optional)</span>
+                                                </label>
+                                                <div className="relative group">
+                                                    <input
+                                                        type="text"
+                                                        id="description"
+                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 hover:border-gray-500/50"
+                                                        value={formData.Description}
+                                                        onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+                                                        placeholder="Enter transaction details..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="amount" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Amount
+                                                </label>
+                                                <div className="relative group">
+                                                    <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+                                                        <span className="text-gray-400 text-xl font-bold group-focus-within:text-indigo-400 transition-colors">₹</span>
+                                                    </div>
+                                                    <input
+                                                        type="number"
+                                                        id="amount"
+                                                        required
+                                                        step="0.01"
+                                                        min="0"
+                                                        className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 text-xl font-semibold hover:border-gray-500/50"
+                                                        value={formData.Amount}
+                                                        onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={submitting}
+                                                className={`w-full font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-xl mt-6 ${isIncome
+                                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/50'
+                                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/50'
+                                                    } text-white`}
+                                            >
+                                                {submitting ? (
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        Adding Transaction...
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        {isIncome ? (
+                                                            <>
+                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                                                </svg>
+                                                                Add Income
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                                                </svg>
+                                                                Add Expense
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
 
@@ -2138,10 +2192,10 @@ export default function Home() {
                                                                     <h3 className="text-xl font-bold text-white">{person}</h3>
                                                                 </div>
                                                                 <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-lg ${balance > 0
-                                                                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
-                                                                        : balance < 0
-                                                                            ? 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
-                                                                            : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400'
+                                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
+                                                                    : balance < 0
+                                                                        ? 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
+                                                                        : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400'
                                                                     }`}>
                                                                     {balance > 0 ? '↑' : balance < 0 ? '↓' : '•'}
                                                                     <span>{formatIndianCurrency(Math.abs(balance))}</span>
@@ -2204,10 +2258,10 @@ export default function Home() {
                                                                                 </td>
                                                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
-                                                                                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                                                            : tx.TransactionType === 'ADDITIONAL_LOAN'
-                                                                                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                                                                : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                                                        : tx.TransactionType === 'ADDITIONAL_LOAN'
+                                                                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                                                         }`}>
                                                                                         {tx.TransactionType === 'LENT' && (
                                                                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2234,8 +2288,8 @@ export default function Home() {
                                                                                 </td>
                                                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                                                     <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${isLent
-                                                                                            ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                                                                                            : 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                                                        ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                                                                                        : 'bg-green-500/10 border border-green-500/20 text-green-400'
                                                                                         }`}>
                                                                                         {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
                                                                                     </div>
@@ -2260,10 +2314,10 @@ export default function Home() {
                                                                                     <span className="text-xs font-medium text-gray-400">{tx.Date}</span>
                                                                                 </div>
                                                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
-                                                                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                                                        : tx.TransactionType === 'ADDITIONAL_LOAN'
-                                                                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                                                    : tx.TransactionType === 'ADDITIONAL_LOAN'
+                                                                                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                                                        : 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                                                     }`}>
                                                                                     {tx.TransactionType === 'LENT' && (
                                                                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2291,8 +2345,8 @@ export default function Home() {
                                                                                 )}
                                                                             </div>
                                                                             <div className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-sm whitespace-nowrap ${isLent
-                                                                                    ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                                                                                    : 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                                                ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                                                                                : 'bg-green-500/10 border border-green-500/20 text-green-400'
                                                                                 }`}>
                                                                                 {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
                                                                             </div>
