@@ -788,6 +788,7 @@ export default function Home() {
         <>
             <Head>
                 <title>Dashboard - Expense Tracker</title>
+                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%239333ea;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M30 35 L45 35 L45 65 L30 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M52 25 L67 25 L67 65 L52 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M25 72 L75 72' stroke='white' stroke-width='3' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M35 72 L35 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M50 72 L50 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M65 72 L65 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Ccircle cx='75' cy='30' r='8' fill='%2310b981'/%3E%3Cpath d='M75 26 L75 34 M71 30 L79 30' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
             </Head>
             <div className="min-h-screen bg-gray-900">
                 {/* Header */}
