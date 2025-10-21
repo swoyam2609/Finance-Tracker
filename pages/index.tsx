@@ -533,12 +533,13 @@ export default function Home() {
     const accountDistribution = getAccountDistribution();
     const summary = getSummary();
 
-    // Calculate daily expenses for chart
+    // Calculate daily expenses for chart with per-account breakdown
     const getDailyExpenses = () => {
         const filtered = getFilteredExpenses();
         if (filtered.length === 0) return [];
 
-        const dailyData: { [key: string]: { date: string; expenses: number; income: number } } = {};
+        const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
+        const dailyData: { [key: string]: any } = {};
 
         // Collect all transaction data
         filtered.forEach(exp => {
@@ -546,17 +547,24 @@ export default function Home() {
 
             const date = exp.Date;
             const amount = parseFloat(exp.Amount || '0');
+            const account = exp.Account;
 
             // Exclude transfer transactions from daily chart
             if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
                 if (!dailyData[date]) {
-                    dailyData[date] = { date, expenses: 0, income: 0 };
+                    dailyData[date] = { date, total: 0 };
+                    accounts.forEach(acc => {
+                        dailyData[date][acc] = 0;
+                    });
                 }
 
+                // Only count expenses (negative amounts)
                 if (amount < 0) {
-                    dailyData[date].expenses += Math.abs(amount);
-                } else {
-                    dailyData[date].income += amount;
+                    const absAmount = Math.abs(amount);
+                    dailyData[date].total += absAmount;
+                    if (accounts.includes(account)) {
+                        dailyData[date][account] += absAmount;
+                    }
                 }
             }
         });
@@ -569,20 +577,24 @@ export default function Home() {
         const maxDate = new Date(dates[dates.length - 1]);
 
         // Fill in missing dates
-        const allDates: { date: string; fullDate: string; expenses: number; income: number }[] = [];
+        const allDates: any[] = [];
         const currentDate = new Date(minDate);
 
         while (currentDate <= maxDate) {
             const dateStr = currentDate.toISOString().split('T')[0];
             const data = dailyData[dateStr];
 
-            allDates.push({
+            const dataPoint: any = {
                 date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 fullDate: dateStr,
-                expenses: data ? data.expenses : 0,
-                income: data ? data.income : 0,
+                total: data ? data.total : 0,
+            };
+
+            accounts.forEach(account => {
+                dataPoint[account] = data ? data[account] : 0;
             });
 
+            allDates.push(dataPoint);
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
@@ -1459,16 +1471,10 @@ export default function Home() {
                                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl"></div>
 
                                 <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-6">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                                         <div>
-                                            <h3 className="text-xl font-bold text-white mb-1">Daily Expenses Trend</h3>
-                                            <p className="text-sm text-gray-400">Track your spending patterns over time</p>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                                                <span className="text-xs text-gray-400">Expenses</span>
-                                            </div>
+                                            <h3 className="text-xl font-bold text-white mb-1">Daily Expenses Trend by Account</h3>
+                                            <p className="text-sm text-gray-400">Track your spending patterns across all accounts</p>
                                         </div>
                                     </div>
 
@@ -1484,21 +1490,34 @@ export default function Home() {
                                         </div>
                                     ) : (
                                         <div className="bg-gray-900/30 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30">
-                                            <ResponsiveContainer width="100%" height={320}>
+                                            <ResponsiveContainer width="100%" height={380}>
                                                 <AreaChart data={dailyExpensesData} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
                                                     <defs>
-                                                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                                                            <stop offset="50%" stopColor="#8b5cf6" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.05} />
+                                                        {/* Gradients for each account */}
+                                                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
+                                                            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
                                                         </linearGradient>
-                                                        <filter id="glow">
-                                                            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                                            <feMerge>
-                                                                <feMergeNode in="coloredBlur" />
-                                                                <feMergeNode in="SourceGraphic" />
-                                                            </feMerge>
-                                                        </filter>
+                                                        <linearGradient id="colorAxis" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
+                                                        </linearGradient>
+                                                        <linearGradient id="colorSBI" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
+                                                        </linearGradient>
+                                                        <linearGradient id="colorCredit" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
+                                                        </linearGradient>
+                                                        <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.02} />
+                                                        </linearGradient>
+                                                        <linearGradient id="colorMutual" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.2} />
+                                                            <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} />
+                                                        </linearGradient>
                                                     </defs>
                                                     <CartesianGrid
                                                         strokeDasharray="3 3"
@@ -1534,32 +1553,79 @@ export default function Home() {
                                                         labelStyle={{
                                                             color: '#d1d5db',
                                                             fontWeight: '600',
-                                                            marginBottom: '4px'
+                                                            marginBottom: '8px'
                                                         }}
-                                                        itemStyle={{
-                                                            color: '#a5b4fc',
+                                                        formatter={(value: number) => formatIndianCurrency(value)}
+                                                        cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
+                                                    />
+                                                    <Legend
+                                                        verticalAlign="top"
+                                                        height={36}
+                                                        iconType="line"
+                                                        wrapperStyle={{
+                                                            paddingBottom: '20px',
+                                                            fontSize: '12px',
                                                             fontWeight: '500'
                                                         }}
-                                                        formatter={(value: number) => [formatIndianCurrency(value), 'Daily Expenses']}
-                                                        cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
+                                                    />
+
+                                                    {/* Total line */}
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="total"
+                                                        name="Total"
+                                                        stroke="#6366f1"
+                                                        strokeWidth={3}
+                                                        fill="url(#colorTotal)"
+                                                        strokeLinecap="round"
+                                                    />
+
+                                                    {/* Individual account lines */}
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="AXIS Bank"
+                                                        name="AXIS Bank"
+                                                        stroke="#10b981"
+                                                        strokeWidth={2}
+                                                        fill="url(#colorAxis)"
+                                                        strokeLinecap="round"
                                                     />
                                                     <Area
                                                         type="monotone"
-                                                        dataKey="expenses"
-                                                        stroke="url(#colorExpensesStroke)"
-                                                        strokeWidth={3}
-                                                        fillOpacity={1}
-                                                        fill="url(#colorExpenses)"
+                                                        dataKey="SBI Bank"
+                                                        name="SBI Bank"
+                                                        stroke="#f59e0b"
+                                                        strokeWidth={2}
+                                                        fill="url(#colorSBI)"
                                                         strokeLinecap="round"
-                                                        filter="url(#glow)"
                                                     />
-                                                    <defs>
-                                                        <linearGradient id="colorExpensesStroke" x1="0" y1="0" x2="1" y2="0">
-                                                            <stop offset="0%" stopColor="#6366f1" />
-                                                            <stop offset="50%" stopColor="#8b5cf6" />
-                                                            <stop offset="100%" stopColor="#a855f7" />
-                                                        </linearGradient>
-                                                    </defs>
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="Credit Card"
+                                                        name="Credit Card"
+                                                        stroke="#ef4444"
+                                                        strokeWidth={2}
+                                                        fill="url(#colorCredit)"
+                                                        strokeLinecap="round"
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="Cash"
+                                                        name="Cash"
+                                                        stroke="#8b5cf6"
+                                                        strokeWidth={2}
+                                                        fill="url(#colorCash)"
+                                                        strokeLinecap="round"
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="Mutual Fund"
+                                                        name="Mutual Fund"
+                                                        stroke="#06b6d4"
+                                                        strokeWidth={2}
+                                                        fill="url(#colorMutual)"
+                                                        strokeLinecap="round"
+                                                    />
                                                 </AreaChart>
                                             </ResponsiveContainer>
                                         </div>
