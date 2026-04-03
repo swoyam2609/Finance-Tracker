@@ -505,18 +505,23 @@ export default function Home() {
         }));
     };
 
-    // Calculate income vs expenses summary
+    // Calculate income vs expenses vs investment summary
     const getSummary = () => {
         const filtered = getFilteredExpenses();
         let totalIncome = 0;
         let totalExpenses = 0;
+        let totalInvestment = 0;
 
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
             // Exclude transfer transactions from income/expense calculations
             if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
                 if (amount >= 0) {
-                    totalIncome += amount;
+                    if (exp.Account === 'Mutual Fund') {
+                        totalInvestment += amount;
+                    } else {
+                        totalIncome += amount;
+                    }
                 } else {
                     totalExpenses += Math.abs(amount);
                 }
@@ -526,13 +531,14 @@ export default function Home() {
         return {
             totalIncome,
             totalExpenses,
+            totalInvestment,
             netSavings: totalIncome - totalExpenses,
             savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
         };
     };
 
-    // Generate sparkline data for income and expenses
-    const getSparklineData = (type: 'income' | 'expense') => {
+    // Generate sparkline data for income, expenses, and investment
+    const getSparklineData = (type: 'income' | 'expense' | 'investment') => {
         const filtered = getFilteredExpenses();
         if (filtered.length === 0) return '';
 
@@ -550,10 +556,12 @@ export default function Home() {
                 dailyData[exp.Date] = 0;
             }
 
-            if (type === 'income' && amount > 0) {
+            if (type === 'income' && amount > 0 && exp.Account !== 'Mutual Fund') {
                 dailyData[exp.Date] += amount;
             } else if (type === 'expense' && amount < 0) {
                 dailyData[exp.Date] += Math.abs(amount);
+            } else if (type === 'investment' && amount > 0 && exp.Account === 'Mutual Fund') {
+                dailyData[exp.Date] += amount;
             }
         });
 
@@ -593,6 +601,7 @@ export default function Home() {
     const summary = getSummary();
     const incomeSparkline = getSparklineData('income');
     const expenseSparkline = getSparklineData('expense');
+    const investmentSparkline = getSparklineData('investment');
 
     // Calculate daily expenses for chart with per-account breakdown
     const getDailyExpenses = () => {
@@ -884,8 +893,8 @@ export default function Home() {
                                     </div>
                                 </div>
 
-                                {/* Income/Expenses Summary Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                {/* Income/Investment/Expenses Summary Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                     {/* Income Card */}
                                     <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-green-900/40 via-green-800/30 to-green-900/40 border border-green-700/30 backdrop-blur-sm">
                                         <div className="relative z-10">
@@ -895,12 +904,12 @@ export default function Home() {
                                                     <p className="text-green-400 text-3xl font-bold">
                                                         {formatIndianCurrency(
                                                             expenses
-                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
+                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out' && expense.Account !== 'Mutual Fund')
                                                                 .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
                                                         )}
                                                     </p>
                                                     <p className="text-green-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out' && expense.Account !== 'Mutual Fund').length} transactions
                                                     </p>
                                                 </div>
                                                 <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -929,6 +938,57 @@ export default function Home() {
                                                             stroke="currentColor"
                                                             strokeWidth="2"
                                                             className="text-green-500/30"
+                                                            strokeDasharray="5,5"
+                                                        />
+                                                    )}
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Investment Card */}
+                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-blue-900/40 via-blue-800/30 to-blue-900/40 border border-blue-700/30 backdrop-blur-sm">
+                                        <div className="relative z-10">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex-1">
+                                                    <p className="text-blue-300/70 text-sm mb-2">Investment</p>
+                                                    <p className="text-blue-400 text-3xl font-bold">
+                                                        {formatIndianCurrency(
+                                                            expenses
+                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Account === 'Mutual Fund' && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
+                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
+                                                        )}
+                                                    </p>
+                                                    <p className="text-blue-300/50 text-xs mt-2">
+                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Account === 'Mutual Fund' && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
+                                                    </p>
+                                                </div>
+                                                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            {/* Sparkline */}
+                                            <div className="mt-6">
+                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                                    {investmentSparkline ? (
+                                                        <path
+                                                            d={investmentSparkline}
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-blue-500/60"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    ) : (
+                                                        <path
+                                                            d="M 0 25 L 200 25"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            className="text-blue-500/30"
                                                             strokeDasharray="5,5"
                                                         />
                                                     )}
@@ -1571,12 +1631,20 @@ export default function Home() {
                             </div>
 
                             {/* Summary Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                                 <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
                                     <div className="px-4 py-5 sm:p-6">
                                         <dt className="text-sm font-medium text-gray-400 truncate">Total Income</dt>
                                         <dd className="mt-1 text-2xl font-semibold text-green-600">
                                             {formatIndianCurrency(summary.totalIncome)}
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
+                                    <div className="px-4 py-5 sm:p-6">
+                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Investment</dt>
+                                        <dd className="mt-1 text-2xl font-semibold text-blue-600">
+                                            {formatIndianCurrency(summary.totalInvestment)}
                                         </dd>
                                     </div>
                                 </div>
