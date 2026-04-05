@@ -660,7 +660,7 @@ export default function Home() {
         <>
             <Head>
                 <title>Finance Tracker</title>
-                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230A84FF'/%3E%3Cpath d='M30 35 L45 35 L45 65 L30 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M52 25 L67 25 L67 65 L52 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M25 72 L75 72' stroke='white' stroke-width='3' stroke-linecap='round' opacity='0.9'/%3E%3C/svg%3E" />
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
             </Head>
 
             {/* Toast Notifications */}
