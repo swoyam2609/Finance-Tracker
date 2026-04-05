@@ -1,9 +1,9 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
 import {
     UtensilsCrossed,
     Car,
@@ -19,138 +19,122 @@ import {
     Plane,
     RefreshCw,
     Gift,
-    Wallet
+    Wallet,
+    X,
+    Plus,
+    TrendingUp,
+    CreditCard,
+    Banknote,
+    Building2,
+    Landmark,
+    CheckCircle2,
+    AlertCircle,
+    ArrowRightLeft,
+    ChevronRight,
 } from 'lucide-react';
 
 type Transaction = ExpenseData & { RowIndex?: number };
 type LoanTx = LoanTransaction & { RowIndex?: number };
+type Toast = { id: number; message: string; type: 'success' | 'error'; exiting?: boolean };
 
 // Indian currency formatting utility
 const formatIndianCurrency = (amount: number): string => {
     const isNegative = amount < 0;
     const absoluteAmount = Math.abs(amount);
-
-    // Convert to string and split by decimal
     const [integerPart, decimalPart] = absoluteAmount.toFixed(2).split('.');
-
-    // Add Indian comma formatting (last 3 digits, then every 2 digits)
     let formattedInteger = integerPart;
     if (integerPart.length > 3) {
         const lastThree = integerPart.slice(-3);
         const remaining = integerPart.slice(0, -3);
-
-        // Add commas every 2 digits for the remaining part
         const formattedRemaining = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
         formattedInteger = formattedRemaining + ',' + lastThree;
     }
-
     const formattedAmount = `₹${formattedInteger}.${decimalPart}`;
     return isNegative ? `-${formattedAmount}` : formattedAmount;
 };
 
-// Category icon mapping function
+// Category icon mapping
 const getCategoryIcon = (category: string, isPositive: boolean = false) => {
-    // Handle income/positive amounts
     if (isPositive) {
         return {
             icon: (
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-sys-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                 </svg>
             ),
-            bgColor: 'bg-green-500/20'
+            bgColor: 'bg-sys-green/15'
         };
     }
-
-    // Handle transfer categories
     if (category === 'Transfer Out') {
         return {
             icon: (
-                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-sys-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
             ),
-            bgColor: 'bg-red-500/20'
+            bgColor: 'bg-sys-red/15'
         };
     }
-
     if (category === 'Transfer In') {
         return {
             icon: (
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-sys-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8l4 4m0 0l4-4m-4 4v12" />
                 </svg>
             ),
-            bgColor: 'bg-green-500/20'
+            bgColor: 'bg-sys-green/15'
         };
     }
-
-    // Category-specific icons
     const categoryMap: { [key: string]: { icon: JSX.Element; bgColor: string } } = {
-        'Food & Dining': {
-            icon: <UtensilsCrossed className="w-5 h-5 text-orange-500" />,
-            bgColor: 'bg-orange-500/20'
-        },
-        'Transportation': {
-            icon: <Car className="w-5 h-5 text-blue-500" />,
-            bgColor: 'bg-blue-500/20'
-        },
-        'Shopping': {
-            icon: <ShoppingBag className="w-5 h-5 text-pink-500" />,
-            bgColor: 'bg-pink-500/20'
-        },
-        'Entertainment': {
-            icon: <Film className="w-5 h-5 text-purple-500" />,
-            bgColor: 'bg-purple-500/20'
-        },
-        'Bills & Utilities': {
-            icon: <Zap className="w-5 h-5 text-yellow-500" />,
-            bgColor: 'bg-yellow-500/20'
-        },
-        'Healthcare': {
-            icon: <Heart className="w-5 h-5 text-red-500" />,
-            bgColor: 'bg-red-500/20'
-        },
-        'Education': {
-            icon: <GraduationCap className="w-5 h-5 text-indigo-500" />,
-            bgColor: 'bg-indigo-500/20'
-        },
-        'Groceries': {
-            icon: <ShoppingCart className="w-5 h-5 text-green-500" />,
-            bgColor: 'bg-green-600/20'
-        },
-        'Rent': {
-            icon: <HomeIcon className="w-5 h-5 text-amber-600" />,
-            bgColor: 'bg-amber-600/20'
-        },
-        'Insurance': {
-            icon: <Shield className="w-5 h-5 text-teal-500" />,
-            bgColor: 'bg-teal-500/20'
-        },
-        'Personal Care': {
-            icon: <Sparkles className="w-5 h-5 text-pink-400" />,
-            bgColor: 'bg-pink-400/20'
-        },
-        'Travel': {
-            icon: <Plane className="w-5 h-5 text-cyan-500" />,
-            bgColor: 'bg-cyan-500/20'
-        },
-        'Subscriptions': {
-            icon: <RefreshCw className="w-5 h-5 text-violet-500" />,
-            bgColor: 'bg-violet-500/20'
-        },
-        'Gifts': {
-            icon: <Gift className="w-5 h-5 text-rose-500" />,
-            bgColor: 'bg-rose-500/20'
-        },
-        'Other': {
-            icon: <Wallet className="w-5 h-5 text-gray-500" />,
-            bgColor: 'bg-gray-500/20'
-        }
+        'Food & Dining': { icon: <UtensilsCrossed className="w-5 h-5 text-sys-orange" />, bgColor: 'bg-sys-orange/15' },
+        'Transportation': { icon: <Car className="w-5 h-5 text-sys-blue" />, bgColor: 'bg-sys-blue/15' },
+        'Shopping': { icon: <ShoppingBag className="w-5 h-5 text-sys-pink" />, bgColor: 'bg-sys-pink/15' },
+        'Entertainment': { icon: <Film className="w-5 h-5 text-sys-purple" />, bgColor: 'bg-sys-purple/15' },
+        'Bills & Utilities': { icon: <Zap className="w-5 h-5 text-sys-yellow" />, bgColor: 'bg-sys-yellow/15' },
+        'Healthcare': { icon: <Heart className="w-5 h-5 text-sys-red" />, bgColor: 'bg-sys-red/15' },
+        'Education': { icon: <GraduationCap className="w-5 h-5 text-sys-indigo" />, bgColor: 'bg-sys-indigo/15' },
+        'Groceries': { icon: <ShoppingCart className="w-5 h-5 text-sys-green" />, bgColor: 'bg-sys-green/15' },
+        'Rent': { icon: <HomeIcon className="w-5 h-5 text-sys-orange" />, bgColor: 'bg-sys-orange/15' },
+        'Insurance': { icon: <Shield className="w-5 h-5 text-sys-teal" />, bgColor: 'bg-sys-teal/15' },
+        'Personal Care': { icon: <Sparkles className="w-5 h-5 text-sys-pink" />, bgColor: 'bg-sys-pink/15' },
+        'Travel': { icon: <Plane className="w-5 h-5 text-sys-cyan" />, bgColor: 'bg-sys-cyan/15' },
+        'Subscriptions': { icon: <RefreshCw className="w-5 h-5 text-sys-purple" />, bgColor: 'bg-sys-purple/15' },
+        'Gifts': { icon: <Gift className="w-5 h-5 text-sys-pink" />, bgColor: 'bg-sys-pink/15' },
+        'Other': { icon: <Wallet className="w-5 h-5 text-sys-label-secondary" />, bgColor: 'bg-sys-fill/50' }
     };
-
     return categoryMap[category] || categoryMap['Other'];
 };
+
+const getAccountIcon = (account: string) => {
+    switch (account) {
+        case 'AXIS Bank': return { icon: <Building2 className="w-5 h-5" />, color: 'text-sys-pink', bg: 'bg-sys-pink/15' };
+        case 'SBI Bank': return { icon: <Landmark className="w-5 h-5" />, color: 'text-sys-blue', bg: 'bg-sys-blue/15' };
+        case 'Credit Card': return { icon: <CreditCard className="w-5 h-5" />, color: 'text-sys-orange', bg: 'bg-sys-orange/15' };
+        case 'Cash': return { icon: <Banknote className="w-5 h-5" />, color: 'text-sys-green', bg: 'bg-sys-green/15' };
+        case 'Mutual Fund': return { icon: <TrendingUp className="w-5 h-5" />, color: 'text-sys-purple', bg: 'bg-sys-purple/15' };
+        default: return { icon: <Wallet className="w-5 h-5" />, color: 'text-sys-label-secondary', bg: 'bg-sys-fill/50' };
+    }
+};
+
+// Animated counter hook
+function useAnimatedCounter(target: number, duration: number = 1200) {
+    const [value, setValue] = useState(0);
+    const prevTarget = useRef(0);
+    useEffect(() => {
+        const start = prevTarget.current;
+        prevTarget.current = target;
+        const startTime = performance.now();
+        const tick = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(start + (target - start) * eased);
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }, [target, duration]);
+    return value;
+}
 
 export default function Home() {
     const router = useRouter();
@@ -173,17 +157,13 @@ export default function Home() {
     // Edit modal state
     const [editOpen, setEditOpen] = useState(false);
     const [editData, setEditData] = useState<ExpenseData>({
-        Date: '',
-        Account: '',
-        Category: '',
-        Description: '',
-        Amount: '',
+        Date: '', Account: '', Category: '', Description: '', Amount: '',
     });
     const [editIsIncome, setEditIsIncome] = useState(false);
     const [editRowIndex, setEditRowIndex] = useState<number | null>(null);
     const [updating, setUpdating] = useState(false);
 
-    // Analytics tab state
+    // Tab & analytics state
     const [activeTab, setActiveTab] = useState<'transactions' | 'transfers' | 'analytics' | 'loans'>('transactions');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
 
@@ -192,10 +172,7 @@ export default function Home() {
     const [loansLoading, setLoansLoading] = useState(false);
     const [loanFormData, setLoanFormData] = useState<LoanTransaction>({
         Date: new Date().toISOString().split('T')[0],
-        PersonName: '',
-        TransactionType: 'LENT',
-        Amount: '',
-        Description: '',
+        PersonName: '', TransactionType: 'LENT', Amount: '', Description: '',
     });
     const [loanSubmitting, setLoanSubmitting] = useState(false);
     const [selectedPerson, setSelectedPerson] = useState<string>('');
@@ -203,10 +180,7 @@ export default function Home() {
     // Transfer state
     const [transferFormData, setTransferFormData] = useState<TransferData>({
         Date: new Date().toISOString().split('T')[0],
-        FromAccount: 'AXIS Bank',
-        ToAccount: 'SBI Bank',
-        Amount: '',
-        Description: '',
+        FromAccount: 'AXIS Bank', ToAccount: 'SBI Bank', Amount: '', Description: '',
     });
     const [transferSubmitting, setTransferSubmitting] = useState(false);
 
@@ -214,19 +188,33 @@ export default function Home() {
     const [showAllTransactions, setShowAllTransactions] = useState(false);
     const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>('All Accounts');
 
+    // New UI state
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [toasts, setToasts] = useState<Toast[]>([]);
+    const [mounted, setMounted] = useState(false);
+    const toastCounter = useRef(0);
+
+    // Toast helper
+    const addToast = useCallback((message: string, type: 'success' | 'error') => {
+        const id = ++toastCounter.current;
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+            setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
+            setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 300);
+        }, 3000);
+    }, []);
+
+    // Mount animation
+    useEffect(() => { setMounted(true); }, []);
+
     // Redirect to login if not authenticated
     useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/login');
-        }
+        if (status === 'unauthenticated') router.push('/login');
     }, [status, router]);
 
-    // Fetch expenses
+    // Fetch data
     useEffect(() => {
-        if (status === 'authenticated') {
-            fetchExpenses();
-            fetchLoansData();
-        }
+        if (status === 'authenticated') { fetchExpenses(); fetchLoansData(); }
     }, [status]);
 
     const fetchExpenses = async () => {
@@ -234,11 +222,7 @@ export default function Home() {
             setLoading(true);
             setError('');
             const response = await fetch('/api/expenses/get');
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch expenses');
-            }
-
+            if (!response.ok) throw new Error('Failed to fetch expenses');
             const data = await response.json();
             setExpenses(data);
         } catch (err) {
@@ -252,179 +236,124 @@ export default function Home() {
         e.preventDefault();
         setSubmitting(true);
         setError('');
-
         try {
-            // Prepare data with correct amount sign
             const amount = parseFloat(formData.Amount);
             const signedAmount = isIncome ? Math.abs(amount) : -Math.abs(amount);
-
             const dataToSend = {
                 ...formData,
                 Amount: signedAmount.toString(),
                 Category: isIncome ? 'Income' : formData.Category,
             };
-
             const response = await fetch('/api/expenses/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToSend),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to add transaction');
             }
-
-            // Reset form
-            setFormData({
-                Date: new Date().toISOString().split('T')[0],
-                Account: 'AXIS Bank',
-                Category: '',
-                Description: '',
-                Amount: '',
-            });
+            setFormData({ Date: new Date().toISOString().split('T')[0], Account: 'AXIS Bank', Category: '', Description: '', Amount: '' });
             setIsIncome(false);
-
-            // Refresh expenses list
+            setDrawerOpen(false);
+            addToast(isIncome ? 'Income added successfully!' : 'Expense added successfully!', 'success');
             await fetchExpenses();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add transaction');
+            addToast(err instanceof Error ? err.message : 'Failed to add transaction', 'error');
         } finally {
             setSubmitting(false);
         }
     };
 
-    // Fetch loans
     const fetchLoansData = async () => {
         try {
             setLoansLoading(true);
             const response = await fetch('/api/loans/get');
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch loans');
-            }
-
+            if (!response.ok) throw new Error('Failed to fetch loans');
             const data = await response.json();
             setLoans(data);
         } catch (err) {
             console.error('Error fetching loans:', err);
-            // Don't set error for loans, just log it
         } finally {
             setLoansLoading(false);
         }
     };
 
-    // Handle loan transaction submit
     const handleLoanSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoanSubmitting(true);
         setError('');
-
         try {
             const response = await fetch('/api/loans/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loanFormData),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to add loan transaction');
             }
-
-            // Reset form
-            setLoanFormData({
-                Date: new Date().toISOString().split('T')[0],
-                PersonName: '',
-                TransactionType: 'LENT',
-                Amount: '',
-                Description: '',
-            });
+            setLoanFormData({ Date: new Date().toISOString().split('T')[0], PersonName: '', TransactionType: 'LENT', Amount: '', Description: '' });
             setSelectedPerson('');
-
-            // Refresh loans list
+            addToast('Loan transaction added!', 'success');
             await fetchLoansData();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add loan transaction');
+            addToast(err instanceof Error ? err.message : 'Failed to add loan transaction', 'error');
         } finally {
             setLoanSubmitting(false);
         }
     };
 
-    // Handle transfer form submission
     const handleTransferSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setTransferSubmitting(true);
         setError('');
-
         try {
             const response = await fetch('/api/transfers/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(transferFormData),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to record transfer');
             }
-
-            // Reset form
-            setTransferFormData({
-                Date: new Date().toISOString().split('T')[0],
-                FromAccount: 'AXIS Bank',
-                ToAccount: 'SBI Bank',
-                Amount: '',
-                Description: '',
-            });
-
-            // Refresh transactions list
+            setTransferFormData({ Date: new Date().toISOString().split('T')[0], FromAccount: 'AXIS Bank', ToAccount: 'SBI Bank', Amount: '', Description: '' });
+            addToast('Transfer recorded successfully!', 'success');
             await fetchExpenses();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to record transfer');
+            addToast(err instanceof Error ? err.message : 'Failed to record transfer', 'error');
         } finally {
             setTransferSubmitting(false);
         }
     };
 
-    // Filter transactions by account
+    // ── Computed data ──
+
     const getFilteredTransactions = () => {
         let filtered = expenses;
-
-        // Apply account filter
         if (selectedAccountFilter !== 'All Accounts') {
             filtered = filtered.filter(expense => expense.Account === selectedAccountFilter);
         }
-
-        // Apply view limit
         const sortedTransactions = filtered.slice().reverse();
         return showAllTransactions ? sortedTransactions : sortedTransactions.slice(0, 10);
     };
 
-    // Calculate account balances
     const calculateBalances = () => {
         const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
         const balances: { [key: string]: number } = {};
-
         accounts.forEach(account => {
             balances[account] = expenses
                 .filter(exp => exp.Account === account)
                 .reduce((sum, exp) => sum + parseFloat(exp.Amount || '0'), 0);
         });
-
         return balances;
     };
 
     const balances = calculateBalances();
     const totalBalance = Object.values(balances).reduce((sum, val) => sum + val, 0);
+    const animatedBalance = useAnimatedCounter(totalBalance);
 
-    // Get available months from expenses
     const getAvailableMonths = () => {
         const months = new Set<string>();
         expenses.forEach(exp => {
@@ -437,11 +366,8 @@ export default function Home() {
         return Array.from(months).sort().reverse();
     };
 
-    // Filter expenses by selected period
     const getFilteredExpenses = () => {
-        if (selectedPeriod === 'overall') {
-            return expenses;
-        }
+        if (selectedPeriod === 'overall') return expenses;
         return expenses.filter(exp => {
             if (!exp.Date) return false;
             const date = new Date(exp.Date);
@@ -450,148 +376,85 @@ export default function Home() {
         });
     };
 
-    // Calculate category distribution
     const getCategoryDistribution = () => {
         const filtered = getFilteredExpenses();
         const categoryTotals: { [key: string]: number } = {};
         let totalExpenses = 0;
-
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            // Exclude income, transfers, and only count negative amounts (actual expenses)
-            if (amount < 0 && exp.Category &&
-                exp.Category !== 'Income' &&
-                exp.Category !== 'Transfer Out' &&
-                exp.Category !== 'Transfer In') {
+            if (amount < 0 && exp.Category && exp.Category !== 'Income' && exp.Category !== 'Transfer Out' && exp.Category !== 'Transfer In') {
                 categoryTotals[exp.Category] = (categoryTotals[exp.Category] || 0) + Math.abs(amount);
                 totalExpenses += Math.abs(amount);
             }
         });
-
         return Object.entries(categoryTotals)
-            .map(([category, amount]) => ({
-                category,
-                amount,
-                percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
-            }))
+            .map(([category, amount]) => ({ category, amount, percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0 }))
             .sort((a, b) => b.amount - a.amount);
     };
 
-    // Calculate account distribution
     const getAccountDistribution = () => {
         const filtered = getFilteredExpenses();
         const accountTotals: { [key: string]: { income: number; expenses: number } } = {};
-
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            // Exclude transfer transactions from account distribution
             if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
-                if (!accountTotals[exp.Account]) {
-                    accountTotals[exp.Account] = { income: 0, expenses: 0 };
-                }
-                if (amount >= 0) {
-                    accountTotals[exp.Account].income += amount;
-                } else {
-                    accountTotals[exp.Account].expenses += Math.abs(amount);
-                }
+                if (!accountTotals[exp.Account]) accountTotals[exp.Account] = { income: 0, expenses: 0 };
+                if (amount >= 0) accountTotals[exp.Account].income += amount;
+                else accountTotals[exp.Account].expenses += Math.abs(amount);
             }
         });
-
         return Object.entries(accountTotals).map(([account, data]) => ({
-            account,
-            income: data.income,
-            expenses: data.expenses,
-            net: data.income - data.expenses,
+            account, income: data.income, expenses: data.expenses, net: data.income - data.expenses,
         }));
     };
 
-    // Calculate income vs expenses vs investment summary
     const getSummary = () => {
         const filtered = getFilteredExpenses();
-        let totalIncome = 0;
-        let totalExpenses = 0;
-        let totalInvestment = 0;
-
+        let totalIncome = 0, totalExpenses = 0, totalInvestment = 0;
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            // Exclude transfer transactions from income/expense calculations
             if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
                 if (amount >= 0) {
-                    if (exp.Account === 'Mutual Fund') {
-                        totalInvestment += amount;
-                    } else {
-                        totalIncome += amount;
-                    }
-                } else {
-                    totalExpenses += Math.abs(amount);
-                }
+                    if (exp.Account === 'Mutual Fund') totalInvestment += amount;
+                    else totalIncome += amount;
+                } else totalExpenses += Math.abs(amount);
             }
         });
-
         return {
-            totalIncome,
-            totalExpenses,
-            totalInvestment,
+            totalIncome, totalExpenses, totalInvestment,
             netSavings: totalIncome - totalExpenses,
             savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
         };
     };
 
-    // Generate sparkline data for income, expenses, and investment
     const getSparklineData = (type: 'income' | 'expense' | 'investment') => {
         const filtered = getFilteredExpenses();
         if (filtered.length === 0) return '';
-
-        // Group by date
         const dailyData: { [key: string]: number } = {};
-
         filtered.forEach(exp => {
             if (!exp.Date) return;
             const amount = parseFloat(exp.Amount || '0');
-
-            // Exclude transfers
             if (exp.Category === 'Transfer In' || exp.Category === 'Transfer Out') return;
-
-            if (!dailyData[exp.Date]) {
-                dailyData[exp.Date] = 0;
-            }
-
-            if (type === 'income' && amount > 0 && exp.Account !== 'Mutual Fund') {
-                dailyData[exp.Date] += amount;
-            } else if (type === 'expense' && amount < 0) {
-                dailyData[exp.Date] += Math.abs(amount);
-            } else if (type === 'investment' && amount > 0 && exp.Account === 'Mutual Fund') {
-                dailyData[exp.Date] += amount;
-            }
+            if (!dailyData[exp.Date]) dailyData[exp.Date] = 0;
+            if (type === 'income' && amount > 0 && exp.Account !== 'Mutual Fund') dailyData[exp.Date] += amount;
+            else if (type === 'expense' && amount < 0) dailyData[exp.Date] += Math.abs(amount);
+            else if (type === 'investment' && amount > 0 && exp.Account === 'Mutual Fund') dailyData[exp.Date] += amount;
         });
-
-        // Sort dates and get values
         const sortedDates = Object.keys(dailyData).sort();
         if (sortedDates.length === 0) return '';
-
         const values = sortedDates.map(date => dailyData[date]);
-
-        // Limit to last 30 days for better visualization
         const recentValues = values.slice(-30);
         if (recentValues.length === 0) return '';
-
-        // Find min and max for scaling
         const max = Math.max(...recentValues);
         const min = Math.min(...recentValues);
         const range = max - min || 1;
-
-        // Generate SVG path
-        const width = 200;
-        const height = 50;
-        const padding = 5;
+        const width = 200, height = 50, padding = 5;
         const step = width / (recentValues.length - 1 || 1);
-
         const points = recentValues.map((value, index) => {
             const x = index * step;
             const y = height - padding - ((value - min) / range) * (height - 2 * padding);
             return `${x},${y}`;
         });
-
         return `M ${points.join(' L ')}`;
     };
 
@@ -603,115 +466,68 @@ export default function Home() {
     const expenseSparkline = getSparklineData('expense');
     const investmentSparkline = getSparklineData('investment');
 
-    // Calculate daily expenses for chart with per-account breakdown
     const getDailyExpenses = () => {
         const filtered = getFilteredExpenses();
         if (filtered.length === 0) return [];
-
         const accounts = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
         const dailyData: { [key: string]: any } = {};
-
-        // Collect all transaction data
         filtered.forEach(exp => {
             if (!exp.Date) return;
-
             const date = exp.Date;
             const amount = parseFloat(exp.Amount || '0');
             const account = exp.Account;
-
-            // Exclude transfer transactions from daily chart
             if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
                 if (!dailyData[date]) {
                     dailyData[date] = { date, total: 0 };
-                    accounts.forEach(acc => {
-                        dailyData[date][acc] = 0;
-                    });
+                    accounts.forEach(acc => { dailyData[date][acc] = 0; });
                 }
-
-                // Only count expenses (negative amounts)
                 if (amount < 0) {
                     const absAmount = Math.abs(amount);
                     dailyData[date].total += absAmount;
-                    if (accounts.includes(account)) {
-                        dailyData[date][account] += absAmount;
-                    }
+                    if (accounts.includes(account)) dailyData[date][account] += absAmount;
                 }
             }
         });
-
-        // Find min and max dates
         const dates = Object.keys(dailyData).sort();
         if (dates.length === 0) return [];
-
         const minDate = new Date(dates[0]);
         const maxDate = new Date(dates[dates.length - 1]);
-
-        // Fill in missing dates
         const allDates: any[] = [];
         const currentDate = new Date(minDate);
-
         while (currentDate <= maxDate) {
             const dateStr = currentDate.toISOString().split('T')[0];
             const data = dailyData[dateStr];
-
             const dataPoint: any = {
                 date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                fullDate: dateStr,
-                total: data ? data.total : 0,
+                fullDate: dateStr, total: data ? data.total : 0,
             };
-
-            accounts.forEach(account => {
-                dataPoint[account] = data ? data[account] : 0;
-            });
-
+            accounts.forEach(account => { dataPoint[account] = data ? data[account] : 0; });
             allDates.push(dataPoint);
             currentDate.setDate(currentDate.getDate() + 1);
         }
-
         return allDates;
     };
 
     const dailyExpensesData = getDailyExpenses();
 
-    // Calculate loans summary per person
     const getLoansSummary = () => {
         const personBalances: { [key: string]: number } = {};
-
         loans.forEach(loan => {
             const amount = parseFloat(loan.Amount || '0');
-            if (!personBalances[loan.PersonName]) {
-                personBalances[loan.PersonName] = 0;
-            }
-
-            // LENT and ADDITIONAL_LOAN increase the amount owed to you (positive)
-            // RECEIVED decreases the amount owed (negative)
-            if (loan.TransactionType === 'LENT' || loan.TransactionType === 'ADDITIONAL_LOAN') {
-                personBalances[loan.PersonName] += amount;
-            } else if (loan.TransactionType === 'RECEIVED') {
-                personBalances[loan.PersonName] -= amount;
-            }
+            if (!personBalances[loan.PersonName]) personBalances[loan.PersonName] = 0;
+            if (loan.TransactionType === 'LENT' || loan.TransactionType === 'ADDITIONAL_LOAN') personBalances[loan.PersonName] += amount;
+            else if (loan.TransactionType === 'RECEIVED') personBalances[loan.PersonName] -= amount;
         });
-
-        return Object.entries(personBalances)
-            .map(([person, balance]) => ({ person, balance }))
-            .sort((a, b) => b.balance - a.balance);
+        return Object.entries(personBalances).map(([person, balance]) => ({ person, balance })).sort((a, b) => b.balance - a.balance);
     };
 
-    // Get transactions for a specific person
     const getPersonTransactions = (personName: string) => {
-        return loans
-            .filter(loan => loan.PersonName === personName)
-            .sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
+        return loans.filter(loan => loan.PersonName === personName).sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
     };
 
-    // Get unique person names
     const getUniquePersons = () => {
         const persons = new Set<string>();
-        loans.forEach(loan => {
-            if (loan.PersonName) {
-                persons.add(loan.PersonName);
-            }
-        });
+        loans.forEach(loan => { if (loan.PersonName) persons.add(loan.PersonName); });
         return Array.from(persons).sort();
     };
 
@@ -719,96 +535,316 @@ export default function Home() {
     const totalLent = loansSummary.reduce((sum, item) => sum + Math.max(0, item.balance), 0);
     const uniquePersons = getUniquePersons();
 
-    // Open edit modal with selected transaction
+    // Date grouping helper
+    const groupTransactionsByDate = (transactions: Transaction[]) => {
+        const groups: { label: string; dateKey: string; transactions: Transaction[] }[] = [];
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const groupMap: { [key: string]: Transaction[] } = {};
+        transactions.forEach(tx => {
+            const key = tx.Date || 'unknown';
+            if (!groupMap[key]) groupMap[key] = [];
+            groupMap[key].push(tx);
+        });
+        Object.keys(groupMap).sort().reverse().forEach(dateKey => {
+            let label = dateKey;
+            if (dateKey === today) label = 'Today';
+            else if (dateKey === yesterday) label = 'Yesterday';
+            else {
+                try {
+                    label = new Date(dateKey).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+                } catch { label = dateKey; }
+            }
+            groups.push({ label, dateKey, transactions: groupMap[dateKey] });
+        });
+        return groups;
+    };
+
+    // Edit modal handlers
     const openEditModal = (tx: Transaction) => {
         const numericAmount = parseFloat(tx.Amount || '0');
         setEditRowIndex(typeof tx.RowIndex === 'number' ? tx.RowIndex : null);
-        setEditData({
-            Date: tx.Date,
-            Account: tx.Account,
-            Category: tx.Category,
-            Description: tx.Description,
-            Amount: Math.abs(numericAmount).toString(),
-        });
+        setEditData({ Date: tx.Date, Account: tx.Account, Category: tx.Category, Description: tx.Description, Amount: Math.abs(numericAmount).toString() });
         setEditIsIncome(numericAmount >= 0);
         setEditOpen(true);
     };
 
-    const closeEditModal = () => {
-        setEditOpen(false);
-        setUpdating(false);
-    };
+    const closeEditModal = () => { setEditOpen(false); setUpdating(false); };
 
     const handleUpdate = async (e: FormEvent) => {
         e.preventDefault();
         if (editRowIndex === null) return;
         setUpdating(true);
         setError('');
-
         try {
             const amount = parseFloat(editData.Amount);
             const signedAmount = editIsIncome ? Math.abs(amount) : -Math.abs(amount);
-
             const payload = {
                 rowIndex: editRowIndex,
-                expenseData: {
-                    ...editData,
-                    Amount: signedAmount.toString(),
-                    Category: editIsIncome ? 'Income' : editData.Category,
-                },
+                expenseData: { ...editData, Amount: signedAmount.toString(), Category: editIsIncome ? 'Income' : editData.Category },
             };
-
             const response = await fetch('/api/expenses/update', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to update transaction');
             }
-
             closeEditModal();
+            addToast('Transaction updated!', 'success');
             await fetchExpenses();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update transaction');
+            addToast(err instanceof Error ? err.message : 'Failed to update transaction', 'error');
         } finally {
             setUpdating(false);
         }
     };
 
+    // ── Loading / Auth states ──
+
     if (status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0)) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-400">Loading...</p>
+            <div className="min-h-screen bg-sys-bg">
+                <div className="bg-sys-bg/80 backdrop-blur-xl border-b border-sys-separator">
+                    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+                        <div className="skeleton h-7 w-40 rounded-lg" />
+                        <div className="skeleton h-7 w-20 rounded-lg" />
+                    </div>
                 </div>
+                <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="skeleton h-5 w-32 rounded mb-3" />
+                    <div className="skeleton h-12 w-64 rounded-lg mb-8" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                        {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+                        {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+                    </div>
+                    <div className="skeleton h-80 rounded-2xl" />
+                </main>
             </div>
         );
     }
 
-    if (status === 'unauthenticated') {
-        return null;
-    }
+    if (status === 'unauthenticated') return null;
+
+    const filteredTxns = getFilteredTransactions();
+    const groupedTxns = groupTransactionsByDate(filteredTxns);
+
+    const tabs = [
+        { key: 'transactions' as const, label: 'Transactions' },
+        { key: 'transfers' as const, label: 'Transfers' },
+        { key: 'analytics' as const, label: 'Analytics' },
+        { key: 'loans' as const, label: 'Loans' },
+    ];
+
+    const categories = [
+        'Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities',
+        'Healthcare', 'Education', 'Groceries', 'Rent', 'Insurance', 'Personal Care',
+        'Travel', 'Subscriptions', 'Gifts', 'Other',
+    ];
+
+    const accountsList = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
+
+    // Spinner component
+    const Spinner = () => (
+        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+    );
 
     return (
         <>
             <Head>
-                <title>Dashboard - Expense Tracker</title>
-                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%239333ea;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Cpath d='M30 35 L45 35 L45 65 L30 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M52 25 L67 25 L67 65 L52 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M25 72 L75 72' stroke='white' stroke-width='3' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M35 72 L35 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M50 72 L50 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Cpath d='M65 72 L65 78' stroke='white' stroke-width='2' stroke-linecap='round' opacity='0.9'/%3E%3Ccircle cx='75' cy='30' r='8' fill='%2310b981'/%3E%3Cpath d='M75 26 L75 34 M71 30 L79 30' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+                <title>Finance Tracker</title>
+                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230A84FF'/%3E%3Cpath d='M30 35 L45 35 L45 65 L30 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M52 25 L67 25 L67 65 L52 65 Z' fill='white' opacity='0.9'/%3E%3Cpath d='M25 72 L75 72' stroke='white' stroke-width='3' stroke-linecap='round' opacity='0.9'/%3E%3C/svg%3E" />
             </Head>
-            <div className="min-h-screen bg-gray-900">
+
+            {/* Toast Notifications */}
+            <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+                {toasts.map(toast => (
+                    <div
+                        key={toast.id}
+                        className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl backdrop-blur-xl shadow-lg ${
+                            toast.exiting ? 'animate-toast-out' : 'animate-toast-in'
+                        } ${
+                            toast.type === 'success'
+                                ? 'bg-sys-green/15 text-sys-green'
+                                : 'bg-sys-red/15 text-sys-red'
+                        }`}
+                    >
+                        {toast.type === 'success'
+                            ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                            : <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        }
+                        <span className="text-sm font-medium">{toast.message}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Drawer Backdrop */}
+            {drawerOpen && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in-fast"
+                    onClick={() => setDrawerOpen(false)}
+                />
+            )}
+
+            {/* Add Transaction Drawer */}
+            <div className={`fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-sys-bg border-l border-sys-separator shadow-2xl overflow-y-auto transition-transform duration-300 ease-out ${
+                drawerOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}>
+                <div className="p-6">
+                    {/* Drawer Header */}
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold text-sys-label">New Transaction</h2>
+                        <button
+                            onClick={() => setDrawerOpen(false)}
+                            className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center transition-colors active:bg-sys-fill"
+                        >
+                            <X className="w-4 h-4 text-sys-label-secondary" />
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Income/Expense Segmented Control */}
+                        <div className="bg-sys-elevated rounded-xl p-1 flex">
+                            <button
+                                type="button"
+                                onClick={() => setIsIncome(false)}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                                    !isIncome ? 'bg-sys-red text-white shadow-sm' : 'text-sys-label-secondary'
+                                }`}
+                            >
+                                Expense
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsIncome(true)}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                                    isIncome ? 'bg-sys-green text-white shadow-sm' : 'text-sys-label-secondary'
+                                }`}
+                            >
+                                Income
+                            </button>
+                        </div>
+
+                        {/* Amount */}
+                        <div>
+                            <label className="text-sm font-medium text-sys-label-secondary mb-2 block">Amount</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-5">
+                                    <span className="text-sys-label-secondary text-2xl font-bold">₹</span>
+                                </div>
+                                <input
+                                    type="number"
+                                    required
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full pl-14 pr-4 py-5 bg-sys-card text-sys-label rounded-2xl focus:outline-none focus:ring-2 focus:ring-sys-blue/50 transition-all text-3xl font-bold placeholder-sys-label-tertiary"
+                                    value={formData.Amount}
+                                    onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Grouped Inputs */}
+                        <div className="apple-card overflow-hidden">
+                            <div>
+                                <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
+                                    value={formData.Date}
+                                    onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
+                                    style={{ colorScheme: 'dark' }}
+                                />
+                            </div>
+                            <div className="border-t border-sys-separator ml-4" />
+                            <div>
+                                <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Account</label>
+                                <select
+                                    required
+                                    className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                    value={formData.Account}
+                                    onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
+                                >
+                                    {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                                </select>
+                            </div>
+                            {!isIncome && (
+                                <>
+                                    <div className="border-t border-sys-separator ml-4" />
+                                    <div className="animate-fade-in">
+                                        <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Category</label>
+                                        <select
+                                            required
+                                            className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                            value={formData.Category}
+                                            onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                        >
+                                            <option value="">Select category</option>
+                                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+                            <div className="border-t border-sys-separator ml-4" />
+                            <div>
+                                <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none placeholder-sys-label-tertiary"
+                                    value={formData.Description}
+                                    onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+                                    placeholder="Optional"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="w-full bg-sys-blue text-white font-semibold py-4 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-[17px]"
+                        >
+                            {submitting ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Spinner />
+                                    Adding...
+                                </span>
+                            ) : (
+                                isIncome ? 'Add Income' : 'Add Expense'
+                            )}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {/* FAB */}
+            <button
+                onClick={() => setDrawerOpen(true)}
+                className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-sys-blue text-white shadow-lg shadow-sys-blue/30 flex items-center justify-center transition-all active:scale-90 ${
+                    mounted ? 'animate-scale-in delay-500' : 'opacity-0'
+                } ${drawerOpen || editOpen ? 'opacity-0 pointer-events-none scale-50' : ''}`}
+            >
+                <Plus className="w-6 h-6" />
+            </button>
+
+            <div className="min-h-screen bg-sys-bg">
                 {/* Header */}
-                <header className="bg-gray-800 shadow-lg border-b border-gray-700">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                        <h1 className="text-2xl font-bold text-gray-100">Expense Tracker</h1>
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-400">{session?.user?.email}</span>
+                <header className="sticky top-0 z-30 bg-sys-bg/80 backdrop-blur-xl border-b border-sys-separator">
+                    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+                        <h1 className="text-[17px] font-semibold text-sys-label">Finance Tracker</h1>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs text-sys-label-tertiary hidden sm:block">{session?.user?.email}</span>
                             <button
                                 onClick={() => signOut()}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                className="text-sys-red text-sm font-medium transition-opacity active:opacity-60"
                             >
                                 Sign Out
                             </button>
@@ -816,1701 +852,751 @@ export default function Home() {
                     </div>
                 </header>
 
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {/* Tab Navigation */}
-                    <div className="mb-6">
-                        <div className="border-b border-gray-700">
-                            <nav className="-mb-px flex space-x-4 sm:space-x-8">
+                <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+                    {/* Segmented Control */}
+                    <div className={`mb-8 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}>
+                        <div className="bg-sys-elevated rounded-xl p-1 flex">
+                            {tabs.map(tab => (
                                 <button
-                                    onClick={() => setActiveTab('transactions')}
-                                    className={`${activeTab === 'transactions'
-                                        ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
+                                    className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                                        activeTab === tab.key
+                                            ? 'bg-sys-fill text-sys-label shadow-sm'
+                                            : 'text-sys-label-secondary'
+                                    }`}
                                 >
-                                    Transactions
+                                    {tab.label}
                                 </button>
-                                <button
-                                    onClick={() => setActiveTab('transfers')}
-                                    className={`${activeTab === 'transfers'
-                                        ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-                                >
-                                    Transfers
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('analytics')}
-                                    className={`${activeTab === 'analytics'
-                                        ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-                                >
-                                    Analytics
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('loans')}
-                                    className={`${activeTab === 'loans'
-                                        ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-                                >
-                                    Loans
-                                </button>
-                            </nav>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Error */}
                     {error && (
-                        <div className="mb-6 rounded-md bg-red-900/50 border border-red-700 p-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm font-medium text-red-200">{error}</p>
-                                </div>
-                            </div>
+                        <div className="mb-6 apple-card p-4 animate-scale-in flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-sys-red flex-shrink-0" />
+                            <p className="text-sm text-sys-red flex-1">{error}</p>
+                            <button onClick={() => setError('')}>
+                                <X className="w-4 h-4 text-sys-label-secondary" />
+                            </button>
                         </div>
                     )}
 
+                    {/* ═══ TRANSACTIONS TAB ═══ */}
                     {activeTab === 'transactions' && (
-                        <>
-                            {/* Dashboard Header */}
-                            <div className="mb-8">
-                                {/* Large Balance Display */}
-                                <div className="text-left mb-6">
-                                    <h1 className="text-5xl font-bold text-white mb-2">
-                                        {formatIndianCurrency(totalBalance)}
-                                    </h1>
-                                    <p className="text-gray-400 text-lg">Total Balance</p>
-                                    <div className="flex items-center mt-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                        <span className="text-sm text-gray-400">Open an account or deposit</span>
+                        <div className={mounted ? 'animate-fade-in' : 'opacity-0'}>
+                            {/* Balance */}
+                            <div className="mb-8 animate-slide-up">
+                                <p className="text-sm text-sys-label-secondary font-medium mb-1">Total Balance</p>
+                                <h2 className="text-4xl sm:text-5xl font-bold text-sys-label tracking-tight">
+                                    {formatIndianCurrency(Math.round(animatedBalance))}
+                                </h2>
+                            </div>
+
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                                {/* Income */}
+                                <div className="apple-card p-5 animate-slide-up stagger-1">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Income</p>
+                                        <div className="w-8 h-8 bg-sys-green/15 rounded-lg flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-sys-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                            </svg>
+                                        </div>
                                     </div>
+                                    <p className="text-sys-green text-2xl font-bold mb-2">
+                                        {formatIndianCurrency(
+                                            expenses
+                                                .filter(e => parseFloat(e.Amount) > 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out' && e.Account !== 'Mutual Fund')
+                                                .reduce((s, e) => s + parseFloat(e.Amount), 0)
+                                        )}
+                                    </p>
+                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                        {incomeSparkline ? (
+                                            <path d={incomeSparkline} fill="none" stroke="#30D158" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
+                                        ) : (
+                                            <path d="M 0 25 L 200 25" fill="none" stroke="#30D158" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
+                                        )}
+                                    </svg>
                                 </div>
 
-                                {/* Income/Investment/Expenses Summary Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                    {/* Income Card */}
-                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-green-900/40 via-green-800/30 to-green-900/40 border border-green-700/30 backdrop-blur-sm">
-                                        <div className="relative z-10">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex-1">
-                                                    <p className="text-green-300/70 text-sm mb-2">Income</p>
-                                                    <p className="text-green-400 text-3xl font-bold">
-                                                        {formatIndianCurrency(
-                                                            expenses
-                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out' && expense.Account !== 'Mutual Fund')
-                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
-                                                        )}
-                                                    </p>
-                                                    <p className="text-green-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out' && expense.Account !== 'Mutual Fund').length} transactions
-                                                    </p>
-                                                </div>
-                                                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            {/* Sparkline */}
-                                            <div className="mt-6">
-                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                                    {incomeSparkline ? (
-                                                        <path
-                                                            d={incomeSparkline}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-green-500/60"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        />
-                                                    ) : (
-                                                        <path
-                                                            d="M 0 25 L 200 25"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-green-500/30"
-                                                            strokeDasharray="5,5"
-                                                        />
-                                                    )}
-                                                </svg>
-                                            </div>
+                                {/* Investment */}
+                                <div className="apple-card p-5 animate-slide-up stagger-2">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Investment</p>
+                                        <div className="w-8 h-8 bg-sys-teal/15 rounded-lg flex items-center justify-center">
+                                            <TrendingUp className="w-4 h-4 text-sys-teal" />
                                         </div>
                                     </div>
-
-                                    {/* Investment Card */}
-                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-blue-900/40 via-blue-800/30 to-blue-900/40 border border-blue-700/30 backdrop-blur-sm">
-                                        <div className="relative z-10">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex-1">
-                                                    <p className="text-blue-300/70 text-sm mb-2">Investment</p>
-                                                    <p className="text-blue-400 text-3xl font-bold">
-                                                        {formatIndianCurrency(
-                                                            expenses
-                                                                .filter(expense => parseFloat(expense.Amount) > 0 && expense.Account === 'Mutual Fund' && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
-                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0)
-                                                        )}
-                                                    </p>
-                                                    <p className="text-blue-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) > 0 && expense.Account === 'Mutual Fund' && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
-                                                    </p>
-                                                </div>
-                                                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            {/* Sparkline */}
-                                            <div className="mt-6">
-                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                                    {investmentSparkline ? (
-                                                        <path
-                                                            d={investmentSparkline}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-blue-500/60"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        />
-                                                    ) : (
-                                                        <path
-                                                            d="M 0 25 L 200 25"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-blue-500/30"
-                                                            strokeDasharray="5,5"
-                                                        />
-                                                    )}
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Spending Card */}
-                                    <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-red-900/40 via-red-800/30 to-red-900/40 border border-red-700/30 backdrop-blur-sm">
-                                        <div className="relative z-10">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex-1">
-                                                    <p className="text-red-300/70 text-sm mb-2">Spending</p>
-                                                    <p className="text-red-400 text-3xl font-bold">
-                                                        {formatIndianCurrency(
-                                                            Math.abs(expenses
-                                                                .filter(expense => parseFloat(expense.Amount) < 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out')
-                                                                .reduce((sum, expense) => sum + parseFloat(expense.Amount), 0))
-                                                        )}
-                                                    </p>
-                                                    <p className="text-red-300/50 text-xs mt-2">
-                                                        ₹ {expenses.filter(expense => parseFloat(expense.Amount) < 0 && expense.Category !== 'Transfer In' && expense.Category !== 'Transfer Out').length} transactions
-                                                    </p>
-                                                </div>
-                                                <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            {/* Sparkline */}
-                                            <div className="mt-6">
-                                                <svg className="w-full h-16" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                                    {expenseSparkline ? (
-                                                        <path
-                                                            d={expenseSparkline}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-red-500/60"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        />
-                                                    ) : (
-                                                        <path
-                                                            d="M 0 25 L 200 25"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            className="text-red-500/30"
-                                                            strokeDasharray="5,5"
-                                                        />
-                                                    )}
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <p className="text-sys-teal text-2xl font-bold mb-2">
+                                        {formatIndianCurrency(
+                                            expenses
+                                                .filter(e => parseFloat(e.Amount) > 0 && e.Account === 'Mutual Fund' && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out')
+                                                .reduce((s, e) => s + parseFloat(e.Amount), 0)
+                                        )}
+                                    </p>
+                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                        {investmentSparkline ? (
+                                            <path d={investmentSparkline} fill="none" stroke="#64D2FF" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
+                                        ) : (
+                                            <path d="M 0 25 L 200 25" fill="none" stroke="#64D2FF" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
+                                        )}
+                                    </svg>
                                 </div>
 
-                                {/* Your Assets Section */}
-                                <div className="mb-8">
-                                    <h2 className="text-xl font-semibold text-white mb-4">Your Assets</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                        {Object.entries(balances).map(([account, balance]) => (
-                                            <div key={account} className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-gray-600 transition-colors">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className={`w-2 h-2 rounded-full ${balance >= 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                                    </div>
+                                {/* Spending */}
+                                <div className="apple-card p-5 animate-slide-up stagger-3">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Spending</p>
+                                        <div className="w-8 h-8 bg-sys-red/15 rounded-lg flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-sys-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <p className="text-sys-red text-2xl font-bold mb-2">
+                                        {formatIndianCurrency(
+                                            Math.abs(expenses
+                                                .filter(e => parseFloat(e.Amount) < 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out')
+                                                .reduce((s, e) => s + parseFloat(e.Amount), 0))
+                                        )}
+                                    </p>
+                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                        {expenseSparkline ? (
+                                            <path d={expenseSparkline} fill="none" stroke="#FF453A" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
+                                        ) : (
+                                            <path d="M 0 25 L 200 25" fill="none" stroke="#FF453A" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
+                                        )}
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Account Cards */}
+                            <div className="mb-8 animate-slide-up stagger-4">
+                                <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider mb-3 px-1">Accounts</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                    {Object.entries(balances).map(([account, balance], idx) => {
+                                        const ai = getAccountIcon(account);
+                                        return (
+                                            <button
+                                                key={account}
+                                                className={`apple-card p-4 text-left transition-all active:scale-[0.97] ${
+                                                    selectedAccountFilter === account ? 'ring-1 ring-sys-blue' : ''
+                                                }`}
+                                                style={{ animationDelay: `${idx * 60}ms` }}
+                                                onClick={() => {
+                                                    setSelectedAccountFilter(selectedAccountFilter === account ? 'All Accounts' : account);
+                                                    setShowAllTransactions(false);
+                                                }}
+                                            >
+                                                <div className={`w-9 h-9 rounded-xl ${ai.bg} flex items-center justify-center mb-3 ${ai.color}`}>
+                                                    {ai.icon}
                                                 </div>
-                                                <h3 className="text-gray-300 text-sm font-medium mb-1">{account}</h3>
-                                                <p className={`text-lg font-semibold ${balance >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                                <p className="text-[11px] text-sys-label-secondary font-medium mb-0.5 truncate">{account}</p>
+                                                <p className={`text-sm font-bold ${balance >= 0 ? 'text-sys-label' : 'text-sys-red'}`}>
                                                     {formatIndianCurrency(balance)}
                                                 </p>
-                                                <p className="text-gray-500 text-xs mt-1">Account Balance</p>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                        </>
-                    )}
 
-                    {activeTab === 'transactions' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-                            {/* Add Transaction Form */}
-                            <div className="lg:col-span-1">
-                                <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50 overflow-hidden">
-                                    {/* Background decoration */}
-                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                            {/* Transactions List */}
+                            <div className="animate-slide-up stagger-5">
+                                <div className="flex items-center justify-between mb-3 px-1">
+                                    <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider">
+                                        {selectedAccountFilter === 'All Accounts' ? 'Recent Transactions' : selectedAccountFilter}
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowAllTransactions(!showAllTransactions)}
+                                        className="text-sys-blue text-xs font-medium transition-opacity active:opacity-60"
+                                    >
+                                        {showAllTransactions ? 'Show Less' : 'See All'}
+                                    </button>
+                                </div>
 
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                </svg>
-                                            </div>
-                                            <h2 className="text-2xl font-bold text-white">Add Transaction</h2>
+                                {/* Account filter pills */}
+                                <div className="flex items-center gap-2 flex-wrap mb-3 px-1">
+                                    {['All Accounts', ...accountsList].map(acc => (
+                                        <button
+                                            key={acc}
+                                            onClick={() => { setSelectedAccountFilter(acc); setShowAllTransactions(false); }}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                                selectedAccountFilter === acc
+                                                    ? 'bg-sys-blue text-white'
+                                                    : 'bg-sys-elevated text-sys-label-secondary'
+                                            }`}
+                                        >
+                                            {acc === 'All Accounts' ? 'All' : acc}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="apple-card overflow-hidden">
+                                    {loading ? (
+                                        <div className="p-4 space-y-4">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <div key={i} className="flex items-center gap-3">
+                                                    <div className="skeleton w-10 h-10 rounded-xl flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                        <div className="skeleton h-4 w-28 rounded mb-2" />
+                                                        <div className="skeleton h-3 w-16 rounded" />
+                                                    </div>
+                                                    <div className="skeleton h-4 w-20 rounded" />
+                                                </div>
+                                            ))}
                                         </div>
-
-                                        <form onSubmit={handleSubmit} className="space-y-5">
-                                            {/* Is it Income Toggle */}
-                                            <div className="relative">
-                                                <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isIncome
-                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/40'
-                                                    : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border-red-500/40'
-                                                    }`}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isIncome ? 'bg-green-500/30' : 'bg-red-500/30'
-                                                            }`}>
-                                                            {isIncome ? (
-                                                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                                                </svg>
-                                                            ) : (
-                                                                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                                                </svg>
-                                                            )}
-                                                        </div>
-                                                        <label htmlFor="isIncome" className={`text-base font-semibold select-none ${isIncome ? 'text-green-300' : 'text-red-300'
-                                                            }`}>
-                                                            {isIncome ? 'Income Transaction' : 'Expense Transaction'}
-                                                        </label>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        id="isIncome"
-                                                        role="switch"
-                                                        aria-checked={isIncome}
-                                                        onClick={() => setIsIncome(!isIncome)}
-                                                        className={`relative inline-flex h-9 w-16 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 shadow-lg ${isIncome ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'
-                                                            }`}
-                                                    >
-                                                        <span
-                                                            className={`inline-block h-7 w-7 transform rounded-full bg-white shadow-lg transition-transform ${isIncome ? 'translate-x-8' : 'translate-x-1'
-                                                                }`}
-                                                        />
-                                                    </button>
-                                                </div>
+                                    ) : filteredTxns.length === 0 ? (
+                                        <div className="py-16 text-center">
+                                            <div className="w-14 h-14 bg-sys-elevated rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                <Wallet className="w-7 h-7 text-sys-label-tertiary" />
                                             </div>
-
-                                            <div>
-                                                <label htmlFor="date" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                    Date
-                                                </label>
-                                                <div className="relative group">
-                                                    <input
-                                                        type="date"
-                                                        id="date"
-                                                        required
-                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 text-base rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 hover:border-gray-500/50 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
-                                                        value={formData.Date}
-                                                        onChange={(e) => setFormData({ ...formData, Date: e.target.value })}
-                                                        style={{ colorScheme: 'dark' }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label htmlFor="account" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                                                        <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                        </svg>
-                                                        Account
-                                                    </label>
-                                                    <div className="relative group">
-                                                        <select
-                                                            id="account"
-                                                            required
-                                                            className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer hover:border-gray-500/50"
-                                                            value={formData.Account}
-                                                            onChange={(e) => setFormData({ ...formData, Account: e.target.value })}
-                                                        >
-                                                            <option value="AXIS Bank">AXIS Bank</option>
-                                                            <option value="SBI Bank">SBI Bank</option>
-                                                            <option value="Credit Card">Credit Card</option>
-                                                            <option value="Cash">Cash</option>
-                                                            <option value="Mutual Fund">Mutual Fund</option>
-                                                        </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-gray-300 transition-colors">
-                                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                        </div>
+                                            <p className="text-sys-label-secondary font-medium text-sm">No transactions yet</p>
+                                            <p className="text-sys-label-tertiary text-xs mt-1">Tap + to add your first one</p>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            {groupedTxns.map((group) => (
+                                                <div key={group.dateKey}>
+                                                    <div className="px-4 py-2 bg-sys-bg/50">
+                                                        <span className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider">{group.label}</span>
                                                     </div>
-                                                </div>
-
-                                                {/* Category - Only show if NOT income */}
-                                                {!isIncome && (
-                                                    <div>
-                                                        <label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                            </svg>
-                                                            Category
-                                                        </label>
-                                                        <div className="relative group">
-                                                            <select
-                                                                id="category"
-                                                                required
-                                                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer hover:border-gray-500/50"
-                                                                value={formData.Category}
-                                                                onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+                                                    {group.transactions.map((expense, index) => {
+                                                        const amount = parseFloat(expense.Amount || '0');
+                                                        const isPositive = amount >= 0;
+                                                        const catIcon = getCategoryIcon(expense.Category, isPositive);
+                                                        return (
+                                                            <div
+                                                                key={`${group.dateKey}-${index}`}
+                                                                className="flex items-center gap-3 px-4 py-3 active:bg-sys-elevated/50 transition-colors cursor-pointer"
+                                                                onClick={() => openEditModal(expense)}
                                                             >
-                                                                <option value="">Select a category</option>
-                                                                <option value="Food & Dining">Food & Dining</option>
-                                                                <option value="Transportation">Transportation</option>
-                                                                <option value="Shopping">Shopping</option>
-                                                                <option value="Entertainment">Entertainment</option>
-                                                                <option value="Bills & Utilities">Bills & Utilities</option>
-                                                                <option value="Healthcare">Healthcare</option>
-                                                                <option value="Education">Education</option>
-                                                                <option value="Groceries">Groceries</option>
-                                                                <option value="Rent">Rent</option>
-                                                                <option value="Insurance">Insurance</option>
-                                                                <option value="Personal Care">Personal Care</option>
-                                                                <option value="Travel">Travel</option>
-                                                                <option value="Subscriptions">Subscriptions</option>
-                                                                <option value="Gifts">Gifts</option>
-                                                                <option value="Other">Other</option>
-                                                            </select>
-                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-gray-300 transition-colors">
-                                                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label htmlFor="description" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Description
-                                                    <span className="text-xs text-gray-500 font-normal">(Optional)</span>
-                                                </label>
-                                                <div className="relative group">
-                                                    <input
-                                                        type="text"
-                                                        id="description"
-                                                        className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 hover:border-gray-500/50"
-                                                        value={formData.Description}
-                                                        onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-                                                        placeholder="Enter transaction details..."
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label htmlFor="amount" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                                                    <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    Amount
-                                                </label>
-                                                <div className="relative group">
-                                                    <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                                                        <span className="text-gray-400 text-xl font-bold group-focus-within:text-indigo-400 transition-colors">₹</span>
-                                                    </div>
-                                                    <input
-                                                        type="number"
-                                                        id="amount"
-                                                        required
-                                                        step="0.01"
-                                                        min="0"
-                                                        className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all placeholder-gray-500 text-xl font-semibold hover:border-gray-500/50"
-                                                        value={formData.Amount}
-                                                        onChange={(e) => setFormData({ ...formData, Amount: e.target.value })}
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                type="submit"
-                                                disabled={submitting}
-                                                className={`w-full font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-xl mt-6 ${isIncome
-                                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/50'
-                                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/50'
-                                                    } text-white`}
-                                            >
-                                                {submitting ? (
-                                                    <span className="flex items-center justify-center gap-2">
-                                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        Adding Transaction...
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center justify-center gap-2">
-                                                        {isIncome ? (
-                                                            <>
-                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                                                </svg>
-                                                                Add Income
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                                                </svg>
-                                                                Add Expense
-                                                            </>
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Latest Transactions */}
-                            <div className="lg:col-span-2">
-                                <div className="bg-gray-800 rounded-xl border border-gray-700">
-                                    <div className="px-4 sm:px-6 py-4 border-b border-gray-700">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h2 className="text-lg sm:text-xl font-semibold text-white">Latest transactions</h2>
-                                            <button
-                                                onClick={() => setShowAllTransactions(!showAllTransactions)}
-                                                className="text-indigo-400 text-xs sm:text-sm hover:text-indigo-300 transition-colors"
-                                            >
-                                                {showAllTransactions ? 'Show less' : 'View all'}
-                                            </button>
-                                        </div>
-
-                                        {/* Account Filter */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm text-gray-400">Filter by account:</span>
-                                                <select
-                                                    value={selectedAccountFilter}
-                                                    onChange={(e) => {
-                                                        setSelectedAccountFilter(e.target.value);
-                                                        setShowAllTransactions(false); // Reset to limited view when filter changes
-                                                    }}
-                                                    className="text-xs bg-gray-700 border border-gray-600 text-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                >
-                                                    <option value="All Accounts">All Accounts</option>
-                                                    <option value="AXIS Bank">AXIS Bank</option>
-                                                    <option value="SBI Bank">SBI Bank</option>
-                                                    <option value="Credit Card">Credit Card</option>
-                                                    <option value="Cash">Cash</option>
-                                                    <option value="Mutual Fund">Mutual Fund</option>
-                                                </select>
-                                            </div>
-                                            {!loading && getFilteredTransactions().length > 0 && (
-                                                <span className="text-xs text-gray-400">
-                                                    Showing {getFilteredTransactions().length}
-                                                    {selectedAccountFilter === 'All Accounts'
-                                                        ? ` of ${expenses.length} transactions`
-                                                        : ` transactions for ${selectedAccountFilter}`
-                                                    }
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="p-4 sm:p-6">
-                                        {loading ? (
-                                            <div className="flex justify-center py-8">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                                            </div>
-                                        ) : getFilteredTransactions().length === 0 ? (
-                                            <p className="text-gray-400 text-center py-8">
-                                                {selectedAccountFilter === 'All Accounts'
-                                                    ? 'No transactions yet'
-                                                    : `No transactions found for ${selectedAccountFilter}`
-                                                }
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {getFilteredTransactions().map((expense, index) => {
-                                                    const amount = parseFloat(expense.Amount || '0');
-                                                    const isPositive = amount >= 0;
-                                                    return (
-                                                        <div key={index} className="flex items-start gap-3 p-3 sm:p-4 hover:bg-gray-700/50 rounded-lg transition-colors group">
-                                                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center ${getCategoryIcon(expense.Category, isPositive).bgColor}`}>
-                                                                    {getCategoryIcon(expense.Category, isPositive).icon}
+                                                                <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${catIcon.bgColor}`}>
+                                                                    {catIcon.icon}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="font-medium text-white text-sm sm:text-base truncate">
-                                                                        {isPositive ? 'Income payment' : expense.Description || expense.Category}
+                                                                    <p className="font-medium text-sys-label text-sm truncate">
+                                                                        {isPositive
+                                                                            ? (expense.Account === 'Mutual Fund' ? 'Investment' : 'Income')
+                                                                            : expense.Description || expense.Category}
                                                                     </p>
-                                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                                        <span className="px-2 py-0.5 text-xs bg-gray-700 text-gray-300 rounded-full whitespace-nowrap">
-                                                                            {expense.Account}
-                                                                        </span>
-                                                                        <span className="text-xs text-gray-400 whitespace-nowrap">
-                                                                            {new Date(expense.Date).toLocaleDateString('en-IN', {
-                                                                                day: 'numeric',
-                                                                                month: 'short'
-                                                                            })}
-                                                                        </span>
-                                                                    </div>
+                                                                    <p className="text-xs text-sys-label-tertiary mt-0.5">{expense.Account}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className={`font-semibold text-sm tabular-nums ${isPositive ? 'text-sys-green' : 'text-sys-label'}`}>
+                                                                        {isPositive ? '+' : '-'}{formatIndianCurrency(Math.abs(amount))}
+                                                                    </p>
+                                                                    <ChevronRight className="w-4 h-4 text-sys-label-tertiary" />
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-1 flex-shrink-0">
-                                                                <p className={`font-semibold text-sm sm:text-base whitespace-nowrap ${isPositive ? 'text-green-500' : 'text-white'
-                                                                    }`}>
-                                                                    {isPositive ? '+' : '-'}{formatIndianCurrency(Math.abs(amount))}
-                                                                </p>
-                                                                <button
-                                                                    onClick={() => openEditModal(expense)}
-                                                                    className="hidden sm:block opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-400 transition-all p-1"
-                                                                >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Transfer Tab */}
+                    {/* ═══ TRANSFERS TAB ═══ */}
                     {activeTab === 'transfers' && (
-                        <div className="max-w-2xl mx-auto">
-                            <div className="bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50">
-                                <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-                                    <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                    </svg>
-                                    Transfer Between Accounts
-                                </h2>
-
-                                {error && (
-                                    <div className="mb-4 p-3 bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg">
-                                        {error}
+                        <div className="animate-fade-in">
+                            <div className="apple-card p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 bg-sys-blue/15 rounded-xl flex items-center justify-center">
+                                        <ArrowRightLeft className="w-5 h-5 text-sys-blue" />
                                     </div>
-                                )}
+                                    <h2 className="text-lg font-bold text-sys-label">Transfer Between Accounts</h2>
+                                </div>
 
-                                <form onSubmit={handleTransferSubmit} className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Date */}
+                                <form onSubmit={handleTransferSubmit} className="space-y-5">
+                                    {/* Transfer Flow */}
+                                    <div className="bg-sys-elevated rounded-2xl p-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex-1">
+                                                <label className="text-xs text-sys-label-secondary font-medium mb-1 block">From</label>
+                                                <select
+                                                    value={transferFormData.FromAccount}
+                                                    onChange={(e) => setTransferFormData({ ...transferFormData, FromAccount: e.target.value })}
+                                                    className="apple-select"
+                                                    required
+                                                >
+                                                    {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex-shrink-0 mt-5">
+                                                <div className="w-10 h-10 rounded-full bg-sys-blue/15 flex items-center justify-center">
+                                                    <ArrowRightLeft className="w-4 h-4 text-sys-blue" />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-xs text-sys-label-secondary font-medium mb-1 block">To</label>
+                                                <select
+                                                    value={transferFormData.ToAccount}
+                                                    onChange={(e) => setTransferFormData({ ...transferFormData, ToAccount: e.target.value })}
+                                                    className="apple-select"
+                                                    required
+                                                >
+                                                    {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        {transferFormData.FromAccount === transferFormData.ToAccount && (
+                                            <p className="text-xs text-sys-orange mt-3 text-center animate-scale-in">
+                                                Please select different accounts
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="apple-card overflow-hidden">
                                         <div>
-                                            <label htmlFor="transferDate" className="block text-sm font-medium text-gray-300 mb-1">
-                                                Date
-                                            </label>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Amount</label>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+                                                    <span className="text-sys-label-secondary font-bold">₹</span>
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    value={transferFormData.Amount}
+                                                    onChange={(e) => setTransferFormData({ ...transferFormData, Amount: e.target.value })}
+                                                    className="w-full pl-8 pr-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                    placeholder="0.00"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="border-t border-sys-separator ml-4" />
+                                        <div>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
                                             <input
                                                 type="date"
-                                                id="transferDate"
                                                 value={transferFormData.Date}
                                                 onChange={(e) => setTransferFormData({ ...transferFormData, Date: e.target.value })}
-                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
                                                 required
+                                                style={{ colorScheme: 'dark' }}
                                             />
                                         </div>
-
-                                        {/* Amount */}
+                                        <div className="border-t border-sys-separator ml-4" />
                                         <div>
-                                            <label htmlFor="transferAmount" className="block text-sm font-medium text-gray-300 mb-1">
-                                                Amount (₹)
-                                            </label>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
                                             <input
-                                                type="number"
-                                                id="transferAmount"
-                                                step="0.01"
-                                                min="0.01"
-                                                value={transferFormData.Amount}
-                                                onChange={(e) => setTransferFormData({ ...transferFormData, Amount: e.target.value })}
-                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                placeholder="0.00"
-                                                required
+                                                type="text"
+                                                value={transferFormData.Description}
+                                                onChange={(e) => setTransferFormData({ ...transferFormData, Description: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                placeholder="Optional"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* From Account */}
-                                        <div>
-                                            <label htmlFor="fromAccount" className="block text-sm font-medium text-gray-300 mb-1">
-                                                From Account
-                                            </label>
-                                            <select
-                                                id="fromAccount"
-                                                value={transferFormData.FromAccount}
-                                                onChange={(e) => setTransferFormData({ ...transferFormData, FromAccount: e.target.value })}
-                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                required
-                                            >
-                                                <option value="AXIS Bank">AXIS Bank</option>
-                                                <option value="SBI Bank">SBI Bank</option>
-                                                <option value="Credit Card">Credit Card</option>
-                                                <option value="Cash">Cash</option>
-                                                <option value="Mutual Fund">Mutual Fund</option>
-                                            </select>
-                                        </div>
-
-                                        {/* To Account */}
-                                        <div>
-                                            <label htmlFor="toAccount" className="block text-sm font-medium text-gray-300 mb-1">
-                                                To Account
-                                            </label>
-                                            <select
-                                                id="toAccount"
-                                                value={transferFormData.ToAccount}
-                                                onChange={(e) => setTransferFormData({ ...transferFormData, ToAccount: e.target.value })}
-                                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                                required
-                                            >
-                                                <option value="AXIS Bank">AXIS Bank</option>
-                                                <option value="SBI Bank">SBI Bank</option>
-                                                <option value="Credit Card">Credit Card</option>
-                                                <option value="Cash">Cash</option>
-                                                <option value="Mutual Fund">Mutual Fund</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Description */}
-                                    <div>
-                                        <label htmlFor="transferDescription" className="block text-sm font-medium text-gray-300 mb-1">
-                                            Description (Optional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="transferDescription"
-                                            value={transferFormData.Description}
-                                            onChange={(e) => setTransferFormData({ ...transferFormData, Description: e.target.value })}
-                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            placeholder="Optional description for this transfer"
-                                        />
-                                    </div>
-
-                                    {/* Transfer Direction Indicator */}
-                                    <div className="bg-gray-700/50 rounded-lg p-4">
-                                        <div className="flex items-center justify-center space-x-4 text-sm text-gray-300">
-                                            <span className="font-medium">{transferFormData.FromAccount}</span>
-                                            <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                            </svg>
-                                            <span className="font-medium">{transferFormData.ToAccount}</span>
-                                        </div>
-                                        {transferFormData.Amount && (
-                                            <div className="text-center mt-2">
-                                                <span className="text-lg font-bold text-indigo-400">
-                                                    {formatIndianCurrency(parseFloat(transferFormData.Amount))}
-                                                </span>
-                                            </div>
-                                        )}
                                     </div>
 
                                     <button
                                         type="submit"
                                         disabled={transferSubmitting || transferFormData.FromAccount === transferFormData.ToAccount}
-                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center"
+                                        className="w-full bg-sys-blue text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-[17px] flex items-center justify-center gap-2"
                                     >
                                         {transferSubmitting ? (
-                                            <>
-                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Processing Transfer...
-                                            </>
+                                            <><Spinner /> Processing...</>
                                         ) : (
-                                            <>
-                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                                </svg>
-                                                Record Transfer
-                                            </>
+                                            <><ArrowRightLeft className="w-5 h-5" /> Record Transfer</>
                                         )}
                                     </button>
-
-                                    {transferFormData.FromAccount === transferFormData.ToAccount && (
-                                        <p className="text-sm text-yellow-400 text-center">
-                                            ⚠️ Please select different accounts for the transfer
-                                        </p>
-                                    )}
                                 </form>
-
-                                <div className="mt-6 p-4 bg-blue-900/30 border border-blue-500/30 rounded-lg">
-                                    <h3 className="text-sm font-medium text-blue-300 mb-2">How transfers work:</h3>
-                                    <ul className="text-xs text-blue-200 space-y-1">
-                                        <li>• Creates two transactions: one debit from source account, one credit to destination account</li>
-                                        <li>• Both transactions are categorized as "Transfer Out" and "Transfer In"</li>
-                                        <li>• Account balances are automatically updated</li>
-                                        <li>• Transfer transactions appear in your transaction history</li>
-                                    </ul>
-                                </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Analytics Tab */}
+                    {/* ═══ ANALYTICS TAB ═══ */}
                     {activeTab === 'analytics' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 animate-fade-in">
                             {/* Period Selector */}
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-gray-100">Expenditure Analysis</h2>
-                                <div>
-                                    <label htmlFor="period" className="mr-2 text-sm font-medium text-gray-300">
-                                        Period:
-                                    </label>
-                                    <select
-                                        id="period"
-                                        value={selectedPeriod}
-                                        onChange={(e) => setSelectedPeriod(e.target.value)}
-                                        className="px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="overall">Overall</option>
-                                        {availableMonths.map(month => {
-                                            const [year, monthNum] = month.split('-');
-                                            const date = new Date(parseInt(year), parseInt(monthNum) - 1);
-                                            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                                            return (
-                                                <option key={month} value={month}>
-                                                    {monthName}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                </div>
+                                <h2 className="text-lg font-bold text-sys-label">Analysis</h2>
+                                <select
+                                    value={selectedPeriod}
+                                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                                    className="px-4 py-2 bg-sys-elevated text-sys-label rounded-xl focus:outline-none text-sm appearance-none cursor-pointer"
+                                >
+                                    <option value="overall">Overall</option>
+                                    {availableMonths.map(month => {
+                                        const [year, monthNum] = month.split('-');
+                                        const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+                                        return <option key={month} value={month}>{date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</option>;
+                                    })}
+                                </select>
                             </div>
 
-                            {/* Summary Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Income</dt>
-                                        <dd className="mt-1 text-2xl font-semibold text-green-600">
-                                            {formatIndianCurrency(summary.totalIncome)}
-                                        </dd>
+                            {/* Summary Stats */}
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                {[
+                                    { label: 'Income', value: summary.totalIncome, color: 'text-sys-green' },
+                                    { label: 'Investment', value: summary.totalInvestment, color: 'text-sys-teal' },
+                                    { label: 'Expenses', value: summary.totalExpenses, color: 'text-sys-red' },
+                                    { label: 'Net Savings', value: summary.netSavings, color: summary.netSavings >= 0 ? 'text-sys-green' : 'text-sys-red' },
+                                    { label: 'Savings Rate', value: summary.savingsRate, color: 'text-sys-blue', isPercent: true },
+                                ].map((card, i) => (
+                                    <div key={card.label} className="apple-card p-4 animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+                                        <p className="text-[11px] font-medium text-sys-label-secondary mb-1.5 uppercase tracking-wider">{card.label}</p>
+                                        <p className={`text-lg font-bold ${card.color}`}>
+                                            {(card as any).isPercent ? `${card.value.toFixed(1)}%` : formatIndianCurrency(card.value)}
+                                        </p>
                                     </div>
-                                </div>
-                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Investment</dt>
-                                        <dd className="mt-1 text-2xl font-semibold text-blue-600">
-                                            {formatIndianCurrency(summary.totalInvestment)}
-                                        </dd>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-400 truncate">Total Expenses</dt>
-                                        <dd className="mt-1 text-2xl font-semibold text-red-600">
-                                            {formatIndianCurrency(summary.totalExpenses)}
-                                        </dd>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-800 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-gray-400 truncate">Net Savings</dt>
-                                        <dd className={`mt-1 text-2xl font-semibold ${summary.netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatIndianCurrency(summary.netSavings)}
-                                        </dd>
-                                    </div>
-                                </div>
-                                <div className="bg-indigo-600 overflow-hidden shadow rounded-lg">
-                                    <div className="px-4 py-5 sm:p-6">
-                                        <dt className="text-sm font-medium text-indigo-100 truncate">Savings Rate</dt>
-                                        <dd className="mt-1 text-2xl font-semibold text-white">
-                                            {summary.savingsRate.toFixed(1)}%
-                                        </dd>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
 
                             {/* Daily Expenses Chart */}
-                            <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 rounded-2xl p-6 border border-gray-700/50 shadow-2xl overflow-hidden">
-                                {/* Background decoration */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl"></div>
-                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl"></div>
+                            <div className="apple-card p-6 animate-slide-up stagger-3">
+                                <h3 className="text-base font-bold text-sys-label mb-1">Daily Expenses</h3>
+                                <p className="text-xs text-sys-label-secondary mb-6">Spending across all accounts</p>
 
-                                <div className="relative z-10">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white mb-1">Daily Expenses Trend by Account</h3>
-                                            <p className="text-sm text-gray-400">Track your spending patterns across all accounts</p>
+                                {dailyExpensesData.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-16">
+                                        <div className="w-14 h-14 bg-sys-elevated rounded-2xl flex items-center justify-center mb-3">
+                                            <TrendingUp className="w-7 h-7 text-sys-label-tertiary" />
                                         </div>
+                                        <p className="text-sys-label-secondary text-sm">No data for this period</p>
                                     </div>
-
-                                    {dailyExpensesData.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-16">
-                                            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-                                                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                </svg>
-                                            </div>
-                                            <p className="text-gray-400 text-center">No transaction data for this period</p>
-                                            <p className="text-gray-500 text-sm text-center mt-1">Start adding expenses to see your trend</p>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-gray-900/30 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30">
-                                            <ResponsiveContainer width="100%" height={380}>
-                                                <AreaChart data={dailyExpensesData} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
-                                                    <defs>
-                                                        {/* Gradients for each account */}
-                                                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                                                            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
-                                                        </linearGradient>
-                                                        <linearGradient id="colorAxis" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
-                                                        </linearGradient>
-                                                        <linearGradient id="colorSBI" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
-                                                        </linearGradient>
-                                                        <linearGradient id="colorCredit" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
-                                                        </linearGradient>
-                                                        <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.02} />
-                                                        </linearGradient>
-                                                        <linearGradient id="colorMutual" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.2} />
-                                                            <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <CartesianGrid
-                                                        strokeDasharray="3 3"
-                                                        stroke="#374151"
-                                                        opacity={0.3}
-                                                        vertical={false}
-                                                    />
-                                                    <XAxis
-                                                        dataKey="date"
-                                                        stroke="#6b7280"
-                                                        style={{ fontSize: '11px', fontWeight: '500' }}
-                                                        tick={{ fill: '#9ca3af' }}
-                                                        axisLine={{ stroke: '#374151' }}
-                                                        tickLine={{ stroke: '#374151' }}
-                                                    />
-                                                    <YAxis
-                                                        stroke="#6b7280"
-                                                        style={{ fontSize: '11px', fontWeight: '500' }}
-                                                        tick={{ fill: '#9ca3af' }}
-                                                        tickFormatter={(value) => `₹${value.toLocaleString()}`}
-                                                        axisLine={{ stroke: '#374151' }}
-                                                        tickLine={{ stroke: '#374151' }}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{
-                                                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                                                            border: '1px solid rgba(99, 102, 241, 0.3)',
-                                                            borderRadius: '12px',
-                                                            padding: '12px',
-                                                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                                                            backdropFilter: 'blur(10px)'
-                                                        }}
-                                                        labelStyle={{
-                                                            color: '#d1d5db',
-                                                            fontWeight: '600',
-                                                            marginBottom: '8px'
-                                                        }}
-                                                        content={(props: any) => {
-                                                            if (!props.payload || props.payload.length === 0) return null;
-
-                                                            const data = props.payload[0].payload;
-                                                            const hasExpenses = data.total > 0;
-
-                                                            if (!hasExpenses) {
-                                                                return (
-                                                                    <div style={{
-                                                                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                                                                        border: '1px solid rgba(99, 102, 241, 0.3)',
-                                                                        borderRadius: '12px',
-                                                                        padding: '12px',
-                                                                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                                                                        backdropFilter: 'blur(10px)'
-                                                                    }}>
-                                                                        <p style={{ color: '#d1d5db', fontWeight: '600', marginBottom: '4px' }}>
-                                                                            {props.label}
-                                                                        </p>
-                                                                        <p style={{ color: '#10b981', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                            <span style={{ fontSize: '18px' }}>🎉</span>
-                                                                            No expenses today!
-                                                                        </p>
-                                                                    </div>
-                                                                );
-                                                            }
-
+                                ) : (
+                                    <div className="rounded-xl overflow-hidden">
+                                        <ResponsiveContainer width="100%" height={350}>
+                                            <AreaChart data={dailyExpensesData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
+                                                <defs>
+                                                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#0A84FF" stopOpacity={0.25} />
+                                                        <stop offset="100%" stopColor="#0A84FF" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                    <linearGradient id="colorAxis" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#30D158" stopOpacity={0.15} />
+                                                        <stop offset="100%" stopColor="#30D158" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                    <linearGradient id="colorSBI" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#FF9F0A" stopOpacity={0.15} />
+                                                        <stop offset="100%" stopColor="#FF9F0A" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                    <linearGradient id="colorCredit" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#FF453A" stopOpacity={0.15} />
+                                                        <stop offset="100%" stopColor="#FF453A" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                    <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#BF5AF2" stopOpacity={0.15} />
+                                                        <stop offset="100%" stopColor="#BF5AF2" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                    <linearGradient id="colorMutual" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#64D2FF" stopOpacity={0.15} />
+                                                        <stop offset="100%" stopColor="#64D2FF" stopOpacity={0.02} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#38383A" opacity={0.3} vertical={false} />
+                                                <XAxis dataKey="date" stroke="#48484A" style={{ fontSize: '11px' }} tick={{ fill: '#8E8E93' }} axisLine={false} tickLine={false} />
+                                                <YAxis stroke="#48484A" style={{ fontSize: '11px' }} tick={{ fill: '#8E8E93' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
+                                                <Tooltip
+                                                    content={(props: any) => {
+                                                        if (!props.payload || props.payload.length === 0) return null;
+                                                        const data = props.payload[0].payload;
+                                                        if (data.total === 0) {
                                                             return (
-                                                                <div style={{
-                                                                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                                                                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                                                                    borderRadius: '12px',
-                                                                    padding: '12px',
-                                                                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                                                                    backdropFilter: 'blur(10px)'
-                                                                }}>
-                                                                    <p style={{ color: '#d1d5db', fontWeight: '600', marginBottom: '8px' }}>
-                                                                        {props.label}
-                                                                    </p>
-                                                                    {props.payload.map((entry: any, index: number) => {
-                                                                        if (entry.value === 0) return null;
-                                                                        return (
-                                                                            <p key={index} style={{ color: entry.color, fontWeight: '500', marginBottom: '4px' }}>
-                                                                                {entry.name}: {formatIndianCurrency(entry.value)}
-                                                                            </p>
-                                                                        );
-                                                                    })}
+                                                                <div className="bg-sys-elevated rounded-xl p-3 shadow-xl border border-sys-separator">
+                                                                    <p className="text-sys-label-secondary text-xs font-medium mb-1">{props.label}</p>
+                                                                    <p className="text-sys-green text-sm">No expenses</p>
                                                                 </div>
                                                             );
-                                                        }}
-                                                        cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
-                                                    />
-                                                    <Legend
-                                                        verticalAlign="top"
-                                                        height={36}
-                                                        iconType="line"
-                                                        wrapperStyle={{
-                                                            paddingBottom: '20px',
-                                                            fontSize: '12px',
-                                                            fontWeight: '500'
-                                                        }}
-                                                    />
-
-                                                    {/* Total line */}
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="total"
-                                                        name="Total"
-                                                        stroke="#6366f1"
-                                                        strokeWidth={3}
-                                                        fill="url(#colorTotal)"
-                                                        strokeLinecap="round"
-                                                    />
-
-                                                    {/* Individual account lines */}
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="AXIS Bank"
-                                                        name="AXIS Bank"
-                                                        stroke="#10b981"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorAxis)"
-                                                        strokeLinecap="round"
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="SBI Bank"
-                                                        name="SBI Bank"
-                                                        stroke="#f59e0b"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorSBI)"
-                                                        strokeLinecap="round"
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="Credit Card"
-                                                        name="Credit Card"
-                                                        stroke="#ef4444"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorCredit)"
-                                                        strokeLinecap="round"
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="Cash"
-                                                        name="Cash"
-                                                        stroke="#8b5cf6"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorCash)"
-                                                        strokeLinecap="round"
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="Mutual Fund"
-                                                        name="Mutual Fund"
-                                                        stroke="#06b6d4"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorMutual)"
-                                                        strokeLinecap="round"
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Category Distribution */}
-                            <div className="bg-gray-800 shadow rounded-lg p-4 sm:p-6">
-                                <h3 className="text-lg font-semibold text-gray-100 mb-4">Expenses by Category</h3>
-                                {categoryDistribution.length === 0 ? (
-                                    <p className="text-gray-400 text-center py-8">No expense data for this period</p>
-                                ) : (
-                                    <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
-                                        <ResponsiveContainer width="100%" height={400}>
-                                            <BarChart
-                                                data={categoryDistribution.map(cat => ({
-                                                    name: cat.category,
-                                                    value: cat.amount,
-                                                    percentage: cat.percentage
-                                                }))}
-                                                margin={{
-                                                    top: 20,
-                                                    right: 30,
-                                                    left: 20,
-                                                    bottom: 60
-                                                }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                <XAxis
-                                                    dataKey="name"
-                                                    angle={-45}
-                                                    textAnchor="end"
-                                                    height={100}
-                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                                />
-                                                <YAxis
-                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                                    tickFormatter={(value) => `₹${value}`}
-                                                />
-                                                <Tooltip
-                                                    contentStyle={{
-                                                        backgroundColor: '#1f2937',
-                                                        border: '1px solid #374151',
-                                                        borderRadius: '8px',
-                                                        color: '#f3f4f6'
+                                                        }
+                                                        return (
+                                                            <div className="bg-sys-elevated rounded-xl p-3 shadow-xl border border-sys-separator">
+                                                                <p className="text-sys-label-secondary text-xs font-medium mb-2">{props.label}</p>
+                                                                {props.payload.map((entry: any, i: number) => {
+                                                                    if (entry.value === 0) return null;
+                                                                    return <p key={i} style={{ color: entry.color }} className="text-xs font-medium">{entry.name}: {formatIndianCurrency(entry.value)}</p>;
+                                                                })}
+                                                            </div>
+                                                        );
                                                     }}
-                                                    formatter={(value: number, name: string, props: any) => [
-                                                        `${formatIndianCurrency(value)} (${props.payload.percentage.toFixed(1)}%)`,
-                                                        'Amount'
-                                                    ]}
-                                                    labelStyle={{ color: '#9ca3af' }}
+                                                    cursor={{ stroke: '#0A84FF', strokeWidth: 1, strokeDasharray: '4 4' }}
                                                 />
-                                                <Bar
-                                                    dataKey="value"
-                                                    radius={[4, 4, 0, 0]}
-                                                >
-                                                    {categoryDistribution.map((entry, index) => {
-                                                        const colors = [
-                                                            '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
-                                                            '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
-                                                            '#f97316', '#84cc16', '#06b6d4', '#a855f7',
-                                                            '#6366f1', '#8b5cf6', '#ec4899'
-                                                        ];
-                                                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                                                    })}
-                                                </Bar>
-                                            </BarChart>
+                                                <Legend verticalAlign="top" height={36} iconType="line" wrapperStyle={{ paddingBottom: '16px', fontSize: '11px' }} />
+                                                <Area type="monotone" dataKey="total" name="Total" stroke="#0A84FF" strokeWidth={2.5} fill="url(#colorTotal)" strokeLinecap="round" />
+                                                <Area type="monotone" dataKey="AXIS Bank" name="AXIS Bank" stroke="#30D158" strokeWidth={1.5} fill="url(#colorAxis)" strokeLinecap="round" />
+                                                <Area type="monotone" dataKey="SBI Bank" name="SBI Bank" stroke="#FF9F0A" strokeWidth={1.5} fill="url(#colorSBI)" strokeLinecap="round" />
+                                                <Area type="monotone" dataKey="Credit Card" name="Credit Card" stroke="#FF453A" strokeWidth={1.5} fill="url(#colorCredit)" strokeLinecap="round" />
+                                                <Area type="monotone" dataKey="Cash" name="Cash" stroke="#BF5AF2" strokeWidth={1.5} fill="url(#colorCash)" strokeLinecap="round" />
+                                                <Area type="monotone" dataKey="Mutual Fund" name="Mutual Fund" stroke="#64D2FF" strokeWidth={1.5} fill="url(#colorMutual)" strokeLinecap="round" />
+                                            </AreaChart>
                                         </ResponsiveContainer>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Account Distribution */}
-                            <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden">
-                                {/* Background decoration */}
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                            {/* Category Distribution */}
+                            <div className="apple-card p-6 animate-slide-up stagger-4">
+                                <h3 className="text-base font-bold text-sys-label mb-4">Expenses by Category</h3>
+                                {categoryDistribution.length === 0 ? (
+                                    <p className="text-sys-label-secondary text-center py-8 text-sm">No expense data for this period</p>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={380}>
+                                        <BarChart data={categoryDistribution.map(cat => ({ name: cat.category, value: cat.amount, percentage: cat.percentage }))} margin={{ top: 15, right: 20, left: 15, bottom: 60 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#38383A" opacity={0.3} />
+                                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fill: '#8E8E93', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                            <YAxis tick={{ fill: '#8E8E93', fontSize: 11 }} tickFormatter={(v) => `₹${v}`} axisLine={false} tickLine={false} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#2C2C2E', border: '1px solid #38383A', borderRadius: '12px', color: '#FFFFFF' }}
+                                                formatter={(value: number, _name: string, props: any) => [`${formatIndianCurrency(value)} (${props.payload.percentage.toFixed(1)}%)`, 'Amount']}
+                                                labelStyle={{ color: '#8E8E93' }}
+                                            />
+                                            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                                                {categoryDistribution.map((_entry, index) => {
+                                                    const colors = ['#0A84FF', '#BF5AF2', '#FF375F', '#FF9F0A', '#30D158', '#5E5CE6', '#FF453A', '#64D2FF', '#FFD60A', '#00C7BE', '#0A84FF', '#BF5AF2', '#FF375F', '#FF9F0A', '#30D158'];
+                                                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                                })}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
 
-                                <div className="relative z-10">
-                                    <div className="px-6 py-5 border-b border-gray-700/50">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h3 className="text-xl font-bold text-white mb-1">Account Breakdown</h3>
-                                                <p className="text-sm text-gray-400">Income, expenses, and net balance per account</p>
-                                            </div>
-                                            <div className="hidden sm:flex items-center gap-4 text-xs">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                                    <span className="text-gray-400">Income</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                                    <span className="text-gray-400">Expenses</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Desktop Table View */}
-                                    <div className="hidden md:block overflow-x-auto">
-                                        <table className="min-w-full">
-                                            <thead>
-                                                <tr className="border-b border-gray-700/50">
-                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                        Account
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <span>Income</span>
-                                                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                                            </svg>
-                                                        </div>
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <span>Expenses</span>
-                                                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                                            </svg>
-                                                        </div>
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                        Net Balance
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {accountDistribution.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="px-6 py-12 text-center">
-                                                            <div className="flex flex-col items-center">
-                                                                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
-                                                                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <p className="text-gray-400 font-medium">No account data for this period</p>
-                                                                <p className="text-gray-500 text-sm mt-1">Add transactions to see your breakdown</p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    accountDistribution.map((acc, index) => (
-                                                        <tr
-                                                            key={acc.account}
-                                                            className="border-b border-gray-700/30 hover:bg-gray-700/20 transition-colors group"
-                                                        >
-                                                            <td className="px-6 py-5">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center group-hover:from-indigo-500/30 group-hover:to-purple-500/30 transition-colors">
-                                                                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                                        </svg>
-                                                                    </div>
-                                                                    <span className="text-base font-semibold text-white">{acc.account}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-5 text-right">
-                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
-                                                                    <span className="text-base font-bold text-green-400">
-                                                                        {formatIndianCurrency(acc.income)}
-                                                                    </span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-5 text-right">
-                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-                                                                    <span className="text-base font-bold text-red-400">
-                                                                        {formatIndianCurrency(acc.expenses)}
-                                                                    </span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-5 text-right">
-                                                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-base ${acc.net >= 0
-                                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
-                                                                    : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
-                                                                    }`}>
-                                                                    {acc.net >= 0 ? '↑' : '↓'}
-                                                                    <span>{formatIndianCurrency(Math.abs(acc.net))}</span>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Mobile Card View */}
-                                    <div className="md:hidden p-4 space-y-3">
-                                        {accountDistribution.length === 0 ? (
-                                            <div className="flex flex-col items-center py-8">
-                                                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
-                                                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-gray-400 font-medium text-center">No account data for this period</p>
-                                                <p className="text-gray-500 text-sm mt-1 text-center">Add transactions to see your breakdown</p>
-                                            </div>
-                                        ) : (
-                                            accountDistribution.map(acc => (
-                                                <div key={acc.account} className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50 hover:border-gray-600/50 transition-colors">
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                                                            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                            </svg>
-                                                        </div>
-                                                        <span className="font-bold text-white text-base">{acc.account}</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-3 gap-3">
-                                                        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
-                                                            <div className="text-green-300/70 text-xs mb-1 font-medium">Income</div>
-                                                            <div className="text-green-400 font-bold text-sm">{formatIndianCurrency(acc.income)}</div>
-                                                        </div>
-                                                        <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/20">
-                                                            <div className="text-red-300/70 text-xs mb-1 font-medium">Expenses</div>
-                                                            <div className="text-red-400 font-bold text-sm">{formatIndianCurrency(acc.expenses)}</div>
-                                                        </div>
-                                                        <div className={`rounded-lg p-3 border ${acc.net >= 0
-                                                            ? 'bg-green-500/10 border-green-500/20'
-                                                            : 'bg-red-500/10 border-red-500/20'
-                                                            }`}>
-                                                            <div className={`text-xs mb-1 font-medium ${acc.net >= 0 ? 'text-green-300/70' : 'text-red-300/70'}`}>Net</div>
-                                                            <div className={`font-bold text-sm ${acc.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                                {formatIndianCurrency(acc.net)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
+                            {/* Account Breakdown */}
+                            <div className="apple-card overflow-hidden animate-slide-up stagger-5">
+                                <div className="px-5 py-4 border-b border-sys-separator">
+                                    <h3 className="text-base font-bold text-sys-label">Account Breakdown</h3>
+                                    <p className="text-xs text-sys-label-secondary mt-0.5">Income, expenses, and net per account</p>
                                 </div>
+
+                                {accountDistribution.length === 0 ? (
+                                    <div className="py-12 text-center">
+                                        <p className="text-sys-label-secondary text-sm">No data for this period</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Desktop Table */}
+                                        <div className="hidden md:block overflow-x-auto">
+                                            <table className="min-w-full">
+                                                <thead>
+                                                    <tr className="border-b border-sys-separator">
+                                                        <th className="px-5 py-3 text-left text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Account</th>
+                                                        <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Income</th>
+                                                        <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Expenses</th>
+                                                        <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Net</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {accountDistribution.map(acc => {
+                                                        const ai = getAccountIcon(acc.account);
+                                                        return (
+                                                            <tr key={acc.account} className="border-b border-sys-separator last:border-0">
+                                                                <td className="px-5 py-3.5">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`w-8 h-8 rounded-lg ${ai.bg} flex items-center justify-center ${ai.color}`}>
+                                                                            {ai.icon}
+                                                                        </div>
+                                                                        <span className="font-medium text-sys-label text-sm">{acc.account}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-5 py-3.5 text-right">
+                                                                    <span className="text-sys-green font-semibold text-sm">{formatIndianCurrency(acc.income)}</span>
+                                                                </td>
+                                                                <td className="px-5 py-3.5 text-right">
+                                                                    <span className="text-sys-red font-semibold text-sm">{formatIndianCurrency(acc.expenses)}</span>
+                                                                </td>
+                                                                <td className="px-5 py-3.5 text-right">
+                                                                    <span className={`font-semibold text-sm ${acc.net >= 0 ? 'text-sys-green' : 'text-sys-red'}`}>
+                                                                        {acc.net >= 0 ? '+' : ''}{formatIndianCurrency(acc.net)}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Mobile Cards */}
+                                        <div className="md:hidden p-4 space-y-3">
+                                            {accountDistribution.map(acc => {
+                                                const ai = getAccountIcon(acc.account);
+                                                return (
+                                                    <div key={acc.account} className="bg-sys-elevated rounded-xl p-4">
+                                                        <div className="flex items-center gap-3 mb-3">
+                                                            <div className={`w-8 h-8 rounded-lg ${ai.bg} flex items-center justify-center ${ai.color}`}>{ai.icon}</div>
+                                                            <span className="font-semibold text-sys-label text-sm">{acc.account}</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <div className="bg-sys-green/10 rounded-lg p-2">
+                                                                <p className="text-[10px] text-sys-green/70 font-medium">Income</p>
+                                                                <p className="text-sys-green font-bold text-xs">{formatIndianCurrency(acc.income)}</p>
+                                                            </div>
+                                                            <div className="bg-sys-red/10 rounded-lg p-2">
+                                                                <p className="text-[10px] text-sys-red/70 font-medium">Expenses</p>
+                                                                <p className="text-sys-red font-bold text-xs">{formatIndianCurrency(acc.expenses)}</p>
+                                                            </div>
+                                                            <div className={`rounded-lg p-2 ${acc.net >= 0 ? 'bg-sys-green/10' : 'bg-sys-red/10'}`}>
+                                                                <p className={`text-[10px] font-medium ${acc.net >= 0 ? 'text-sys-green/70' : 'text-sys-red/70'}`}>Net</p>
+                                                                <p className={`font-bold text-xs ${acc.net >= 0 ? 'text-sys-green' : 'text-sys-red'}`}>{formatIndianCurrency(acc.net)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Loans Tab */}
+                    {/* ═══ LOANS TAB ═══ */}
                     {activeTab === 'loans' && (
-                        <div className="space-y-6">
-                            {/* Summary Card */}
-                            <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 rounded-2xl shadow-2xl p-8 text-white overflow-hidden">
-                                {/* Background decoration */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                                                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h2 className="text-lg font-medium text-indigo-100">Total Money Lent</h2>
-                                                    <p className="text-5xl font-bold mt-1">{formatIndianCurrency(totalLent)}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-4">
-                                                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                                    </svg>
-                                                    <span className="text-white font-semibold">{loansSummary.filter(p => p.balance > 0).length} people</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                    </svg>
-                                                    <span className="text-white font-semibold">{loans.length} transactions</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div className="space-y-6 animate-fade-in">
+                            {/* Summary */}
+                            <div className="apple-card p-6">
+                                <p className="text-sys-label-secondary text-sm font-medium mb-1">Total Money Lent</p>
+                                <p className="text-3xl sm:text-4xl font-bold text-sys-label mb-3">{formatIndianCurrency(totalLent)}</p>
+                                <div className="flex items-center gap-2">
+                                    <span className="px-3 py-1 bg-sys-elevated rounded-lg text-xs font-medium text-sys-label-secondary">
+                                        {loansSummary.filter(p => p.balance > 0).length} people
+                                    </span>
+                                    <span className="px-3 py-1 bg-sys-elevated rounded-lg text-xs font-medium text-sys-label-secondary">
+                                        {loans.length} transactions
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-                                {/* Add Loan Transaction Form */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Add Loan Form */}
                                 <div className="lg:col-span-1">
-                                    <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-6 border border-gray-700/50 overflow-hidden">
-                                        {/* Background decoration */}
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
-
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                    </svg>
-                                                </div>
-                                                <h2 className="text-xl font-bold text-white">Add Transaction</h2>
-                                            </div>
-                                            <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                    <div className="apple-card p-6">
+                                        <h3 className="text-base font-bold text-sys-label mb-5">Add Transaction</h3>
+                                        <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                            <div className="apple-card overflow-hidden">
                                                 <div>
-                                                    <label htmlFor="loanDate" className="block text-sm font-medium text-gray-300 mb-1">
-                                                        Date
-                                                    </label>
-                                                    <input
-                                                        type="date"
-                                                        id="loanDate"
-                                                        required
-                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        value={loanFormData.Date}
-                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
-                                                    />
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
+                                                    <input type="date" required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
+                                                        value={loanFormData.Date} onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })} style={{ colorScheme: 'dark' }} />
                                                 </div>
-
+                                                <div className="border-t border-sys-separator ml-4" />
                                                 <div>
-                                                    <label htmlFor="personName" className="block text-sm font-medium text-gray-300 mb-1">
-                                                        Person Name
-                                                    </label>
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Person</label>
                                                     {uniquePersons.length > 0 ? (
-                                                        <div className="space-y-2">
-                                                            <select
-                                                                id="personName"
-                                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                                value={selectedPerson}
-                                                                onChange={(e) => {
-                                                                    setSelectedPerson(e.target.value);
-                                                                    setLoanFormData({ ...loanFormData, PersonName: e.target.value });
-                                                                }}
-                                                            >
-                                                                <option value="">-- Select or type new name --</option>
-                                                                {uniquePersons.map(person => (
-                                                                    <option key={person} value={person}>{person}</option>
-                                                                ))}
+                                                        <div className="px-4 pb-2.5 space-y-2">
+                                                            <select className="w-full py-1.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                                                value={selectedPerson} onChange={(e) => { setSelectedPerson(e.target.value); setLoanFormData({ ...loanFormData, PersonName: e.target.value }); }}>
+                                                                <option value="">Select or type new</option>
+                                                                {uniquePersons.map(p => <option key={p} value={p}>{p}</option>)}
                                                             </select>
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Or enter new name"
-                                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                                value={selectedPerson === '' ? loanFormData.PersonName : ''}
-                                                                onChange={(e) => {
-                                                                    setSelectedPerson('');
-                                                                    setLoanFormData({ ...loanFormData, PersonName: e.target.value });
-                                                                }}
-                                                            />
+                                                            <input type="text" placeholder="Or enter new name" className="w-full py-1.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                                value={selectedPerson === '' ? loanFormData.PersonName : ''} onChange={(e) => { setSelectedPerson(''); setLoanFormData({ ...loanFormData, PersonName: e.target.value }); }} />
                                                         </div>
                                                     ) : (
-                                                        <input
-                                                            type="text"
-                                                            id="personName"
-                                                            required
-                                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                            value={loanFormData.PersonName}
-                                                            onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })}
-                                                            placeholder="Enter person's name"
-                                                        />
+                                                        <input type="text" required className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                            value={loanFormData.PersonName} onChange={(e) => setLoanFormData({ ...loanFormData, PersonName: e.target.value })} placeholder="Enter name" />
                                                     )}
                                                 </div>
-
+                                                <div className="border-t border-sys-separator ml-4" />
                                                 <div>
-                                                    <label htmlFor="transactionType" className="block text-sm font-medium text-gray-300 mb-1">
-                                                        Transaction Type
-                                                    </label>
-                                                    <select
-                                                        id="transactionType"
-                                                        required
-                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        value={loanFormData.TransactionType}
-                                                        onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
-                                                    >
-                                                        <option value="LENT">Money Lent (New Loan)</option>
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Type</label>
+                                                    <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                                        value={loanFormData.TransactionType} onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}>
+                                                        <option value="LENT">Money Lent</option>
                                                         <option value="ADDITIONAL_LOAN">Additional Loan</option>
-                                                        <option value="RECEIVED">Money Received (Repayment)</option>
+                                                        <option value="RECEIVED">Money Received</option>
                                                     </select>
                                                 </div>
-
+                                                <div className="border-t border-sys-separator ml-4" />
                                                 <div>
-                                                    <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-300 mb-1">
-                                                        Amount
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        id="loanAmount"
-                                                        required
-                                                        step="0.01"
-                                                        min="0"
-                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        value={loanFormData.Amount}
-                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
-                                                        placeholder="0.00"
-                                                    />
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Amount</label>
+                                                    <input type="number" required step="0.01" min="0" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                        value={loanFormData.Amount} onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })} placeholder="0.00" />
                                                 </div>
-
+                                                <div className="border-t border-sys-separator ml-4" />
                                                 <div>
-                                                    <label htmlFor="loanDescription" className="block text-sm font-medium text-gray-300 mb-1">
-                                                        Description
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        id="loanDescription"
-                                                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        value={loanFormData.Description}
-                                                        onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
-                                                        placeholder="Optional details"
-                                                    />
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
+                                                    <input type="text" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                        value={loanFormData.Description} onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })} placeholder="Optional" />
                                                 </div>
+                                            </div>
 
-                                                <button
-                                                    type="submit"
-                                                    disabled={loanSubmitting}
-                                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                                >
-                                                    {loanSubmitting ? (
-                                                        <>
-                                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
-                                                            Adding...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                            </svg>
-                                                            Add Transaction
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </form>
-                                        </div>
+                                            <button type="submit" disabled={loanSubmitting}
+                                                className="w-full bg-sys-blue text-white font-semibold py-3 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                                {loanSubmitting ? (
+                                                    <><Spinner /> Adding...</>
+                                                ) : (
+                                                    <><Plus className="w-5 h-5" /> Add Transaction</>
+                                                )}
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
 
-                                {/* People List and Transactions */}
-                                <div className="lg:col-span-2 space-y-6">
+                                {/* People List */}
+                                <div className="lg:col-span-2 space-y-4">
                                     {loansSummary.length === 0 ? (
-                                        <div className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl p-12 text-center border border-gray-700/50 overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
-                                            <div className="relative z-10">
-                                                <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <p className="text-gray-400 text-lg">No loan records yet. Add your first loan transaction to get started!</p>
+                                        <div className="apple-card p-12 text-center">
+                                            <div className="w-14 h-14 bg-sys-elevated rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                                <Banknote className="w-7 h-7 text-sys-label-tertiary" />
                                             </div>
+                                            <p className="text-sys-label-secondary text-sm">No loan records yet</p>
                                         </div>
                                     ) : (
                                         loansSummary.map(({ person, balance }) => {
-                                            const personTransactions = getPersonTransactions(person);
+                                            const personTxns = getPersonTransactions(person);
+                                            const totalLentToPerson = personTxns.filter(t => t.TransactionType === 'LENT' || t.TransactionType === 'ADDITIONAL_LOAN').reduce((s, t) => s + parseFloat(t.Amount || '0'), 0);
+                                            const totalReceived = personTxns.filter(t => t.TransactionType === 'RECEIVED').reduce((s, t) => s + parseFloat(t.Amount || '0'), 0);
+                                            const repaymentPercent = totalLentToPerson > 0 ? Math.min((totalReceived / totalLentToPerson) * 100, 100) : 0;
                                             return (
-                                                <div key={person} className="relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-700/50">
-                                                    {/* Background decoration */}
-                                                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl"></div>
-
-                                                    <div className="relative z-10">
-                                                        <div className="px-6 py-5 bg-gradient-to-r from-gray-900/80 to-gray-800/80 border-b border-gray-700/50 backdrop-blur-sm">
-                                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl flex items-center justify-center">
-                                                                        <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                                        </svg>
-                                                                    </div>
-                                                                    <h3 className="text-xl font-bold text-white">{person}</h3>
+                                                <div key={person} className="apple-card overflow-hidden">
+                                                    <div className="px-5 py-4 border-b border-sys-separator">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full bg-sys-blue/15 flex items-center justify-center text-sys-blue font-bold text-sm">
+                                                                    {person.charAt(0).toUpperCase()}
                                                                 </div>
-                                                                <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-lg ${balance > 0
-                                                                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400'
-                                                                    : balance < 0
-                                                                        ? 'bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30 text-red-400'
-                                                                        : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 text-gray-400'
-                                                                    }`}>
-                                                                    {balance > 0 ? '↑' : balance < 0 ? '↓' : '•'}
-                                                                    <span>{formatIndianCurrency(Math.abs(balance))}</span>
-                                                                    <span className="text-sm font-medium opacity-80">
-                                                                        {balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}
-                                                                    </span>
+                                                                <div>
+                                                                    <h3 className="font-semibold text-sys-label">{person}</h3>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <div className="w-20 h-1.5 bg-sys-fill rounded-full overflow-hidden">
+                                                                            <div className="h-full bg-sys-blue rounded-full transition-all duration-500" style={{ width: `${repaymentPercent}%` }} />
+                                                                        </div>
+                                                                        <span className="text-[10px] text-sys-label-tertiary">{repaymentPercent.toFixed(0)}% repaid</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            <span className={`px-3 py-1.5 rounded-lg font-bold text-sm ${
+                                                                balance > 0 ? 'bg-sys-green/15 text-sys-green'
+                                                                    : balance < 0 ? 'bg-sys-red/15 text-sys-red'
+                                                                        : 'bg-sys-fill text-sys-label-secondary'
+                                                            }`}>
+                                                                {formatIndianCurrency(Math.abs(balance))}
+                                                                <span className="text-[10px] ml-1 opacity-70">{balance > 0 ? 'owed' : balance < 0 ? 'overpaid' : 'settled'}</span>
+                                                            </span>
                                                         </div>
+                                                    </div>
 
-                                                        {/* Desktop Table View */}
-                                                        <div className="hidden md:block overflow-x-auto">
-                                                            <table className="min-w-full">
-                                                                <thead>
-                                                                    <tr className="border-b border-gray-700/30">
-                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                                </svg>
-                                                                                Date
-                                                                            </div>
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                                                </svg>
-                                                                                Type
-                                                                            </div>
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                                </svg>
-                                                                                Description
-                                                                            </div>
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                                                            <div className="flex items-center justify-end gap-2">
-                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                                </svg>
-                                                                                Amount
-                                                                            </div>
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {personTransactions.map((tx, idx) => {
-                                                                        const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
-                                                                        return (
-                                                                            <tr key={idx} className="border-b border-gray-700/20 hover:bg-gray-700/20 transition-colors group">
-                                                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="w-2 h-2 rounded-full bg-indigo-500/50"></div>
-                                                                                        <span className="text-sm font-medium text-gray-300">{tx.Date}</span>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
-                                                                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                                                        : tx.TransactionType === 'ADDITIONAL_LOAN'
-                                                                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                                                        }`}>
-                                                                                        {tx.TransactionType === 'LENT' && (
-                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                                                                            </svg>
-                                                                                        )}
-                                                                                        {tx.TransactionType === 'ADDITIONAL_LOAN' && (
-                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                                                            </svg>
-                                                                                        )}
-                                                                                        {tx.TransactionType === 'RECEIVED' && (
-                                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                                                                                            </svg>
-                                                                                        )}
-                                                                                        {tx.TransactionType === 'LENT' ? 'Lent' :
-                                                                                            tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
-                                                                                                'Received'}
-                                                                                    </span>
-                                                                                </td>
-                                                                                <td className="px-6 py-4">
-                                                                                    <span className="text-sm text-gray-300">{tx.Description || '-'}</span>
-                                                                                </td>
-                                                                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${isLent
-                                                                                        ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                                                                                        : 'bg-green-500/10 border border-green-500/20 text-green-400'
-                                                                                        }`}>
-                                                                                        {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
-                                                                                    </div>
-                                                                                </td>
-                                                                            </tr>
-                                                                        );
-                                                                    })}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-
-                                                        {/* Mobile Card View */}
-                                                        <div className="md:hidden p-4 space-y-3">
-                                                            {personTransactions.map((tx, idx) => {
-                                                                const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
-                                                                return (
-                                                                    <div key={idx} className="bg-gray-700/30 rounded-xl p-4 border border-gray-700/50 hover:bg-gray-700/40 transition-colors">
-                                                                        <div className="flex justify-between items-start gap-3">
-                                                                            <div className="flex-1 space-y-2">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-indigo-500/50"></div>
-                                                                                    <span className="text-xs font-medium text-gray-400">{tx.Date}</span>
-                                                                                </div>
-                                                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg ${tx.TransactionType === 'LENT'
-                                                                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                                                    : tx.TransactionType === 'ADDITIONAL_LOAN'
-                                                                                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                                                        : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                                                    }`}>
-                                                                                    {tx.TransactionType === 'LENT' && (
-                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                                                                        </svg>
-                                                                                    )}
-                                                                                    {tx.TransactionType === 'ADDITIONAL_LOAN' && (
-                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                                                        </svg>
-                                                                                    )}
-                                                                                    {tx.TransactionType === 'RECEIVED' && (
-                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                                                                                        </svg>
-                                                                                    )}
-                                                                                    {tx.TransactionType === 'LENT' ? 'Lent' :
-                                                                                        tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' :
-                                                                                            'Received'}
-                                                                                </span>
-                                                                                {tx.Description && (
-                                                                                    <div className="text-xs text-gray-400 mt-1">
-                                                                                        {tx.Description}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-sm whitespace-nowrap ${isLent
-                                                                                ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                                                                                : 'bg-green-500/10 border border-green-500/20 text-green-400'
-                                                                                }`}>
-                                                                                {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
+                                                    <div className="p-2">
+                                                        {personTxns.map((tx, idx) => {
+                                                            const isLent = tx.TransactionType === 'LENT' || tx.TransactionType === 'ADDITIONAL_LOAN';
+                                                            return (
+                                                                <div key={idx} className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+                                                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isLent ? 'bg-sys-blue' : 'bg-sys-green'}`} />
+                                                                    <span className="text-xs text-sys-label-tertiary w-20 flex-shrink-0">{tx.Date}</span>
+                                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                                                                        tx.TransactionType === 'LENT' ? 'bg-sys-blue/15 text-sys-blue'
+                                                                            : tx.TransactionType === 'ADDITIONAL_LOAN' ? 'bg-sys-purple/15 text-sys-purple'
+                                                                                : 'bg-sys-green/15 text-sys-green'
+                                                                    }`}>
+                                                                        {tx.TransactionType === 'LENT' ? 'Lent' : tx.TransactionType === 'ADDITIONAL_LOAN' ? 'Additional' : 'Received'}
+                                                                    </span>
+                                                                    <span className="text-xs text-sys-label-secondary flex-1 truncate">{tx.Description || '-'}</span>
+                                                                    <span className={`text-sm font-bold tabular-nums ${isLent ? 'text-sys-blue' : 'text-sys-green'}`}>
+                                                                        {isLent ? '+' : '-'}{formatIndianCurrency(parseFloat(tx.Amount || '0'))}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             );
@@ -2521,136 +1607,80 @@ export default function Home() {
                         </div>
                     )}
 
-                    {/* Edit Modal */}
+                    {/* ═══ EDIT MODAL ═══ */}
                     {editOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-black/70" onClick={closeEditModal} />
-                            <div className="relative bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-100">Edit Transaction</h3>
-                                    <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-300" aria-label="Close">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                            <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 11-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
-                                        </svg>
+                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in-fast">
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeEditModal} />
+                            <div className="relative bg-sys-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-0 sm:mx-4 p-6 animate-slide-up">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-lg font-bold text-sys-label">Edit Transaction</h3>
+                                    <button onClick={closeEditModal} className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center">
+                                        <X className="w-4 h-4 text-sys-label-secondary" />
                                     </button>
                                 </div>
 
                                 <form onSubmit={handleUpdate} className="space-y-4">
-                                    {/* Is it Income Checkbox */}
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id="editIsIncome"
-                                            checked={editIsIncome}
-                                            onChange={(e) => setEditIsIncome(e.target.checked)}
-                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-600 rounded"
-                                        />
-                                        <label htmlFor="editIsIncome" className="ml-2 block text-sm font-medium text-gray-300">
-                                            Is it an Income
-                                        </label>
+                                    {/* Income/Expense Segmented */}
+                                    <div className="bg-sys-elevated rounded-xl p-1 flex">
+                                        <button type="button" onClick={() => setEditIsIncome(false)}
+                                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${!editIsIncome ? 'bg-sys-red text-white shadow-sm' : 'text-sys-label-secondary'}`}>
+                                            Expense
+                                        </button>
+                                        <button type="button" onClick={() => setEditIsIncome(true)}
+                                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${editIsIncome ? 'bg-sys-green text-white shadow-sm' : 'text-sys-label-secondary'}`}>
+                                            Income
+                                        </button>
                                     </div>
 
-                                    <div>
-                                        <label htmlFor="editDate" className="block text-sm font-medium text-gray-300 mb-1">
-                                            Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="editDate"
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={editData.Date}
-                                            onChange={(e) => setEditData({ ...editData, Date: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="editAccount" className="block text-sm font-medium text-gray-300 mb-1">
-                                            Account
-                                        </label>
-                                        <select
-                                            id="editAccount"
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={editData.Account}
-                                            onChange={(e) => setEditData({ ...editData, Account: e.target.value })}
-                                        >
-                                            <option value="AXIS Bank">AXIS Bank</option>
-                                            <option value="SBI Bank">SBI Bank</option>
-                                            <option value="Credit Card">Credit Card</option>
-                                            <option value="Cash">Cash</option>
-                                        </select>
-                                    </div>
-
-                                    {!editIsIncome && (
+                                    <div className="apple-card overflow-hidden">
                                         <div>
-                                            <label htmlFor="editCategory" className="block text-sm font-medium text-gray-300 mb-1">
-                                                Category
-                                            </label>
-                                            <select
-                                                id="editCategory"
-                                                required
-                                                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                value={editData.Category}
-                                                onChange={(e) => setEditData({ ...editData, Category: e.target.value })}
-                                            >
-                                                <option value="">Select a category</option>
-                                                <option value="Food & Dining">Food & Dining</option>
-                                                <option value="Transportation">Transportation</option>
-                                                <option value="Shopping">Shopping</option>
-                                                <option value="Entertainment">Entertainment</option>
-                                                <option value="Bills & Utilities">Bills & Utilities</option>
-                                                <option value="Healthcare">Healthcare</option>
-                                                <option value="Education">Education</option>
-                                                <option value="Groceries">Groceries</option>
-                                                <option value="Rent">Rent</option>
-                                                <option value="Insurance">Insurance</option>
-                                                <option value="Personal Care">Personal Care</option>
-                                                <option value="Travel">Travel</option>
-                                                <option value="Subscriptions">Subscriptions</option>
-                                                <option value="Gifts">Gifts</option>
-                                                <option value="Other">Other</option>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
+                                            <input type="date" required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
+                                                value={editData.Date} onChange={(e) => setEditData({ ...editData, Date: e.target.value })} style={{ colorScheme: 'dark' }} />
+                                        </div>
+                                        <div className="border-t border-sys-separator ml-4" />
+                                        <div>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Account</label>
+                                            <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                                value={editData.Account} onChange={(e) => setEditData({ ...editData, Account: e.target.value })}>
+                                                {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
                                             </select>
                                         </div>
-                                    )}
-
-                                    <div>
-                                        <label htmlFor="editDescription" className="block text-sm font-medium text-gray-300 mb-1">
-                                            Description
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="editDescription"
-                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={editData.Description}
-                                            onChange={(e) => setEditData({ ...editData, Description: e.target.value })}
-                                            placeholder="Optional details"
-                                        />
+                                        {!editIsIncome && (
+                                            <>
+                                                <div className="border-t border-sys-separator ml-4" />
+                                                <div className="animate-fade-in">
+                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Category</label>
+                                                    <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                                        value={editData.Category} onChange={(e) => setEditData({ ...editData, Category: e.target.value })}>
+                                                        <option value="">Select category</option>
+                                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className="border-t border-sys-separator ml-4" />
+                                        <div>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
+                                            <input type="text" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                value={editData.Description} onChange={(e) => setEditData({ ...editData, Description: e.target.value })} placeholder="Details" />
+                                        </div>
+                                        <div className="border-t border-sys-separator ml-4" />
+                                        <div>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Amount</label>
+                                            <input type="number" required step="0.01" min="0" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                                value={editData.Amount} onChange={(e) => setEditData({ ...editData, Amount: e.target.value })} placeholder="0.00" />
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label htmlFor="editAmount" className="block text-sm font-medium text-gray-300 mb-1">
-                                            Amount
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="editAmount"
-                                            required
-                                            step="0.01"
-                                            min="0"
-                                            className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={editData.Amount}
-                                            onChange={(e) => setEditData({ ...editData, Amount: e.target.value })}
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-end gap-3 pt-2">
-                                        <button type="button" onClick={closeEditModal} className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-200">
+                                    <div className="flex gap-3 pt-2">
+                                        <button type="button" onClick={closeEditModal}
+                                            className="flex-1 py-3 rounded-xl bg-sys-elevated text-sys-label font-medium transition-all active:scale-[0.98]">
                                             Cancel
                                         </button>
-                                        <button type="submit" disabled={updating} className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
-                                            {updating ? 'Saving...' : 'Save Changes'}
+                                        <button type="submit" disabled={updating}
+                                            className="flex-1 py-3 rounded-xl bg-sys-blue text-white font-semibold transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed">
+                                            {updating ? 'Saving...' : 'Save'}
                                         </button>
                                     </div>
                                 </form>
@@ -2662,4 +1692,3 @@ export default function Home() {
         </>
     );
 }
-

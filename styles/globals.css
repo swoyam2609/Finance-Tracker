@@ -5,10 +5,111 @@
 @layer base {
     :root {
         --foreground-rgb: 255, 255, 255;
-        --background-rgb: 17, 24, 39;
+        --background-rgb: 0, 0, 0;
     }
 
     body {
-        @apply bg-gray-900 text-gray-100;
+        @apply bg-sys-bg text-sys-label font-sans antialiased;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
+
+    /* Apple-style scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
+
+@layer components {
+    /* Apple material card — frosted glass */
+    .apple-card {
+        @apply bg-sys-card rounded-2xl;
+    }
+
+    /* Apple elevated surface */
+    .apple-elevated {
+        @apply bg-sys-elevated rounded-2xl;
+    }
+
+    /* Skeleton shimmer */
+    .skeleton {
+        border-radius: 8px;
+        background: linear-gradient(90deg, #1C1C1E 25%, #2C2C2E 50%, #1C1C1E 75%);
+        background-size: 200% 100%;
+        animation: shimmer 2s linear infinite;
+    }
+
+    /* Sparkline path draw */
+    .sparkline-path {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: drawLine 1.5s ease-out forwards;
+    }
+
+    /* iOS-style grouped list */
+    .ios-list {
+        @apply bg-sys-card rounded-2xl overflow-hidden;
+    }
+    .ios-list-item {
+        @apply px-4 py-3 flex items-center gap-3;
+    }
+    .ios-list-item + .ios-list-item {
+        @apply border-t border-sys-separator;
+        margin-left: 52px;
+        padding-left: 0;
+        border-top-style: solid;
+    }
+
+    /* Stagger delays */
+    .stagger-1 { animation-delay: 50ms; }
+    .stagger-2 { animation-delay: 100ms; }
+    .stagger-3 { animation-delay: 150ms; }
+    .stagger-4 { animation-delay: 200ms; }
+    .stagger-5 { animation-delay: 250ms; }
+    .stagger-6 { animation-delay: 300ms; }
+
+    /* Hide number input arrows */
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type='number'] {
+        -moz-appearance: textfield;
+    }
+
+    /* Apple-style input */
+    .apple-input {
+        @apply w-full px-4 py-3 bg-sys-elevated border-0 text-white rounded-xl;
+        @apply focus:outline-none focus:ring-2 focus:ring-sys-blue/50;
+        @apply placeholder-sys-label-tertiary transition-all;
+    }
+
+    /* Apple-style select */
+    .apple-select {
+        @apply w-full px-4 py-3 bg-sys-elevated border-0 text-white rounded-xl;
+        @apply focus:outline-none focus:ring-2 focus:ring-sys-blue/50;
+        @apply appearance-none cursor-pointer transition-all;
+    }
+}
+
+@layer utilities {
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    .delay-300 { animation-delay: 300ms; }
+    .delay-400 { animation-delay: 400ms; }
+    .delay-500 { animation-delay: 500ms; }
+    .delay-600 { animation-delay: 600ms; }
+    .delay-700 { animation-delay: 700ms; }
 }
