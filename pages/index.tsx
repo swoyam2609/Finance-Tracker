@@ -413,12 +413,16 @@ export default function Home() {
         let totalIncome = 0, totalExpenses = 0, totalInvestment = 0;
         filtered.forEach(exp => {
             const amount = parseFloat(exp.Amount || '0');
-            if (exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
-                if (amount >= 0) {
-                    if (exp.Account === 'Mutual Fund') totalInvestment += amount;
-                    else totalIncome += amount;
-                } else totalExpenses += Math.abs(amount);
+            // Transfers INTO Mutual Fund count as investment
+            if (exp.Category === 'Transfer In' && exp.Account === 'Mutual Fund') {
+                totalInvestment += amount;
+                return;
             }
+            if (exp.Category === 'Transfer In' || exp.Category === 'Transfer Out') return;
+            if (amount >= 0) {
+                if (exp.Account === 'Mutual Fund') totalInvestment += amount;
+                else totalIncome += amount;
+            } else totalExpenses += Math.abs(amount);
         });
         return {
             totalIncome, totalExpenses, totalInvestment,
@@ -434,6 +438,12 @@ export default function Home() {
         filtered.forEach(exp => {
             if (!exp.Date) return;
             const amount = parseFloat(exp.Amount || '0');
+            // Transfers INTO Mutual Fund count as investment
+            if (type === 'investment' && exp.Category === 'Transfer In' && exp.Account === 'Mutual Fund') {
+                if (!dailyData[exp.Date]) dailyData[exp.Date] = 0;
+                dailyData[exp.Date] += amount;
+                return;
+            }
             if (exp.Category === 'Transfer In' || exp.Category === 'Transfer Out') return;
             if (!dailyData[exp.Date]) dailyData[exp.Date] = 0;
             if (type === 'income' && amount > 0 && exp.Account !== 'Mutual Fund') dailyData[exp.Date] += amount;
@@ -886,90 +896,42 @@ export default function Home() {
                     {/* ═══ TRANSACTIONS TAB ═══ */}
                     {activeTab === 'transactions' && (
                         <div className={mounted ? 'animate-fade-in' : 'opacity-0'}>
-                            {/* Balance */}
-                            <div className="mb-8 animate-slide-up">
-                                <p className="text-sm text-sys-label-secondary font-medium mb-1">Total Balance</p>
-                                <h2 className="text-4xl sm:text-5xl font-bold text-sys-label tracking-tight">
-                                    {formatIndianCurrency(Math.round(animatedBalance))}
-                                </h2>
-                            </div>
-
-                            {/* Summary Cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                {/* Income */}
-                                <div className="apple-card p-5 animate-slide-up stagger-1">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Income</p>
-                                        <div className="w-8 h-8 bg-sys-green/15 rounded-lg flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-sys-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <p className="text-sys-green text-2xl font-bold mb-2">
-                                        {formatIndianCurrency(
-                                            expenses
-                                                .filter(e => parseFloat(e.Amount) > 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out' && e.Account !== 'Mutual Fund')
-                                                .reduce((s, e) => s + parseFloat(e.Amount), 0)
-                                        )}
+                            {/* Top 3 Stats */}
+                            <div className="grid grid-cols-3 gap-3 mb-8 animate-slide-up">
+                                {/* Current Balance */}
+                                <div className="apple-card p-4">
+                                    <p className="text-sys-label-secondary text-[11px] font-semibold uppercase tracking-wider mb-2">Balance</p>
+                                    <p className="text-sys-label text-xl sm:text-2xl font-bold tracking-tight">
+                                        {formatIndianCurrency((balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0))}
                                     </p>
-                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                        {incomeSparkline ? (
-                                            <path d={incomeSparkline} fill="none" stroke="#30D158" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
-                                        ) : (
-                                            <path d="M 0 25 L 200 25" fill="none" stroke="#30D158" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
-                                        )}
-                                    </svg>
+                                    <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash</p>
                                 </div>
 
                                 {/* Investment */}
-                                <div className="apple-card p-5 animate-slide-up stagger-2">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Investment</p>
-                                        <div className="w-8 h-8 bg-sys-teal/15 rounded-lg flex items-center justify-center">
-                                            <TrendingUp className="w-4 h-4 text-sys-teal" />
-                                        </div>
-                                    </div>
-                                    <p className="text-sys-teal text-2xl font-bold mb-2">
-                                        {formatIndianCurrency(
-                                            expenses
-                                                .filter(e => parseFloat(e.Amount) > 0 && e.Account === 'Mutual Fund' && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out')
-                                                .reduce((s, e) => s + parseFloat(e.Amount), 0)
-                                        )}
+                                <div className="apple-card p-4">
+                                    <p className="text-sys-teal text-[11px] font-semibold uppercase tracking-wider mb-2">Investment</p>
+                                    <p className="text-sys-teal text-xl sm:text-2xl font-bold tracking-tight">
+                                        {formatIndianCurrency(balances['Mutual Fund'] || 0)}
                                     </p>
-                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                        {investmentSparkline ? (
-                                            <path d={investmentSparkline} fill="none" stroke="#64D2FF" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
-                                        ) : (
-                                            <path d="M 0 25 L 200 25" fill="none" stroke="#64D2FF" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
-                                        )}
-                                    </svg>
+                                    <p className="text-sys-label-tertiary text-[10px] mt-1">Mutual Fund</p>
                                 </div>
 
-                                {/* Spending */}
-                                <div className="apple-card p-5 animate-slide-up stagger-3">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sys-label-secondary text-xs font-semibold uppercase tracking-wider">Spending</p>
-                                        <div className="w-8 h-8 bg-sys-red/15 rounded-lg flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-sys-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <p className="text-sys-red text-2xl font-bold mb-2">
+                                {/* Spent Today */}
+                                <div className="apple-card p-4">
+                                    <p className="text-sys-red text-[11px] font-semibold uppercase tracking-wider mb-2">Spent Today</p>
+                                    <p className="text-sys-red text-xl sm:text-2xl font-bold tracking-tight">
                                         {formatIndianCurrency(
                                             Math.abs(expenses
-                                                .filter(e => parseFloat(e.Amount) < 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out')
+                                                .filter(e => {
+                                                    const today = new Date().toISOString().split('T')[0];
+                                                    return e.Date === today && parseFloat(e.Amount) < 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out';
+                                                })
                                                 .reduce((s, e) => s + parseFloat(e.Amount), 0))
                                         )}
                                     </p>
-                                    <svg className="w-full h-10" viewBox="0 0 200 50" preserveAspectRatio="none">
-                                        {expenseSparkline ? (
-                                            <path d={expenseSparkline} fill="none" stroke="#FF453A" strokeWidth="2" className="sparkline-path" strokeLinecap="round" strokeLinejoin="round" />
-                                        ) : (
-                                            <path d="M 0 25 L 200 25" fill="none" stroke="#FF453A" strokeWidth="1" opacity="0.3" strokeDasharray="5,5" />
-                                        )}
-                                    </svg>
+                                    <p className="text-sys-label-tertiary text-[10px] mt-1">
+                                        {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                    </p>
                                 </div>
                             </div>
 
