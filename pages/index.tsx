@@ -901,7 +901,7 @@ export default function Home() {
                                 {/* Current Balance */}
                                 <div className="apple-card p-4">
                                     <p className="text-sys-label-secondary text-[11px] font-semibold uppercase tracking-wider mb-2">Balance</p>
-                                    <p className="text-sys-label text-xl sm:text-2xl font-bold tracking-tight">
+                                    <p className="text-sys-label text-base sm:text-2xl font-bold tracking-tight truncate">
                                         {formatIndianCurrency((balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0))}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash</p>
@@ -910,7 +910,7 @@ export default function Home() {
                                 {/* Investment */}
                                 <div className="apple-card p-4">
                                     <p className="text-sys-teal text-[11px] font-semibold uppercase tracking-wider mb-2">Investment</p>
-                                    <p className="text-sys-teal text-xl sm:text-2xl font-bold tracking-tight">
+                                    <p className="text-sys-teal text-base sm:text-2xl font-bold tracking-tight truncate">
                                         {formatIndianCurrency(balances['Mutual Fund'] || 0)}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">Mutual Fund</p>
@@ -919,7 +919,7 @@ export default function Home() {
                                 {/* Spent Today */}
                                 <div className="apple-card p-4">
                                     <p className="text-sys-red text-[11px] font-semibold uppercase tracking-wider mb-2">Spent Today</p>
-                                    <p className="text-sys-red text-xl sm:text-2xl font-bold tracking-tight">
+                                    <p className="text-sys-red text-base sm:text-2xl font-bold tracking-tight truncate">
                                         {formatIndianCurrency(
                                             Math.abs(expenses
                                                 .filter(e => {
