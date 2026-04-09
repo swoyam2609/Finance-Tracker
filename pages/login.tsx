@@ -56,7 +56,9 @@ export default function Login() {
         <>
             <Head>
                 <title>Sign In - Finance Tracker</title>
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="icon" type="image/png" href="/favicon.png" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <meta name="theme-color" content="#000000" />
             </Head>
             <div className="min-h-screen flex flex-col items-center justify-center bg-sys-bg px-4">
                 {/* App Icon */}

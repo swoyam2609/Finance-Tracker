@@ -6,6 +6,7 @@
     :root {
         --foreground-rgb: 255, 255, 255;
         --background-rgb: 0, 0, 0;
+        --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     body {
@@ -117,4 +118,14 @@
     .delay-500 { animation-delay: 500ms; }
     .delay-600 { animation-delay: 600ms; }
     .delay-700 { animation-delay: 700ms; }
+
+    /* Hide scrollbar for horizontal scroll areas */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Horizontal scroll fade edge */
+    .scroll-fade-right {
+        -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    }
 }

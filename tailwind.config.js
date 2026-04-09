@@ -44,6 +44,8 @@ module.exports = {
                 'toast-in': 'toastIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) both',
                 'toast-out': 'toastOut 0.25s ease-in both',
                 'bounce-in': 'bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                'slide-up-sheet': 'slideUpSheet 0.35s cubic-bezier(0.32, 0.72, 0, 1) both',
+                'slide-down-sheet': 'slideDownSheet 0.25s ease-in both',
             },
             keyframes: {
                 fadeIn: {
@@ -82,6 +84,14 @@ module.exports = {
                     '0%': { transform: 'scale(0)', opacity: '0' },
                     '70%': { transform: 'scale(1.05)' },
                     '100%': { transform: 'scale(1)', opacity: '1' },
+                },
+                slideUpSheet: {
+                    '0%': { transform: 'translateY(100%)' },
+                    '100%': { transform: 'translateY(0)' },
+                },
+                slideDownSheet: {
+                    '0%': { transform: 'translateY(0)' },
+                    '100%': { transform: 'translateY(100%)' },
                 },
             },
         },

@@ -190,6 +190,7 @@ export default function Home() {
 
     // New UI state
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [loanFormExpanded, setLoanFormExpanded] = useState(false);
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [mounted, setMounted] = useState(false);
     const toastCounter = useRef(0);
@@ -351,8 +352,17 @@ export default function Home() {
     };
 
     const balances = calculateBalances();
-    const totalBalance = Object.values(balances).reduce((sum, val) => sum + val, 0);
+    const totalBalance = (balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0);
     const animatedBalance = useAnimatedCounter(totalBalance);
+    const investmentBalance = balances['Mutual Fund'] || 0;
+    const animatedInvestment = useAnimatedCounter(investmentBalance);
+    const spentToday = Math.abs(expenses
+        .filter(e => {
+            const today = new Date().toISOString().split('T')[0];
+            return e.Date === today && parseFloat(e.Amount) < 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out';
+        })
+        .reduce((s, e) => s + parseFloat(e.Amount), 0));
+    const animatedSpentToday = useAnimatedCounter(spentToday);
 
     const getAvailableMonths = () => {
         const months = new Set<string>();
@@ -624,13 +634,12 @@ export default function Home() {
                     </div>
                 </div>
                 <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-                    <div className="skeleton h-5 w-32 rounded mb-3" />
-                    <div className="skeleton h-12 w-64 rounded-lg mb-8" />
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                        {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+                    <div className="skeleton h-10 w-full rounded-xl mb-8" />
+                    <div className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-3 sm:overflow-visible">
+                        {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-2xl min-w-[60vw] sm:min-w-0 flex-shrink-0" />)}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
-                        {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+                    <div className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-5 sm:overflow-visible">
+                        {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-24 rounded-2xl min-w-[42vw] sm:min-w-0 flex-shrink-0" />)}
                     </div>
                     <div className="skeleton h-80 rounded-2xl" />
                 </main>
@@ -644,10 +653,10 @@ export default function Home() {
     const groupedTxns = groupTransactionsByDate(filteredTxns);
 
     const tabs = [
-        { key: 'transactions' as const, label: 'Transactions' },
-        { key: 'transfers' as const, label: 'Transfers' },
-        { key: 'analytics' as const, label: 'Analytics' },
-        { key: 'loans' as const, label: 'Loans' },
+        { key: 'transactions' as const, label: 'Transactions', shortLabel: 'Txns' },
+        { key: 'transfers' as const, label: 'Transfers', shortLabel: 'Transfer' },
+        { key: 'analytics' as const, label: 'Analytics', shortLabel: 'Stats' },
+        { key: 'loans' as const, label: 'Loans', shortLabel: 'Loans' },
     ];
 
     const categories = [
@@ -670,11 +679,13 @@ export default function Home() {
         <>
             <Head>
                 <title>Finance Tracker</title>
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="icon" type="image/png" href="/favicon.png" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <meta name="theme-color" content="#000000" />
             </Head>
 
             {/* Toast Notifications */}
-            <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed top-4 left-4 right-4 sm:left-auto z-[100] flex flex-col gap-2 pointer-events-none">
                 {toasts.map(toast => (
                     <div
                         key={toast.id}
@@ -703,11 +714,21 @@ export default function Home() {
                 />
             )}
 
-            {/* Add Transaction Drawer */}
-            <div className={`fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-sys-bg border-l border-sys-separator shadow-2xl overflow-y-auto transition-transform duration-300 ease-out ${
-                drawerOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}>
-                <div className="p-6">
+            {/* Add Transaction Drawer — bottom sheet on mobile, side drawer on sm+ */}
+            <div className={`fixed z-50 bg-sys-bg shadow-2xl overflow-y-auto transition-transform duration-300 ease-out
+                inset-x-0 bottom-0 rounded-t-3xl border-t border-sys-separator max-h-[92vh]
+                sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:rounded-t-none sm:border-t-0 sm:border-l sm:max-h-none sm:w-full sm:max-w-md
+                ${drawerOpen
+                    ? 'translate-y-0 sm:translate-y-0 sm:translate-x-0'
+                    : 'translate-y-full sm:translate-y-0 sm:translate-x-full'
+                }`}
+                style={{ paddingBottom: 'var(--safe-area-bottom, 0px)' }}
+            >
+                {/* Drag handle — mobile only */}
+                <div className="flex justify-center py-3 sm:hidden">
+                    <div className="w-10 h-1 rounded-full bg-sys-fill" />
+                </div>
+                <div className="px-6 pb-6 sm:p-6">
                     {/* Drawer Header */}
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-xl font-bold text-sys-label">New Transaction</h2>
@@ -841,6 +862,7 @@ export default function Home() {
                 className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-sys-blue text-white shadow-lg shadow-sys-blue/30 flex items-center justify-center transition-all active:scale-90 ${
                     mounted ? 'animate-scale-in delay-500' : 'opacity-0'
                 } ${drawerOpen || editOpen ? 'opacity-0 pointer-events-none scale-50' : ''}`}
+                style={{ marginBottom: 'var(--safe-area-bottom, 0px)' }}
             >
                 <Plus className="w-6 h-6" />
             </button>
@@ -848,7 +870,7 @@ export default function Home() {
             <div className="min-h-screen bg-sys-bg">
                 {/* Header */}
                 <header className="sticky top-0 z-30 bg-sys-bg/80 backdrop-blur-xl border-b border-sys-separator">
-                    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+                    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3.5 flex justify-between items-center">
                         <h1 className="text-[17px] font-semibold text-sys-label">Finance Tracker</h1>
                         <div className="flex items-center gap-3">
                             <span className="text-xs text-sys-label-tertiary hidden sm:block">{session?.user?.email}</span>
@@ -862,7 +884,7 @@ export default function Home() {
                     </div>
                 </header>
 
-                <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+                <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-24">
                     {/* Segmented Control */}
                     <div className={`mb-8 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}>
                         <div className="bg-sys-elevated rounded-xl p-1 flex">
@@ -870,13 +892,14 @@ export default function Home() {
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                                    className={`flex-1 py-2 px-1 rounded-lg text-xs sm:text-[13px] font-semibold transition-all ${
                                         activeTab === tab.key
                                             ? 'bg-sys-fill text-sys-label shadow-sm'
                                             : 'text-sys-label-secondary'
                                     }`}
                                 >
-                                    {tab.label}
+                                    <span className="sm:hidden">{tab.shortLabel}</span>
+                                    <span className="hidden sm:inline">{tab.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -897,37 +920,30 @@ export default function Home() {
                     {activeTab === 'transactions' && (
                         <div className={mounted ? 'animate-fade-in' : 'opacity-0'}>
                             {/* Top 3 Stats */}
-                            <div className="grid grid-cols-3 gap-3 mb-8 animate-slide-up">
+                            <div className="flex gap-3 mb-8 animate-slide-up overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
                                 {/* Current Balance */}
-                                <div className="apple-card p-4">
+                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-label-secondary text-[11px] font-semibold uppercase tracking-wider mb-2">Balance</p>
-                                    <p className="text-sys-label text-base sm:text-2xl font-bold tracking-tight truncate">
-                                        {formatIndianCurrency((balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0))}
+                                    <p className="text-sys-label text-xl sm:text-2xl font-bold tracking-tight">
+                                        {formatIndianCurrency(animatedBalance)}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash</p>
                                 </div>
 
                                 {/* Investment */}
-                                <div className="apple-card p-4">
+                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-teal text-[11px] font-semibold uppercase tracking-wider mb-2">Investment</p>
-                                    <p className="text-sys-teal text-base sm:text-2xl font-bold tracking-tight truncate">
-                                        {formatIndianCurrency(balances['Mutual Fund'] || 0)}
+                                    <p className="text-sys-teal text-xl sm:text-2xl font-bold tracking-tight">
+                                        {formatIndianCurrency(animatedInvestment)}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">Mutual Fund</p>
                                 </div>
 
                                 {/* Spent Today */}
-                                <div className="apple-card p-4">
+                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-red text-[11px] font-semibold uppercase tracking-wider mb-2">Spent Today</p>
-                                    <p className="text-sys-red text-base sm:text-2xl font-bold tracking-tight truncate">
-                                        {formatIndianCurrency(
-                                            Math.abs(expenses
-                                                .filter(e => {
-                                                    const today = new Date().toISOString().split('T')[0];
-                                                    return e.Date === today && parseFloat(e.Amount) < 0 && e.Category !== 'Transfer In' && e.Category !== 'Transfer Out';
-                                                })
-                                                .reduce((s, e) => s + parseFloat(e.Amount), 0))
-                                        )}
+                                    <p className="text-sys-red text-xl sm:text-2xl font-bold tracking-tight">
+                                        {formatIndianCurrency(animatedSpentToday)}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">
                                         {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -938,13 +954,13 @@ export default function Home() {
                             {/* Account Cards */}
                             <div className="mb-8 animate-slide-up stagger-4">
                                 <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider mb-3 px-1">Accounts</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
                                     {Object.entries(balances).map(([account, balance], idx) => {
                                         const ai = getAccountIcon(account);
                                         return (
                                             <button
                                                 key={account}
-                                                className={`apple-card p-4 text-left transition-all active:scale-[0.97] ${
+                                                className={`apple-card p-4 text-left transition-all active:scale-[0.97] min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0 ${
                                                     selectedAccountFilter === account ? 'ring-1 ring-sys-blue' : ''
                                                 }`}
                                                 style={{ animationDelay: `${idx * 60}ms` }}
@@ -981,12 +997,12 @@ export default function Home() {
                                 </div>
 
                                 {/* Account filter pills */}
-                                <div className="flex items-center gap-2 flex-wrap mb-3 px-1">
+                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide scroll-fade-right pb-0.5">
                                     {['All Accounts', ...accountsList].map(acc => (
                                         <button
                                             key={acc}
                                             onClick={() => { setSelectedAccountFilter(acc); setShowAllTransactions(false); }}
-                                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                                 selectedAccountFilter === acc
                                                     ? 'bg-sys-blue text-white'
                                                     : 'bg-sys-elevated text-sys-label-secondary'
@@ -1021,8 +1037,8 @@ export default function Home() {
                                         </div>
                                     ) : (
                                         <div>
-                                            {groupedTxns.map((group) => (
-                                                <div key={group.dateKey}>
+                                            {groupedTxns.map((group, groupIdx) => (
+                                                <div key={group.dateKey} className="animate-fade-in" style={{ animationDelay: `${groupIdx * 80}ms` }}>
                                                     <div className="px-4 py-2 bg-sys-bg/50">
                                                         <span className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider">{group.label}</span>
                                                     </div>
@@ -1196,7 +1212,7 @@ export default function Home() {
                             </div>
 
                             {/* Summary Stats */}
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                            <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
                                 {[
                                     { label: 'Income', value: summary.totalIncome, color: 'text-sys-green' },
                                     { label: 'Investment', value: summary.totalInvestment, color: 'text-sys-teal' },
@@ -1204,7 +1220,7 @@ export default function Home() {
                                     { label: 'Net Savings', value: summary.netSavings, color: summary.netSavings >= 0 ? 'text-sys-green' : 'text-sys-red' },
                                     { label: 'Savings Rate', value: summary.savingsRate, color: 'text-sys-blue', isPercent: true },
                                 ].map((card, i) => (
-                                    <div key={card.label} className="apple-card p-4 animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+                                    <div key={card.label} className="apple-card p-4 animate-slide-up min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0" style={{ animationDelay: `${i * 60}ms` }}>
                                         <p className="text-[11px] font-medium text-sys-label-secondary mb-1.5 uppercase tracking-wider">{card.label}</p>
                                         <p className={`text-lg font-bold ${card.color}`}>
                                             {(card as any).isPercent ? `${card.value.toFixed(1)}%` : formatIndianCurrency(card.value)}
@@ -1227,7 +1243,7 @@ export default function Home() {
                                     </div>
                                 ) : (
                                     <div className="rounded-xl overflow-hidden">
-                                        <ResponsiveContainer width="100%" height={350}>
+                                        <ResponsiveContainer width="100%" height={280}>
                                             <AreaChart data={dailyExpensesData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
                                                 <defs>
                                                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -1256,8 +1272,8 @@ export default function Home() {
                                                     </linearGradient>
                                                 </defs>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#38383A" opacity={0.3} vertical={false} />
-                                                <XAxis dataKey="date" stroke="#48484A" style={{ fontSize: '11px' }} tick={{ fill: '#8E8E93' }} axisLine={false} tickLine={false} />
-                                                <YAxis stroke="#48484A" style={{ fontSize: '11px' }} tick={{ fill: '#8E8E93' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
+                                                <XAxis dataKey="date" stroke="#48484A" style={{ fontSize: '10px' }} tick={{ fill: '#8E8E93' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                                                <YAxis stroke="#48484A" style={{ fontSize: '10px' }} tick={{ fill: '#8E8E93' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
                                                 <Tooltip
                                                     content={(props: any) => {
                                                         if (!props.payload || props.payload.length === 0) return null;
@@ -1282,7 +1298,7 @@ export default function Home() {
                                                     }}
                                                     cursor={{ stroke: '#0A84FF', strokeWidth: 1, strokeDasharray: '4 4' }}
                                                 />
-                                                <Legend verticalAlign="top" height={36} iconType="line" wrapperStyle={{ paddingBottom: '16px', fontSize: '11px' }} />
+                                                <Legend verticalAlign="top" height={44} iconType="line" wrapperStyle={{ paddingBottom: '12px', fontSize: '10px', lineHeight: '18px' }} />
                                                 <Area type="monotone" dataKey="total" name="Total" stroke="#0A84FF" strokeWidth={2.5} fill="url(#colorTotal)" strokeLinecap="round" />
                                                 <Area type="monotone" dataKey="AXIS Bank" name="AXIS Bank" stroke="#30D158" strokeWidth={1.5} fill="url(#colorAxis)" strokeLinecap="round" />
                                                 <Area type="monotone" dataKey="SBI Bank" name="SBI Bank" stroke="#FF9F0A" strokeWidth={1.5} fill="url(#colorSBI)" strokeLinecap="round" />
@@ -1301,10 +1317,10 @@ export default function Home() {
                                 {categoryDistribution.length === 0 ? (
                                     <p className="text-sys-label-secondary text-center py-8 text-sm">No expense data for this period</p>
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={380}>
+                                    <ResponsiveContainer width="100%" height={300}>
                                         <BarChart data={categoryDistribution.map(cat => ({ name: cat.category, value: cat.amount, percentage: cat.percentage }))} margin={{ top: 15, right: 20, left: 15, bottom: 60 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#38383A" opacity={0.3} />
-                                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fill: '#8E8E93', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fill: '#8E8E93', fontSize: 10 }} axisLine={false} tickLine={false} interval={0} tickFormatter={(value: string) => value.length > 12 ? value.slice(0, 12) + '…' : value} />
                                             <YAxis tick={{ fill: '#8E8E93', fontSize: 11 }} tickFormatter={(v) => `₹${v}`} axisLine={false} tickLine={false} />
                                             <Tooltip
                                                 contentStyle={{ backgroundColor: '#2C2C2E', border: '1px solid #38383A', borderRadius: '12px', color: '#FFFFFF' }}
@@ -1432,8 +1448,15 @@ export default function Home() {
                                 {/* Add Loan Form */}
                                 <div className="lg:col-span-1">
                                     <div className="apple-card p-6">
-                                        <h3 className="text-base font-bold text-sys-label mb-5">Add Transaction</h3>
-                                        <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setLoanFormExpanded(!loanFormExpanded)}
+                                            className="flex items-center justify-between w-full lg:pointer-events-none"
+                                        >
+                                            <h3 className="text-base font-bold text-sys-label">Add Transaction</h3>
+                                            <Plus className={`w-5 h-5 text-sys-label-secondary lg:hidden transition-transform ${loanFormExpanded ? 'rotate-45' : ''}`} />
+                                        </button>
+                                        <form onSubmit={handleLoanSubmit} className={`space-y-4 ${loanFormExpanded ? 'mt-5' : 'hidden'} lg:block lg:mt-5`}>
                                             <div className="apple-card overflow-hidden">
                                                 <div>
                                                     <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
@@ -1573,7 +1596,13 @@ export default function Home() {
                     {editOpen && (
                         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in-fast">
                             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeEditModal} />
-                            <div className="relative bg-sys-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-0 sm:mx-4 p-6 animate-slide-up">
+                            <div className="relative bg-sys-card rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-0 sm:mx-4 p-6 animate-slide-up-sheet sm:animate-slide-up"
+                                 style={{ paddingBottom: 'max(1.5rem, var(--safe-area-bottom, 0px))' }}
+                            >
+                                {/* Drag handle — mobile only */}
+                                <div className="flex justify-center pb-2 sm:hidden">
+                                    <div className="w-10 h-1 rounded-full bg-sys-fill" />
+                                </div>
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-lg font-bold text-sys-label">Edit Transaction</h3>
                                     <button onClick={closeEditModal} className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center">
