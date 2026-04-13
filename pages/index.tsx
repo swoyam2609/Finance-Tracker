@@ -6,6 +6,7 @@ import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingScreen from '@/components/LoadingScreen';
+import { PressableCard, SlideIndicator, AnimatedTabContent, BottomSheet, ModalSheet, StaggerContainer, StaggerItem } from '@/components/MotionPrimitives';
 import {
     UtensilsCrossed,
     Car,
@@ -33,6 +34,7 @@ import {
     AlertCircle,
     ArrowRightLeft,
     ChevronRight,
+    Users,
 } from 'lucide-react';
 
 type Transaction = ExpenseData & { RowIndex?: number };
@@ -102,6 +104,7 @@ const getCategoryIcon = (category: string, isPositive: boolean = false) => {
         'Travel': { icon: <Plane className="w-5 h-5 text-sys-cyan" />, bgColor: 'bg-sys-cyan/15' },
         'Subscriptions': { icon: <RefreshCw className="w-5 h-5 text-sys-purple" />, bgColor: 'bg-sys-purple/15' },
         'Gifts': { icon: <Gift className="w-5 h-5 text-sys-pink" />, bgColor: 'bg-sys-pink/15' },
+        'Family Transfer': { icon: <Users className="w-5 h-5 text-sys-teal" />, bgColor: 'bg-sys-teal/15' },
         'Other': { icon: <Wallet className="w-5 h-5 text-sys-label-secondary" />, bgColor: 'bg-sys-fill/50' }
     };
     return categoryMap[category] || categoryMap['Other'];
@@ -354,7 +357,7 @@ export default function Home() {
     };
 
     const balances = calculateBalances();
-    const totalBalance = (balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0);
+    const totalBalance = (balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0) - 15000;
     const animatedBalance = useAnimatedCounter(totalBalance);
     const investmentBalance = balances['Mutual Fund'] || 0;
     const animatedInvestment = useAnimatedCounter(investmentBalance);
@@ -643,7 +646,7 @@ export default function Home() {
     const categories = [
         'Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities',
         'Healthcare', 'Education', 'Groceries', 'Rent', 'Insurance', 'Personal Care',
-        'Travel', 'Subscriptions', 'Gifts', 'Other',
+        'Travel', 'Subscriptions', 'Gifts', 'Family Transfer', 'Other',
     ];
 
     const accountsList = ['AXIS Bank', 'SBI Bank', 'Credit Card', 'Cash', 'Mutual Fund'];
@@ -698,35 +701,15 @@ export default function Home() {
                         transition={{ duration: 0.4, ease: 'easeOut' }}
                     >
 
-            {/* Drawer Backdrop */}
-            {drawerOpen && (
-                <div
-                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in-fast"
-                    onClick={() => setDrawerOpen(false)}
-                />
-            )}
-
-            {/* Add Transaction Drawer — bottom sheet on mobile, side drawer on sm+ */}
-            <div className={`fixed z-50 bg-sys-bg shadow-2xl overflow-y-auto transition-transform duration-300 ease-out
-                inset-x-0 bottom-0 rounded-t-3xl border-t border-sys-separator max-h-[92vh]
-                sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:rounded-t-none sm:border-t-0 sm:border-l sm:max-h-none sm:w-full sm:max-w-md
-                ${drawerOpen
-                    ? 'translate-y-0 sm:translate-y-0 sm:translate-x-0'
-                    : 'translate-y-full sm:translate-y-0 sm:translate-x-full'
-                }`}
-                style={{ paddingBottom: 'var(--safe-area-bottom, 0px)' }}
-            >
-                {/* Drag handle — mobile only */}
-                <div className="flex justify-center py-3 sm:hidden">
-                    <div className="w-10 h-1 rounded-full bg-sys-fill" />
-                </div>
+            {/* Add Transaction Drawer */}
+            <BottomSheet isOpen={drawerOpen} onClose={() => setDrawerOpen(false)}>
                 <div className="px-6 pb-6 sm:p-6">
                     {/* Drawer Header */}
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-xl font-bold text-sys-label">New Transaction</h2>
                         <button
                             onClick={() => setDrawerOpen(false)}
-                            className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center transition-colors active:bg-sys-fill"
+                            className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center min-w-[44px] min-h-[44px]"
                         >
                             <X className="w-4 h-4 text-sys-label-secondary" />
                         </button>
@@ -735,23 +718,15 @@ export default function Home() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Income/Expense Segmented Control */}
                         <div className="bg-sys-elevated rounded-xl p-1 flex">
-                            <button
-                                type="button"
-                                onClick={() => setIsIncome(false)}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                                    !isIncome ? 'bg-sys-red text-white shadow-sm' : 'text-sys-label-secondary'
-                                }`}
-                            >
-                                Expense
+                            <button type="button" onClick={() => setIsIncome(false)}
+                                className="relative flex-1 py-2.5 rounded-lg text-sm font-semibold">
+                                {!isIncome && <SlideIndicator layoutId="incomeExpenseToggle" className="bg-sys-red rounded-lg shadow-sm" />}
+                                <span className={`relative z-10 ${!isIncome ? 'text-white' : 'text-sys-label-secondary'}`}>Expense</span>
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsIncome(true)}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                                    isIncome ? 'bg-sys-green text-white shadow-sm' : 'text-sys-label-secondary'
-                                }`}
-                            >
-                                Income
+                            <button type="button" onClick={() => setIsIncome(true)}
+                                className="relative flex-1 py-2.5 rounded-lg text-sm font-semibold">
+                                {isIncome && <SlideIndicator layoutId="incomeExpenseToggle" className="bg-sys-green rounded-lg shadow-sm" />}
+                                <span className={`relative z-10 ${isIncome ? 'text-white' : 'text-sys-label-secondary'}`}>Income</span>
                             </button>
                         </div>
 
@@ -803,7 +778,7 @@ export default function Home() {
                             {!isIncome && (
                                 <>
                                     <div className="border-t border-sys-separator ml-4" />
-                                    <div className="animate-fade-in">
+                                    <div>
                                         <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Category</label>
                                         <select
                                             required
@@ -846,18 +821,21 @@ export default function Home() {
                         </button>
                     </form>
                 </div>
-            </div>
+            </BottomSheet>
 
             {/* FAB */}
-            <button
+            <motion.button
                 onClick={() => setDrawerOpen(true)}
-                className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-sys-blue text-white shadow-lg shadow-sys-blue/30 flex items-center justify-center transition-all active:scale-90 ${
-                    mounted ? 'animate-scale-in delay-500' : 'opacity-0'
-                } ${drawerOpen || editOpen ? 'opacity-0 pointer-events-none scale-50' : ''}`}
+                className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-sys-blue text-white shadow-lg shadow-sys-blue/30 flex items-center justify-center"
                 style={{ marginBottom: 'var(--safe-area-bottom, 0px)' }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: drawerOpen || editOpen ? 0 : 1, opacity: drawerOpen || editOpen ? 0 : 1 }}
+                whileTap={{ scale: 0.85 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
                 <Plus className="w-6 h-6" />
-            </button>
+            </motion.button>
 
             <div className="min-h-screen bg-sys-bg">
                 {/* Header */}
@@ -868,7 +846,7 @@ export default function Home() {
                             <span className="text-xs text-sys-label-tertiary hidden sm:block">{session?.user?.email}</span>
                             <button
                                 onClick={() => signOut()}
-                                className="text-sys-red text-sm font-medium transition-opacity active:opacity-60"
+                                className="text-sys-red text-sm font-medium transition-opacity active:opacity-60 min-h-[44px] flex items-center"
                             >
                                 Sign Out
                             </button>
@@ -884,14 +862,15 @@ export default function Home() {
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`flex-1 py-2 px-1 rounded-lg text-xs sm:text-[13px] font-semibold transition-all ${
-                                        activeTab === tab.key
-                                            ? 'bg-sys-fill text-sys-label shadow-sm'
-                                            : 'text-sys-label-secondary'
-                                    }`}
+                                    className="relative flex-1 py-2 px-1 rounded-lg text-xs sm:text-[13px] font-semibold transition-colors z-10"
                                 >
-                                    <span className="sm:hidden">{tab.shortLabel}</span>
-                                    <span className="hidden sm:inline">{tab.label}</span>
+                                    {activeTab === tab.key && (
+                                        <SlideIndicator layoutId="activeTab" className="bg-sys-fill rounded-lg shadow-sm" />
+                                    )}
+                                    <span className={`relative z-10 ${activeTab === tab.key ? 'text-sys-label' : 'text-sys-label-secondary'}`}>
+                                        <span className="sm:hidden">{tab.shortLabel}</span>
+                                        <span className="hidden sm:inline">{tab.label}</span>
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -908,31 +887,33 @@ export default function Home() {
                         </div>
                     )}
 
+                    {/* ═══ TAB CONTENT ═══ */}
+                    <AnimatedTabContent activeKey={activeTab}>
                     {/* ═══ TRANSACTIONS TAB ═══ */}
                     {activeTab === 'transactions' && (
-                        <div className={mounted ? 'animate-fade-in' : 'opacity-0'}>
+                        <div>
                             {/* Top 3 Stats */}
-                            <div className="flex gap-3 mb-8 animate-slide-up overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
+                            <StaggerContainer className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
                                 {/* Current Balance */}
-                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
+                                <StaggerItem className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-label-secondary text-[11px] font-semibold uppercase tracking-wider mb-2">Balance</p>
                                     <p className="text-sys-label text-xl sm:text-2xl font-bold tracking-tight">
                                         {formatIndianCurrency(animatedBalance)}
                                     </p>
-                                    <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash</p>
-                                </div>
+                                    <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash − 15K min</p>
+                                </StaggerItem>
 
                                 {/* Investment */}
-                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
+                                <StaggerItem className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-teal text-[11px] font-semibold uppercase tracking-wider mb-2">Investment</p>
                                     <p className="text-sys-teal text-xl sm:text-2xl font-bold tracking-tight">
                                         {formatIndianCurrency(animatedInvestment)}
                                     </p>
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">Mutual Fund</p>
-                                </div>
+                                </StaggerItem>
 
                                 {/* Spent Today */}
-                                <div className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
+                                <StaggerItem className="apple-card p-4 min-w-[60vw] snap-center sm:min-w-0 flex-shrink-0">
                                     <p className="text-sys-red text-[11px] font-semibold uppercase tracking-wider mb-2">Spent Today</p>
                                     <p className="text-sys-red text-xl sm:text-2xl font-bold tracking-tight">
                                         {formatIndianCurrency(animatedSpentToday)}
@@ -940,26 +921,26 @@ export default function Home() {
                                     <p className="text-sys-label-tertiary text-[10px] mt-1">
                                         {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                     </p>
-                                </div>
-                            </div>
+                                </StaggerItem>
+                            </StaggerContainer>
 
                             {/* Account Cards */}
-                            <div className="mb-8 animate-slide-up stagger-4">
+                            <div className="mb-8">
                                 <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider mb-3 px-1">Accounts</h3>
-                                <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
-                                    {Object.entries(balances).map(([account, balance], idx) => {
+                                <StaggerContainer className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
+                                    {Object.entries(balances).map(([account, balance]) => {
                                         const ai = getAccountIcon(account);
                                         return (
-                                            <button
-                                                key={account}
-                                                className={`apple-card p-4 text-left transition-all active:scale-[0.97] min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0 ${
+                                            <StaggerItem key={account}>
+                                            <PressableCard
+                                                className={`apple-card p-4 text-left min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0 ${
                                                     selectedAccountFilter === account ? 'ring-1 ring-sys-blue' : ''
                                                 }`}
-                                                style={{ animationDelay: `${idx * 60}ms` }}
                                                 onClick={() => {
                                                     setSelectedAccountFilter(selectedAccountFilter === account ? 'All Accounts' : account);
                                                     setShowAllTransactions(false);
                                                 }}
+                                                scaleAmount={0.96}
                                             >
                                                 <div className={`w-9 h-9 rounded-xl ${ai.bg} flex items-center justify-center mb-3 ${ai.color}`}>
                                                     {ai.icon}
@@ -968,14 +949,15 @@ export default function Home() {
                                                 <p className={`text-sm font-bold ${balance >= 0 ? 'text-sys-label' : 'text-sys-red'}`}>
                                                     {formatIndianCurrency(balance)}
                                                 </p>
-                                            </button>
+                                            </PressableCard>
+                                            </StaggerItem>
                                         );
                                     })}
-                                </div>
+                                </StaggerContainer>
                             </div>
 
                             {/* Transactions List */}
-                            <div className="animate-slide-up stagger-5">
+                            <div>
                                 <div className="flex items-center justify-between mb-3 px-1">
                                     <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider">
                                         {selectedAccountFilter === 'All Accounts' ? 'Recent Transactions' : selectedAccountFilter}
@@ -994,13 +976,14 @@ export default function Home() {
                                         <button
                                             key={acc}
                                             onClick={() => { setSelectedAccountFilter(acc); setShowAllTransactions(false); }}
-                                            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                                selectedAccountFilter === acc
-                                                    ? 'bg-sys-blue text-white'
-                                                    : 'bg-sys-elevated text-sys-label-secondary'
-                                            }`}
+                                            className="relative flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium"
                                         >
-                                            {acc === 'All Accounts' ? 'All' : acc}
+                                            {selectedAccountFilter === acc && (
+                                                <SlideIndicator layoutId="activeFilter" className="bg-sys-blue rounded-full" />
+                                            )}
+                                            <span className={`relative z-10 ${selectedAccountFilter === acc ? 'text-white' : 'text-sys-label-secondary'}`}>
+                                                {acc === 'All Accounts' ? 'All' : acc}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -1039,10 +1022,11 @@ export default function Home() {
                                                         const isPositive = amount >= 0;
                                                         const catIcon = getCategoryIcon(expense.Category, isPositive);
                                                         return (
-                                                            <div
+                                                            <PressableCard
                                                                 key={`${group.dateKey}-${index}`}
-                                                                className="flex items-center gap-3 px-4 py-3 active:bg-sys-elevated/50 transition-colors cursor-pointer"
+                                                                className="flex items-center gap-3 px-4 py-3"
                                                                 onClick={() => openEditModal(expense)}
+                                                                scaleAmount={0.98}
                                                             >
                                                                 <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${catIcon.bgColor}`}>
                                                                     {catIcon.icon}
@@ -1061,7 +1045,7 @@ export default function Home() {
                                                                     </p>
                                                                     <ChevronRight className="w-4 h-4 text-sys-label-tertiary" />
                                                                 </div>
-                                                            </div>
+                                                            </PressableCard>
                                                         );
                                                     })}
                                                 </div>
@@ -1075,7 +1059,7 @@ export default function Home() {
 
                     {/* ═══ TRANSFERS TAB ═══ */}
                     {activeTab === 'transfers' && (
-                        <div className="animate-fade-in">
+                        <div className="space-y-6">
                             <div className="apple-card p-6">
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="w-10 h-10 bg-sys-blue/15 rounded-xl flex items-center justify-center">
@@ -1185,7 +1169,7 @@ export default function Home() {
 
                     {/* ═══ ANALYTICS TAB ═══ */}
                     {activeTab === 'analytics' && (
-                        <div className="space-y-6 animate-fade-in">
+                        <div className="space-y-6">
                             {/* Period Selector */}
                             <div className="flex justify-between items-center">
                                 <h2 className="text-lg font-bold text-sys-label">Analysis</h2>
@@ -1204,25 +1188,30 @@ export default function Home() {
                             </div>
 
                             {/* Summary Stats */}
-                            <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
+                            <StaggerContainer className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
                                 {[
                                     { label: 'Income', value: summary.totalIncome, color: 'text-sys-green' },
                                     { label: 'Investment', value: summary.totalInvestment, color: 'text-sys-teal' },
                                     { label: 'Expenses', value: summary.totalExpenses, color: 'text-sys-red' },
                                     { label: 'Net Savings', value: summary.netSavings, color: summary.netSavings >= 0 ? 'text-sys-green' : 'text-sys-red' },
                                     { label: 'Savings Rate', value: summary.savingsRate, color: 'text-sys-blue', isPercent: true },
-                                ].map((card, i) => (
-                                    <div key={card.label} className="apple-card p-4 animate-slide-up min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0" style={{ animationDelay: `${i * 60}ms` }}>
+                                ].map((card) => (
+                                    <StaggerItem key={card.label} className="apple-card p-4 min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0">
                                         <p className="text-[11px] font-medium text-sys-label-secondary mb-1.5 uppercase tracking-wider">{card.label}</p>
                                         <p className={`text-lg font-bold ${card.color}`}>
                                             {(card as any).isPercent ? `${card.value.toFixed(1)}%` : formatIndianCurrency(card.value)}
                                         </p>
-                                    </div>
+                                    </StaggerItem>
                                 ))}
-                            </div>
+                            </StaggerContainer>
 
                             {/* Daily Expenses Chart */}
-                            <div className="apple-card p-6 animate-slide-up stagger-3">
+                            <motion.div
+                                className="apple-card p-6"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.1 }}
+                            >
                                 <h3 className="text-base font-bold text-sys-label mb-1">Daily Expenses</h3>
                                 <p className="text-xs text-sys-label-secondary mb-6">Spending across all accounts</p>
 
@@ -1301,37 +1290,58 @@ export default function Home() {
                                         </ResponsiveContainer>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
 
                             {/* Category Distribution */}
-                            <div className="apple-card p-6 animate-slide-up stagger-4">
+                            <motion.div
+                                className="apple-card p-6"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.2 }}
+                            >
                                 <h3 className="text-base font-bold text-sys-label mb-4">Expenses by Category</h3>
                                 {categoryDistribution.length === 0 ? (
                                     <p className="text-sys-label-secondary text-center py-8 text-sm">No expense data for this period</p>
                                 ) : (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={categoryDistribution.map(cat => ({ name: cat.category, value: cat.amount, percentage: cat.percentage }))} margin={{ top: 15, right: 20, left: 15, bottom: 60 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#38383A" opacity={0.3} />
-                                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fill: '#8E8E93', fontSize: 10 }} axisLine={false} tickLine={false} interval={0} tickFormatter={(value: string) => value.length > 12 ? value.slice(0, 12) + '…' : value} />
-                                            <YAxis tick={{ fill: '#8E8E93', fontSize: 11 }} tickFormatter={(v) => `₹${v}`} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#2C2C2E', border: '1px solid #38383A', borderRadius: '12px', color: '#FFFFFF' }}
-                                                formatter={(value: number, _name: string, props: any) => [`${formatIndianCurrency(value)} (${props.payload.percentage.toFixed(1)}%)`, 'Amount']}
-                                                labelStyle={{ color: '#8E8E93' }}
-                                            />
-                                            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                                                {categoryDistribution.map((_entry, index) => {
-                                                    const colors = ['#0A84FF', '#BF5AF2', '#FF375F', '#FF9F0A', '#30D158', '#5E5CE6', '#FF453A', '#64D2FF', '#FFD60A', '#00C7BE', '#0A84FF', '#BF5AF2', '#FF375F', '#FF9F0A', '#30D158'];
-                                                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                                                })}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const colors = ['#0A84FF', '#BF5AF2', '#FF375F', '#FF9F0A', '#30D158', '#5E5CE6', '#FF453A', '#64D2FF', '#FFD60A', '#00C7BE'];
+                                            const maxAmount = Math.max(...categoryDistribution.map(c => c.amount));
+                                            return categoryDistribution.map((cat, index) => (
+                                                <div key={cat.category}>
+                                                    <div className="flex items-center justify-between mb-1.5">
+                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: colors[index % colors.length] }} />
+                                                            <span className="text-sm text-sys-label truncate">{cat.category}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                                                            <span className="text-sm font-semibold text-sys-label">{formatIndianCurrency(cat.amount)}</span>
+                                                            <span className="text-xs text-sys-label-tertiary w-12 text-right">{cat.percentage.toFixed(1)}%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-2 bg-sys-fill rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            className="h-full rounded-full"
+                                                            style={{ backgroundColor: colors[index % colors.length] }}
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${(cat.amount / maxAmount) * 100}%` }}
+                                                            transition={{ type: 'spring', stiffness: 300, damping: 25, delay: index * 0.05 }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
                                 )}
-                            </div>
+                            </motion.div>
 
                             {/* Account Breakdown */}
-                            <div className="apple-card overflow-hidden animate-slide-up stagger-5">
+                            <motion.div
+                                className="apple-card overflow-hidden"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
+                            >
                                 <div className="px-5 py-4 border-b border-sys-separator">
                                     <h3 className="text-base font-bold text-sys-label">Account Breakdown</h3>
                                     <p className="text-xs text-sys-label-secondary mt-0.5">Income, expenses, and net per account</p>
@@ -1415,13 +1425,13 @@ export default function Home() {
                                         </div>
                                     </>
                                 )}
-                            </div>
+                            </motion.div>
                         </div>
                     )}
 
                     {/* ═══ LOANS TAB ═══ */}
                     {activeTab === 'loans' && (
-                        <div className="space-y-6 animate-fade-in">
+                        <div className="space-y-6">
                             {/* Summary */}
                             <div className="apple-card p-6">
                                 <p className="text-sys-label-secondary text-sm font-medium mb-1">Total Money Lent</p>
@@ -1584,92 +1594,85 @@ export default function Home() {
                         </div>
                     )}
 
+                    </AnimatedTabContent>
+
                     {/* ═══ EDIT MODAL ═══ */}
-                    {editOpen && (
-                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in-fast">
-                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeEditModal} />
-                            <div className="relative bg-sys-card rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-0 sm:mx-4 p-6 animate-slide-up-sheet sm:animate-slide-up"
-                                 style={{ paddingBottom: 'max(1.5rem, var(--safe-area-bottom, 0px))' }}
-                            >
-                                {/* Drag handle — mobile only */}
-                                <div className="flex justify-center pb-2 sm:hidden">
-                                    <div className="w-10 h-1 rounded-full bg-sys-fill" />
-                                </div>
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-lg font-bold text-sys-label">Edit Transaction</h3>
-                                    <button onClick={closeEditModal} className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center">
-                                        <X className="w-4 h-4 text-sys-label-secondary" />
-                                    </button>
-                                </div>
+                    <ModalSheet isOpen={editOpen} onClose={closeEditModal}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-sys-label">Edit Transaction</h3>
+                            <button onClick={closeEditModal} className="w-8 h-8 rounded-full bg-sys-fill/50 flex items-center justify-center min-w-[44px] min-h-[44px]">
+                                <X className="w-4 h-4 text-sys-label-secondary" />
+                            </button>
+                        </div>
 
-                                <form onSubmit={handleUpdate} className="space-y-4">
-                                    {/* Income/Expense Segmented */}
-                                    <div className="bg-sys-elevated rounded-xl p-1 flex">
-                                        <button type="button" onClick={() => setEditIsIncome(false)}
-                                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${!editIsIncome ? 'bg-sys-red text-white shadow-sm' : 'text-sys-label-secondary'}`}>
-                                            Expense
-                                        </button>
-                                        <button type="button" onClick={() => setEditIsIncome(true)}
-                                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${editIsIncome ? 'bg-sys-green text-white shadow-sm' : 'text-sys-label-secondary'}`}>
-                                            Income
-                                        </button>
-                                    </div>
+                        <form onSubmit={handleUpdate} className="space-y-4">
+                            {/* Income/Expense Segmented */}
+                            <div className="bg-sys-elevated rounded-xl p-1 flex">
+                                <button type="button" onClick={() => setEditIsIncome(false)}
+                                    className="relative flex-1 py-2 rounded-lg text-sm font-semibold">
+                                    {!editIsIncome && <SlideIndicator layoutId="editIncomeExpenseToggle" className="bg-sys-red rounded-lg shadow-sm" />}
+                                    <span className={`relative z-10 ${!editIsIncome ? 'text-white' : 'text-sys-label-secondary'}`}>Expense</span>
+                                </button>
+                                <button type="button" onClick={() => setEditIsIncome(true)}
+                                    className="relative flex-1 py-2 rounded-lg text-sm font-semibold">
+                                    {editIsIncome && <SlideIndicator layoutId="editIncomeExpenseToggle" className="bg-sys-green rounded-lg shadow-sm" />}
+                                    <span className={`relative z-10 ${editIsIncome ? 'text-white' : 'text-sys-label-secondary'}`}>Income</span>
+                                </button>
+                            </div>
 
-                                    <div className="apple-card overflow-hidden">
-                                        <div>
-                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
-                                            <input type="date" required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
-                                                value={editData.Date} onChange={(e) => setEditData({ ...editData, Date: e.target.value })} style={{ colorScheme: 'dark' }} />
-                                        </div>
+                            <div className="apple-card overflow-hidden">
+                                <div>
+                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Date</label>
+                                    <input type="date" required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none"
+                                        value={editData.Date} onChange={(e) => setEditData({ ...editData, Date: e.target.value })} style={{ colorScheme: 'dark' }} />
+                                </div>
+                                <div className="border-t border-sys-separator ml-4" />
+                                <div>
+                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Account</label>
+                                    <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
+                                        value={editData.Account} onChange={(e) => setEditData({ ...editData, Account: e.target.value })}>
+                                        {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                                    </select>
+                                </div>
+                                {!editIsIncome && (
+                                    <>
                                         <div className="border-t border-sys-separator ml-4" />
                                         <div>
-                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Account</label>
+                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Category</label>
                                             <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
-                                                value={editData.Account} onChange={(e) => setEditData({ ...editData, Account: e.target.value })}>
-                                                {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                                                value={editData.Category} onChange={(e) => setEditData({ ...editData, Category: e.target.value })}>
+                                                <option value="">Select category</option>
+                                                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                             </select>
                                         </div>
-                                        {!editIsIncome && (
-                                            <>
-                                                <div className="border-t border-sys-separator ml-4" />
-                                                <div className="animate-fade-in">
-                                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Category</label>
-                                                    <select required className="w-full px-4 py-2.5 bg-transparent text-sys-label focus:outline-none appearance-none cursor-pointer"
-                                                        value={editData.Category} onChange={(e) => setEditData({ ...editData, Category: e.target.value })}>
-                                                        <option value="">Select category</option>
-                                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                                    </select>
-                                                </div>
-                                            </>
-                                        )}
-                                        <div className="border-t border-sys-separator ml-4" />
-                                        <div>
-                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
-                                            <input type="text" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
-                                                value={editData.Description} onChange={(e) => setEditData({ ...editData, Description: e.target.value })} placeholder="Details" />
-                                        </div>
-                                        <div className="border-t border-sys-separator ml-4" />
-                                        <div>
-                                            <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Amount</label>
-                                            <input type="number" required step="0.01" min="0" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
-                                                value={editData.Amount} onChange={(e) => setEditData({ ...editData, Amount: e.target.value })} placeholder="0.00" />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-2">
-                                        <button type="button" onClick={closeEditModal}
-                                            className="flex-1 py-3 rounded-xl bg-sys-elevated text-sys-label font-medium transition-all active:scale-[0.98]">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" disabled={updating}
-                                            className="flex-1 py-3 rounded-xl bg-sys-blue text-white font-semibold transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed">
-                                            {updating ? 'Saving...' : 'Save'}
-                                        </button>
-                                    </div>
-                                </form>
+                                    </>
+                                )}
+                                <div className="border-t border-sys-separator ml-4" />
+                                <div>
+                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Description</label>
+                                    <input type="text" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                        value={editData.Description} onChange={(e) => setEditData({ ...editData, Description: e.target.value })} placeholder="Details" />
+                                </div>
+                                <div className="border-t border-sys-separator ml-4" />
+                                <div>
+                                    <label className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block">Amount</label>
+                                    <input type="number" required step="0.01" min="0" className="w-full px-4 py-2.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none"
+                                        value={editData.Amount} onChange={(e) => setEditData({ ...editData, Amount: e.target.value })} placeholder="0.00" />
+                                </div>
                             </div>
-                        </div>
-                    )}
+
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={closeEditModal}
+                                    className="flex-1 py-3 rounded-xl bg-sys-elevated text-sys-label font-medium transition-all active:scale-[0.98]">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={updating}
+                                    className="flex-1 py-3 rounded-xl bg-sys-blue text-white font-semibold transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed">
+                                    {updating ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </ModalSheet>
                 </main>
             </div>
 

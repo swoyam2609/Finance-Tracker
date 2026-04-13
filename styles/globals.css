@@ -13,6 +13,7 @@
         @apply bg-sys-bg text-sys-label font-sans antialiased;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        overscroll-behavior: contain;
     }
 
     /* Apple-style scrollbar */
