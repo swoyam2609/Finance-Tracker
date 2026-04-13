@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import LoadingScreen from '@/components/LoadingScreen';
 import {
     UtensilsCrossed,
     Car,
@@ -624,30 +626,9 @@ export default function Home() {
 
     // ── Loading / Auth states ──
 
-    if (status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0)) {
-        return (
-            <div className="min-h-screen bg-sys-bg">
-                <div className="bg-sys-bg/80 backdrop-blur-xl border-b border-sys-separator">
-                    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-                        <div className="skeleton h-7 w-40 rounded-lg" />
-                        <div className="skeleton h-7 w-20 rounded-lg" />
-                    </div>
-                </div>
-                <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-                    <div className="skeleton h-10 w-full rounded-xl mb-8" />
-                    <div className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-3 sm:overflow-visible">
-                        {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-2xl min-w-[60vw] sm:min-w-0 flex-shrink-0" />)}
-                    </div>
-                    <div className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-5 sm:overflow-visible">
-                        {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-24 rounded-2xl min-w-[42vw] sm:min-w-0 flex-shrink-0" />)}
-                    </div>
-                    <div className="skeleton h-80 rounded-2xl" />
-                </main>
-            </div>
-        );
-    }
-
     if (status === 'unauthenticated') return null;
+
+    const isLoading = status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0);
 
     const filteredTxns = getFilteredTransactions();
     const groupedTxns = groupTransactionsByDate(filteredTxns);
@@ -705,6 +686,17 @@ export default function Home() {
                     </div>
                 ))}
             </div>
+
+            <AnimatePresence mode="wait">
+                {isLoading ? (
+                    <LoadingScreen key="loading" />
+                ) : (
+                    <motion.div
+                        key="dashboard"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                    >
 
             {/* Drawer Backdrop */}
             {drawerOpen && (
@@ -1680,6 +1672,10 @@ export default function Home() {
                     )}
                 </main>
             </div>
+
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 }

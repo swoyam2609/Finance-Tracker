@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "framer-motion": "^12.38.0",
     "google-auth-library": "^9.0.0",
     "google-spreadsheet": "^4.1.2",
     "lucide-react": "^0.546.0",
