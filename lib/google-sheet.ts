@@ -135,9 +135,8 @@ export async function updateExpense(rowIndex: number, expenseData: ExpenseData):
             nextValues.Amount = amt;
         }
 
-        // Prefer set() to ensure proper dirty state tracking
-        (row as any).set(nextValues);
-        await (row as any).save();
+        row.assign(nextValues);
+        await row.save();
     } catch (error) {
         console.error('Error updating expense in Google Sheets:', error);
         throw error;
@@ -230,8 +229,8 @@ export async function updateLoanTransaction(rowIndex: number, loanData: LoanTran
             nextValues.Amount = amt;
         }
 
-        (row as any).set(nextValues);
-        await (row as any).save();
+        row.assign(nextValues);
+        await row.save();
     } catch (error) {
         console.error('Error updating loan transaction in Google Sheets:', error);
         throw error;
