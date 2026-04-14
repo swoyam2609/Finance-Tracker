@@ -6,7 +6,7 @@ import { ExpenseData, LoanTransaction, TransferData } from '@/lib/google-sheet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingScreen from '@/components/LoadingScreen';
-import { PressableCard, SlideIndicator, AnimatedTabContent, BottomSheet, ModalSheet, StaggerContainer, StaggerItem } from '@/components/MotionPrimitives';
+import { PressableCard, SlideIndicator, BottomSheet, ModalSheet, StaggerContainer, StaggerItem } from '@/components/MotionPrimitives';
 import {
     UtensilsCrossed,
     Car,
@@ -342,6 +342,13 @@ export default function Home() {
         if (selectedAccountFilter !== 'All Accounts') {
             filtered = filtered.filter(expense => expense.Account === selectedAccountFilter);
         }
+        if (selectedCategoryFilter !== 'All Categories') {
+            if (selectedCategoryFilter === 'Income') {
+                filtered = filtered.filter(expense => parseFloat(expense.Amount || '0') >= 0);
+            } else {
+                filtered = filtered.filter(expense => expense.Category === selectedCategoryFilter);
+            }
+        }
         const sortedTransactions = filtered.slice().reverse();
         return showAllTransactions ? sortedTransactions : sortedTransactions.slice(0, 10);
     };
@@ -640,6 +647,19 @@ export default function Home() {
 
     const isLoading = status === 'loading' || (status === 'authenticated' && loading && expenses.length === 0);
 
+    // Build active category list from data
+    const activeCategories = (() => {
+        const cats = new Set<string>();
+        expenses.forEach(exp => {
+            if (parseFloat(exp.Amount || '0') >= 0) {
+                cats.add('Income');
+            } else if (exp.Category && exp.Category !== 'Transfer In' && exp.Category !== 'Transfer Out') {
+                cats.add(exp.Category);
+            }
+        });
+        return ['All Categories', ...Array.from(cats).sort()];
+    })();
+
     const filteredTxns = getFilteredTransactions();
     const groupedTxns = groupTransactionsByDate(filteredTxns);
 
@@ -899,10 +919,10 @@ export default function Home() {
                     )}
 
                     {/* ═══ TAB CONTENT ═══ */}
-                    <AnimatedTabContent activeKey={activeTab}>
+                    <AnimatePresence mode="wait" initial={false}>
                     {/* ═══ TRANSACTIONS TAB ═══ */}
                     {activeTab === 'transactions' && (
-                        <div>
+                        <motion.div key="transactions" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                             {/* Top 3 Stats */}
                             <StaggerContainer className="flex gap-3 mb-8 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
                                 {/* Current Balance */}
@@ -971,7 +991,7 @@ export default function Home() {
                             <div>
                                 <div className="flex items-center justify-between mb-3 px-1">
                                     <h3 className="text-xs font-semibold text-sys-label-secondary uppercase tracking-wider">
-                                        {selectedAccountFilter === 'All Accounts' ? 'Recent Transactions' : selectedAccountFilter}
+                                        {selectedCategoryFilter !== 'All Categories' ? selectedCategoryFilter : selectedAccountFilter === 'All Accounts' ? 'Recent Transactions' : selectedAccountFilter}
                                     </h3>
                                     <button
                                         onClick={() => setShowAllTransactions(!showAllTransactions)}
@@ -994,6 +1014,24 @@ export default function Home() {
                                             )}
                                             <span className={`relative z-10 ${selectedAccountFilter === acc ? 'text-white' : 'text-sys-label-secondary'}`}>
                                                 {acc === 'All Accounts' ? 'All' : acc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Category filter pills */}
+                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide scroll-fade-right pb-0.5">
+                                    {activeCategories.map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => { setSelectedCategoryFilter(cat); setShowAllTransactions(false); }}
+                                            className="relative flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium"
+                                        >
+                                            {selectedCategoryFilter === cat && (
+                                                <SlideIndicator layoutId="activeCategoryFilter" className="bg-sys-elevated rounded-full" />
+                                            )}
+                                            <span className={`relative z-10 ${selectedCategoryFilter === cat ? 'text-sys-label' : 'text-sys-label-tertiary'}`}>
+                                                {cat === 'All Categories' ? 'All' : cat}
                                             </span>
                                         </button>
                                     ))}
@@ -1065,12 +1103,12 @@ export default function Home() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
 
                     {/* ═══ TRANSFERS TAB ═══ */}
                     {activeTab === 'transfers' && (
-                        <div className="space-y-6">
+                        <motion.div key="transfers" className="space-y-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                             <div className="apple-card p-6">
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="w-10 h-10 bg-sys-blue/15 rounded-xl flex items-center justify-center">
@@ -1175,12 +1213,12 @@ export default function Home() {
                                     </button>
                                 </form>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
 
                     {/* ═══ ANALYTICS TAB ═══ */}
                     {activeTab === 'analytics' && (
-                        <div className="space-y-6">
+                        <motion.div key="analytics" className="space-y-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                             {/* Period Selector */}
                             <div className="flex justify-between items-center">
                                 <h2 className="text-lg font-bold text-sys-label">Analysis</h2>
@@ -1463,12 +1501,12 @@ export default function Home() {
                                     </>
                                 )}
                             </motion.div>
-                        </div>
+                        </motion.div>
                     )}
 
                     {/* ═══ LOANS TAB ═══ */}
                     {activeTab === 'loans' && (
-                        <div className="space-y-6">
+                        <motion.div key="loans" className="space-y-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                             {/* Summary */}
                             <div className="apple-card p-6">
                                 <p className="text-sys-label-secondary text-sm font-medium mb-1">Total Money Lent</p>
@@ -1628,10 +1666,10 @@ export default function Home() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
 
-                    </AnimatedTabContent>
+                    </AnimatePresence>
 
                     {/* ═══ EDIT MODAL ═══ */}
                     <ModalSheet isOpen={editOpen} onClose={closeEditModal}>

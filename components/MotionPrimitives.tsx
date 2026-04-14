@@ -85,15 +85,17 @@ export function AnimatedTabContent({
 
     return (
         <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-                key={activeKey}
-                initial={shouldReduceMotion ? { opacity: 0 } : { x: dir * 40, opacity: 0 }}
-                animate={shouldReduceMotion ? { opacity: 1 } : { x: 0, opacity: 1 }}
-                exit={shouldReduceMotion ? { opacity: 0 } : { x: dir * -40, opacity: 0 }}
-                transition={shouldReduceMotion ? springs.reduced : springs.snappy}
-            >
-                {children}
-            </motion.div>
+            {children && (
+                <motion.div
+                    key={activeKey}
+                    initial={shouldReduceMotion ? { opacity: 0 } : { x: dir * 40, opacity: 0 }}
+                    animate={shouldReduceMotion ? { opacity: 1 } : { x: 0, opacity: 1 }}
+                    exit={shouldReduceMotion ? { opacity: 0 } : { x: dir * -40, opacity: 0 }}
+                    transition={shouldReduceMotion ? springs.reduced : springs.snappy}
+                >
+                    {children}
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 }
