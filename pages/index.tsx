@@ -1002,7 +1002,7 @@ export default function Home() {
                                 </div>
 
                                 {/* Account filter pills */}
-                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide scroll-fade-right pb-0.5">
+                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide pb-0.5">
                                     {['All Accounts', ...accountsList].map(acc => (
                                         <button
                                             key={acc}
@@ -1020,7 +1020,7 @@ export default function Home() {
                                 </div>
 
                                 {/* Category filter pills */}
-                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide scroll-fade-right pb-0.5">
+                                <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto scrollbar-hide pb-0.5">
                                     {activeCategories.map(cat => (
                                         <button
                                             key={cat}
