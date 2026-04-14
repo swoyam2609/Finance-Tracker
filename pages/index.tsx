@@ -171,6 +171,7 @@ export default function Home() {
     // Tab & analytics state
     const [activeTab, setActiveTab] = useState<'transactions' | 'transfers' | 'analytics' | 'loans'>('transactions');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('overall');
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('All Categories');
 
     // Loans state
     const [loans, setLoans] = useState<LoanTx[]>([]);
@@ -382,13 +383,19 @@ export default function Home() {
     };
 
     const getFilteredExpenses = () => {
-        if (selectedPeriod === 'overall') return expenses;
-        return expenses.filter(exp => {
-            if (!exp.Date) return false;
-            const date = new Date(exp.Date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            return monthKey === selectedPeriod;
-        });
+        let filtered = expenses;
+        if (selectedPeriod !== 'overall') {
+            filtered = filtered.filter(exp => {
+                if (!exp.Date) return false;
+                const date = new Date(exp.Date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                return monthKey === selectedPeriod;
+            });
+        }
+        if (selectedCategoryFilter !== 'All Categories') {
+            filtered = filtered.filter(exp => exp.Category === selectedCategoryFilter);
+        }
+        return filtered;
     };
 
     const getCategoryDistribution = () => {
@@ -663,8 +670,8 @@ export default function Home() {
         <>
             <Head>
                 <title>Finance Tracker</title>
-                <link rel="icon" type="image/png" href="/favicon.png" />
-                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="icon" type="image/png" href="/favicon.png?v=2" />
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <meta name="apple-mobile-web-app-title" content="Finance" />
@@ -1191,6 +1198,24 @@ export default function Home() {
                                 </select>
                             </div>
 
+                            {/* Category Filter Pills */}
+                            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-right pb-0.5">
+                                {['All Categories', ...categories].map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategoryFilter(cat)}
+                                        className="relative flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium"
+                                    >
+                                        {selectedCategoryFilter === cat && (
+                                            <SlideIndicator layoutId="activeCategoryFilter" className="bg-sys-blue rounded-full" />
+                                        )}
+                                        <span className={`relative z-10 ${selectedCategoryFilter === cat ? 'text-white' : 'text-sys-label-secondary'}`}>
+                                            {cat === 'All Categories' ? 'All' : cat}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+
                             {/* Summary Stats */}
                             <StaggerContainer className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
                                 {[
@@ -1216,8 +1241,12 @@ export default function Home() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.1 }}
                             >
-                                <h3 className="text-base font-bold text-sys-label mb-1">Daily Expenses</h3>
-                                <p className="text-xs text-sys-label-secondary mb-6">Spending across all accounts</p>
+                                <h3 className="text-base font-bold text-sys-label mb-1">
+                                    {selectedCategoryFilter === 'All Categories' ? 'Daily Expenses' : `${selectedCategoryFilter}`}
+                                </h3>
+                                <p className="text-xs text-sys-label-secondary mb-6">
+                                    {selectedCategoryFilter === 'All Categories' ? 'Spending across all accounts' : `${selectedCategoryFilter} spending across all accounts`}
+                                </p>
 
                                 {dailyExpensesData.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-16">
@@ -1303,7 +1332,9 @@ export default function Home() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.2 }}
                             >
-                                <h3 className="text-base font-bold text-sys-label mb-4">Expenses by Category</h3>
+                                <h3 className="text-base font-bold text-sys-label mb-4">
+                                    {selectedCategoryFilter === 'All Categories' ? 'Expenses by Category' : `${selectedCategoryFilter} Expenses`}
+                                </h3>
                                 {categoryDistribution.length === 0 ? (
                                     <p className="text-sys-label-secondary text-center py-8 text-sm">No expense data for this period</p>
                                 ) : (
@@ -1348,7 +1379,9 @@ export default function Home() {
                             >
                                 <div className="px-5 py-4 border-b border-sys-separator">
                                     <h3 className="text-base font-bold text-sys-label">Account Breakdown</h3>
-                                    <p className="text-xs text-sys-label-secondary mt-0.5">Income, expenses, and net per account</p>
+                                    <p className="text-xs text-sys-label-secondary mt-0.5">
+                                        {selectedCategoryFilter === 'All Categories' ? 'Income, expenses, and net per account' : `${selectedCategoryFilter} per account`}
+                                    </p>
                                 </div>
 
                                 {accountDistribution.length === 0 ? (
