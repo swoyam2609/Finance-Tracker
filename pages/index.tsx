@@ -365,7 +365,7 @@ export default function Home() {
     };
 
     const balances = calculateBalances();
-    const totalBalance = (balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0) - 15000;
+    const totalBalance = (balances['AXIS Bank'] || 0) + (balances['SBI Bank'] || 0) + (balances['Cash'] || 0) + (balances['Credit Card'] || 0) - 15000;
     const animatedBalance = useAnimatedCounter(totalBalance);
     const investmentBalance = balances['Mutual Fund'] || 0;
     const animatedInvestment = useAnimatedCounter(investmentBalance);
@@ -931,7 +931,7 @@ export default function Home() {
                                     <p className="text-sys-label text-xl sm:text-2xl font-bold tracking-tight">
                                         {formatIndianCurrency(animatedBalance)}
                                     </p>
-                                    <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash − 15K min</p>
+                                    <p className="text-sys-label-tertiary text-[10px] mt-1">AXIS + SBI + Cash − CC Bill − 15K min</p>
                                 </StaggerItem>
 
                                 {/* Investment */}
