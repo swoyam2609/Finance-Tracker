@@ -488,7 +488,7 @@ export default function AnalyticsPage() {
                                 return (
                                     <div
                                         key={row.account}
-                                        className="glass overflow-hidden shrink-0 snap-center w-[220px] p-4"
+                                        className="glass overflow-hidden shrink-0 snap-center w-[200px] sm:w-[220px] p-4"
                                     >
                                         <div className="glass-bloom" style={{ background: bloomColor }} aria-hidden="true" />
                                         <div className="glass-scrim" aria-hidden="true" />

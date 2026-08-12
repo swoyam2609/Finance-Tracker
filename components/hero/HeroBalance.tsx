@@ -85,7 +85,7 @@ export default function HeroBalance({
     const figure = (
         <motion.span
             aria-hidden="true"
-            className="money block text-[42px] font-[680] leading-[1.05] tracking-[-0.03em] md:text-[48px]"
+            className="money block text-[34px] sm:text-[38px] md:text-[48px] font-[680] leading-[1.05] tracking-[-0.03em] break-all"
             animate={
                 shouldReduceMotion || !flashDirection
                     ? {}

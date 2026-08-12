@@ -142,7 +142,7 @@ export const META_CLASS = 'tracking-[0.05em] text-white/60';
 function Figure({ amount, variant }: { amount: number; variant: CardVariant }) {
     const type = CARD_TYPE[variant];
     return (
-        <div className={`money font-semibold tracking-[-0.025em] whitespace-nowrap ${type.value}`}>
+        <div className={`money font-semibold tracking-[-0.025em] truncate ${type.value}`}>
             {formatIndianCurrency(amount, { decimals: type.decimals })}
         </div>
     );

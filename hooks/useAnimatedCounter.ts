@@ -1,79 +1,81 @@
 /**
- * Tweens a number towards `target` using an underdamped spring.
+ * Tweens a number towards `target` using a spring animation.
  *
- * The spring overshoots the target by ~3% and settles back — the physical
- * "iOS spring" feel. This replaces the previous two-phase ease, which was
- * mathematically broken: both phases were ease-out curves, so the number
- * just decelerated with a velocity kink at 55% rather than truly rushing
- * and settling.
+ * Design goals:
+ *  - The number should visibly rush toward the target (fast initial velocity).
+ *  - A small, satisfying overshoot (~5-6%) so the change feels physical.
+ *  - Smooth settle — no abrupt stop, no visible oscillation kinks.
+ *  - Total duration ~800ms so it feels snappy, not sluggish.
  *
- * Uses the closed-form underdamped spring solution rather than numerical
- * integration, so there is no accumulated error and the value at any time t
- * is exact:
+ * Implementation: numerical integration of a damped spring (mass-spring-damper)
+ * using semi-implicit Euler. This is simpler than the closed-form solution and
+ * handles mid-flight target changes naturally — the spring just retargets
+ * from wherever the value currently is, with its current velocity preserved.
  *
- *   x(t) = target − A · e^(−ζω₀t) · [cos(ω_d·t) + (ζω₀/ω_d)·sin(ω_d·t)]
+ *   F = -k·x - c·v     (Hooke + damping)
+ *   a = F / m          (m = 1)
+ *   v += a·dt
+ *   x += v·dt
  *
- * where A = target − start, ω_d = ω₀√(1−ζ²).
- *
- * The `duration` parameter (ms) controls the settling time: ω₀ is derived so
- * that the spring settles within 2% of the target at roughly `duration`.
- * The overshoot percentage is fixed by ζ and stays constant regardless of
- * duration.
+ * where x is the displacement from target, k is stiffness, c is damping.
  *
  * `prefers-reduced-motion` short-circuits and reports `target` immediately.
- *
- * Starts from 0 on mount, then springs from the current displayed value to
- * the new target on each change — so mid-flight target changes don't jump.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
-/** Damping ratio. 0.75 → ~2.8% overshoot. */
-const ZETA = 0.75;
+// Spring parameters tuned for a money counter:
+//   stiffness (k) = 170  — high enough to feel snappy
+//   damping (c)   = 16   — underdamped, gives ~5% overshoot
+//   mass (m)       = 1
+const STIFFNESS = 170;
+const DAMPING = 16;
 
-export function useAnimatedCounter(target: number, duration: number = 900): number {
+export function useAnimatedCounter(target: number, duration: number = 800): number {
     const shouldReduceMotion = useReducedMotion();
     const [value, setValue] = useState(0);
-    // Tracks the actual displayed value, not the target — so a mid-flight
-    // target change springs from where the number currently is, not from the
-    // previous target (which would cause a visible jump).
-    const currentRef = useRef(0);
+    // Current position and velocity — preserved across target changes so
+    // mid-flight retargeting carries momentum instead of jumping.
+    const positionRef = useRef(0);
+    const velocityRef = useRef(0);
 
     useEffect(() => {
         if (shouldReduceMotion) {
-            currentRef.current = target;
+            positionRef.current = target;
+            velocityRef.current = 0;
             setValue(target);
             return;
         }
 
-        const start = currentRef.current;
-        if (start === target) return;
+        // If already at target with no velocity, skip.
+        if (positionRef.current === target && Math.abs(velocityRef.current) < 0.1) return;
 
-        // Derive ω₀ from the requested duration so the 2% settling time
-        // roughly matches: t_s ≈ 4 / (ζ·ω₀)  →  ω₀ = 4 / (ζ · duration_s)
-        const omega0 = 4 / (ZETA * (duration / 1000));
-        const omegaD = omega0 * Math.sqrt(1 - ZETA * ZETA);
-        const amplitude = target - start;
+        let frame = requestAnimationFrame(function tick() {
+            // Fixed timestep for stable integration. 120Hz displays get
+            // smaller real dt but we still step in fixed increments —
+            // substepping twice per frame keeps the spring stable.
+            const dt = 1 / 120;
 
-        const startTime = performance.now();
+            for (let i = 0; i < 2; i++) {
+                const displacement = positionRef.current - target;
+                const force = -STIFFNESS * displacement - DAMPING * velocityRef.current;
+                const acceleration = force; // mass = 1
+                velocityRef.current += acceleration * dt;
+                positionRef.current += velocityRef.current * dt;
+            }
 
-        let frame = requestAnimationFrame(function tick(now: number) {
-            const t = (now - startTime) / 1000; // seconds
+            const current = positionRef.current;
+            setValue(current);
 
-            // Closed-form underdamped spring position at time t.
-            const decay = Math.exp(-ZETA * omega0 * t);
-            const oscillation =
-                Math.cos(omegaD * t) + (ZETA * omega0 / omegaD) * Math.sin(omegaD * t);
-            const next = target - amplitude * decay * oscillation;
+            // Stop when both position and velocity have settled.
+            const settled =
+                Math.abs(current - target) < 0.3 &&
+                Math.abs(velocityRef.current) < 0.5;
 
-            currentRef.current = next;
-            setValue(next);
-
-            // Stop when the spring has settled within 0.5 of the target
-            // (half a rupee is invisible in the formatted output).
-            if (Math.abs(next - target) < 0.5) {
-                currentRef.current = target;
+            if (settled) {
+                positionRef.current = target;
+                velocityRef.current = 0;
                 setValue(target);
                 return;
             }

@@ -150,7 +150,7 @@ export default function LoansPage() {
                     />
                     <div className="relative">
                         <p className="text-sys-label-secondary text-sm font-medium mb-1">Total Money Lent</p>
-                        <p className="money text-3xl sm:text-4xl font-bold text-sys-label mb-3">
+                        <p className="money text-2xl sm:text-3xl md:text-4xl font-bold text-sys-label mb-3 break-all">
                             {formatIndianCurrency(totalLent)}
                         </p>
                         <div className="flex items-center gap-2">
