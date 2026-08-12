@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
     "bcrypt": "^5.1.1",
     "framer-motion": "^12.38.0",
     "google-auth-library": "^9.0.0",

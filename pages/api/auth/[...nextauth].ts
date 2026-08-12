@@ -1,9 +1,11 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { hasPasskey } from '@/lib/passkey';
 
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
+            id: 'credentials',
             name: 'Credentials',
             credentials: {
                 email: { label: "Email", type: "email" },
@@ -33,7 +35,29 @@ export const authOptions: NextAuthOptions = {
 
                 return null;
             }
-        })
+        }),
+        CredentialsProvider({
+            id: 'passkey',
+            name: 'Passkey',
+            credentials: {
+                verified: { label: 'Verified', type: 'text' },
+            },
+            async authorize(credentials) {
+                // The client calls /api/passkey/authenticate directly to verify
+                // the WebAuthn assertion, then calls signIn('passkey') with
+                // { verified: 'true' }. We trust the flag only if a passkey
+                // is actually registered.
+                if (credentials?.verified !== 'true') return null;
+                if (!hasPasskey()) return null;
+
+                const validEmail = process.env.USER_EMAIL;
+                return {
+                    id: '1',
+                    email: validEmail || 'user@finance.local',
+                    name: 'User',
+                };
+            },
+        }),
     ],
     pages: {
         signIn: '/login',
@@ -60,4 +84,3 @@ export const authOptions: NextAuthOptions = {
 };
 
 export default NextAuth(authOptions);
-
