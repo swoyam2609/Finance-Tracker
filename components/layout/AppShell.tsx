@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import LoadingScreen from '@/components/LoadingScreen';
+import { useFinance } from '@/components/data/FinanceProvider';
 import BottomNav from './BottomNav';
 import SideRail from './SideRail';
 // ToastHost is mounted in pages/_app.tsx, not here: a page that calls
@@ -24,11 +25,17 @@ export default function AppShell({
 }) {
     const router = useRouter();
     const { status } = useSession();
+    const { loading: dataLoading } = useFinance();
 
     // Redirect to login if not authenticated (moved from pages/index.tsx)
     useEffect(() => {
         if (status === 'unauthenticated') router.push('/login');
     }, [status, router]);
+
+    // Show the loading screen until both the session resolves AND the first
+    // sheet data load completes. Without the data gate, the app flashes empty
+    // states before the transactions arrive.
+    const showLoading = status === 'loading' || (status === 'authenticated' && dataLoading);
 
     return (
         <>
@@ -43,9 +50,9 @@ export default function AppShell({
                 <meta name="theme-color" content="#000000" />
             </Head>
 
-            {status === 'loading' && <LoadingScreen />}
+            {showLoading && <LoadingScreen />}
 
-            {status === 'authenticated' && (
+            {status === 'authenticated' && !dataLoading && (
                 <div className="min-h-screen bg-sys-bg">
                     {/* Desktop left rail — md and above */}
                     <SideRail />
