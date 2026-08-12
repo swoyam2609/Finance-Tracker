@@ -44,8 +44,8 @@ const ACCOUNT_HEADERS = [
 ];
 
 const SEED = [
-    { Id: 'AXIS Bank', Label: 'AXIS Bank', Kind: 'bank', Art: 'maroon', MinBalance: 10000, Order: 1 },
-    { Id: 'SBI Bank', Label: 'SBI Bank', Kind: 'bank', Art: 'blue', MinBalance: 5000, Order: 2 },
+    { Id: 'AXIS Bank', Label: 'AXIS Bank', Kind: 'bank', Art: 'maroon', MinBalance: 12000, Order: 1 },
+    { Id: 'SBI Bank', Label: 'SBI Bank', Kind: 'bank', Art: 'blue', MinBalance: 3000, Order: 2 },
     { Id: 'Credit Card', Label: 'Credit Card', Kind: 'credit', Art: 'violet', Order: 3 },
     { Id: 'Cash', Label: 'Cash', Kind: 'cash', Art: 'green', Order: 4 },
     { Id: 'Mutual Fund', Label: 'Mutual Fund', Kind: 'investment', Art: 'teal', Order: 5 },

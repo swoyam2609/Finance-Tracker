@@ -119,11 +119,11 @@ export function coerceAccount(row: Record<string, unknown>, index: number): Acco
 export const DEFAULT_ACCOUNTS: Account[] = [
     {
         Id: 'AXIS Bank', Label: 'AXIS Bank', Kind: 'bank', Last4: '', Network: '', Art: 'maroon',
-        CreditLimit: 0, MinBalance: 10000, StatementDay: null, DueDay: null, Order: 1, Archived: false,
+        CreditLimit: 0, MinBalance: 12000, StatementDay: null, DueDay: null, Order: 1, Archived: false,
     },
     {
         Id: 'SBI Bank', Label: 'SBI Bank', Kind: 'bank', Last4: '', Network: '', Art: 'blue',
-        CreditLimit: 0, MinBalance: 5000, StatementDay: null, DueDay: null, Order: 2, Archived: false,
+        CreditLimit: 0, MinBalance: 3000, StatementDay: null, DueDay: null, Order: 2, Archived: false,
     },
     {
         Id: 'Credit Card', Label: 'Credit Card', Kind: 'credit', Last4: '', Network: '', Art: 'violet',
