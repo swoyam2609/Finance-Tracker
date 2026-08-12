@@ -1,4 +1,4 @@
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, useDragControls } from 'framer-motion';
 import { ReactNode, useRef, useEffect } from 'react';
 
 // ── Spring presets ──
@@ -114,6 +114,7 @@ export function BottomSheet({
     side?: boolean;
 }) {
     const shouldReduceMotion = useReducedMotion();
+    const dragControls = useDragControls();
 
     return (
         <AnimatePresence>
@@ -141,6 +142,8 @@ export function BottomSheet({
                         exit={side ? { x: '100%' } : { y: '100%' }}
                         transition={shouldReduceMotion ? springs.reduced : springs.snappy}
                         drag={side || shouldReduceMotion ? false : 'y'}
+                        dragControls={dragControls}
+                        dragListener={false}
                         dragConstraints={{ top: 0 }}
                         dragElastic={0.2}
                         onDragEnd={(_e, info) => {
@@ -149,9 +152,13 @@ export function BottomSheet({
                             }
                         }}
                     >
-                        {/* Drag handle — mobile only */}
+                        {/* Drag handle — mobile only. Starts a drag only when touched,
+                            so the rest of the sheet scrolls normally. */}
                         {!side && (
-                            <div className="flex justify-center py-3 sm:hidden">
+                            <div
+                                className="flex justify-center py-3 sm:hidden cursor-grab active:cursor-grabbing"
+                                onPointerDown={(e) => dragControls.start(e)}
+                            >
                                 <div className="w-10 h-1 rounded-full bg-sys-fill" />
                             </div>
                         )}
@@ -175,6 +182,7 @@ export function ModalSheet({
     children: ReactNode;
 }) {
     const shouldReduceMotion = useReducedMotion();
+    const dragControls = useDragControls();
 
     return (
         <AnimatePresence>
@@ -197,6 +205,8 @@ export function ModalSheet({
                         exit={{ y: '100%' }}
                         transition={shouldReduceMotion ? springs.reduced : springs.snappy}
                         drag={shouldReduceMotion ? false : 'y'}
+                        dragControls={dragControls}
+                        dragListener={false}
                         dragConstraints={{ top: 0 }}
                         dragElastic={0.2}
                         onDragEnd={(_e, info) => {
@@ -206,10 +216,13 @@ export function ModalSheet({
                         }}
                     >
                         <div
-                            className="bg-sys-card rounded-t-3xl shadow-2xl p-6"
+                            className="bg-sys-card rounded-t-3xl shadow-2xl p-6 max-h-[92vh] overflow-y-auto"
                             style={{ paddingBottom: 'max(1.5rem, var(--safe-area-bottom, 0px))' }}
                         >
-                            <div className="flex justify-center pb-2">
+                            <div
+                                className="flex justify-center pb-2 cursor-grab active:cursor-grabbing"
+                                onPointerDown={(e) => dragControls.start(e)}
+                            >
                                 <div className="w-10 h-1 rounded-full bg-sys-fill" />
                             </div>
                             {children}
@@ -220,7 +233,7 @@ export function ModalSheet({
                         className="fixed inset-0 z-50 hidden sm:flex items-center justify-center pointer-events-none"
                     >
                         <motion.div
-                            className="bg-sys-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 pointer-events-auto"
+                            className="bg-sys-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 pointer-events-auto max-h-[85vh] overflow-y-auto"
                             initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
                             animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
                             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
