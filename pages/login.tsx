@@ -48,7 +48,17 @@ export default function Login() {
             if (result?.error) {
                 setError('Invalid email or password');
             } else if (result?.ok) {
-                router.push('/');
+                // If no passkey is registered yet, stay on the login page so
+                // the session can update to 'authenticated' and the passkey
+                // registration prompt can render. The flag also blocks the
+                // render-time redirect on line 31. "Skip for now" and
+                // successful registration both call router.push('/') to leave.
+                // If a passkey is already registered, go straight home.
+                if (passkeyRegistered) {
+                    router.push('/');
+                } else {
+                    setRegisteringPasskey(true);
+                }
             }
         } catch (err) {
             setError('An error occurred. Please try again.');
@@ -105,7 +115,6 @@ export default function Login() {
 
     const handleRegisterPasskey = async () => {
         setError('');
-        setRegisteringPasskey(true);
         setPasskeyLoading(true);
         try {
             // 1. Get registration options (requires an active session).
@@ -135,11 +144,13 @@ export default function Login() {
             // Redirect to home after successful registration.
             router.push('/');
         } catch (err: any) {
-            if (err?.name === 'NotAllowedError') return;
+            if (err?.name === 'NotAllowedError') return; // user cancelled
             setError(err instanceof Error ? err.message : 'Passkey registration failed');
         } finally {
             setPasskeyLoading(false);
-            setRegisteringPasskey(false);
+            // Keep registeringPasskey=true on failure so the user can retry
+            // without being redirected away. It's cleared by the "Skip for
+            // now" button, which calls router.push('/').
         }
     };
 
@@ -228,7 +239,10 @@ export default function Login() {
                                 )}
                             </button>
                             <button
-                                onClick={() => router.push('/')}
+                                onClick={() => {
+                                    setRegisteringPasskey(false);
+                                    router.push('/');
+                                }}
                                 className="w-full text-sys-label-secondary font-medium py-2 text-sm"
                             >
                                 Skip for now
