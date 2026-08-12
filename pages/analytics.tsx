@@ -31,6 +31,7 @@ import { summarize, amountOf, isTransfer } from '@/lib/finance';
 import { CATEGORIES, ALL_CATEGORIES, categoryColor } from '@/lib/categories';
 import { resolveArt, ART_PRESETS, type Account } from '@/lib/accounts';
 import { formatIndianCurrency } from '@/lib/format';
+import AccountLogo from '@/components/wallet/AccountLogo';
 
 const TOTAL_COLOR = '#0A84FF';
 
@@ -462,106 +463,67 @@ export default function AnalyticsPage() {
                     </div>
                 </motion.div>
 
-                {/* Account Breakdown */}
+                {/* Account Breakdown — scrollable glass cards */}
                 <motion.div
-                    className="glass overflow-hidden"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
                 >
-                    <div className="glass-bloom" style={{ background: ART_PRESETS.teal }} aria-hidden="true" />
-                    <div className="glass-scrim" aria-hidden="true" />
-                    <div className="relative">
-                    <div className="px-5 py-4 border-b border-sys-separator">
-                        <h3 className="text-base font-bold text-sys-label">Account Breakdown</h3>
-                        <p className="text-xs text-sys-label-secondary mt-0.5">
-                            {isAllCategories ? 'Income, expenses, and net per account' : `${selectedCategory} per account`}
+                    <div className="flex items-baseline justify-between mb-3">
+                        <h3 className="text-[11px] uppercase tracking-[0.12em] text-sys-label-tertiary">Account Breakdown</h3>
+                        <p className="text-[11px] text-sys-label-tertiary">
+                            {isAllCategories ? 'Income, expenses & net' : `${selectedCategory} per account`}
                         </p>
                     </div>
 
                     {accountRows.length === 0 ? (
-                        <div className="py-12 text-center">
+                        <div className="glass flex flex-col items-center text-center py-12 px-6">
                             <p className="text-sys-label-secondary text-sm">No data for this period</p>
                         </div>
                     ) : (
-                        <>
-                            {/* Desktop Table — md and up */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead>
-                                        <tr className="border-b border-sys-separator">
-                                            <th className="px-5 py-3 text-left text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Account</th>
-                                            <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Income</th>
-                                            <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Expenses</th>
-                                            <th className="px-5 py-3 text-right text-[11px] font-semibold text-sys-label-secondary uppercase tracking-wider">Net</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {accountRows.map(row => {
-                                            const glyph = accountGlyph(row.account);
-                                            return (
-                                                <tr key={row.account} className="border-b border-sys-separator last:border-0">
-                                                    <td className="px-5 py-3.5">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-8 h-8 rounded-lg ${glyph.bg} flex items-center justify-center ${glyph.color}`}>
-                                                                {glyph.icon}
-                                                            </div>
-                                                            <span className="font-medium text-sys-label text-sm">{row.account}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-right">
-                                                        <span className="text-sys-green font-semibold text-sm money">{formatIndianCurrency(row.income)}</span>
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-right">
-                                                        <span className="text-sys-red font-semibold text-sm money">{formatIndianCurrency(row.expenses)}</span>
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-right">
-                                                        <span className={`font-semibold text-sm money ${row.net >= 0 ? 'text-sys-green' : 'text-sys-red'}`}>
-                                                            {row.net >= 0 ? '+' : ''}{formatIndianCurrency(row.net)}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Mobile Cards — below md */}
-                            <div className="md:hidden p-4 space-y-3">
-                                {accountRows.map(row => {
-                                    const glyph = accountGlyph(row.account);
-                                    return (
-                                        <div key={row.account} className="bg-sys-elevated rounded-xl p-4">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className={`w-8 h-8 rounded-lg ${glyph.bg} flex items-center justify-center ${glyph.color}`}>
-                                                    {glyph.icon}
+                        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto scrollbar-hide pb-1">
+                            {accountRows.map(row => {
+                                const account = visibleAccounts.find(a => a.Id === row.account);
+                                const bloomColor = account ? resolveArt(account) : ART_PRESETS.slate;
+                                return (
+                                    <div
+                                        key={row.account}
+                                        className="glass overflow-hidden shrink-0 snap-center w-[220px] p-4"
+                                    >
+                                        <div className="glass-bloom" style={{ background: bloomColor }} aria-hidden="true" />
+                                        <div className="glass-scrim" aria-hidden="true" />
+                                        <div className="relative">
+                                            {/* Account header — logo + name */}
+                                            <div className="flex items-center gap-2.5 mb-4">
+                                                <div className="w-9 h-9 rounded-[10px] overflow-hidden shrink-0">
+                                                    <AccountLogo account={account ?? { Id: row.account, Label: row.account, Kind: 'bank', Last4: '', Network: '', Art: '', CreditLimit: 0, MinBalance: 0, StatementDay: null, DueDay: null, Order: 0, Archived: false }} />
                                                 </div>
-                                                <span className="font-semibold text-sys-label text-sm">{row.account}</span>
+                                                <p className="text-[14px] font-semibold text-sys-label truncate">{row.account}</p>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <div className="bg-sys-green/10 rounded-lg p-2">
-                                                    <p className="text-[10px] text-sys-green/70 font-medium">Income</p>
-                                                    <p className="text-sys-green font-bold text-xs money">{formatIndianCurrency(row.income)}</p>
+
+                                            {/* Net figure — the hero number */}
+                                            <p className={`text-[22px] font-bold money tracking-[-0.01em] ${row.net >= 0 ? 'text-sys-green' : 'text-sys-red'}`}>
+                                                {row.net >= 0 ? '+' : ''}{formatIndianCurrency(row.net, { decimals: false })}
+                                            </p>
+                                            <p className="text-[10px] text-sys-label-tertiary uppercase tracking-wider mt-0.5">Net flow</p>
+
+                                            {/* Income / Expenses split */}
+                                            <div className="mt-3 pt-3 border-t border-sys-glass-stroke/60 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-[10px] text-sys-label-tertiary uppercase tracking-wider">Income</p>
+                                                    <p className="text-[13px] font-semibold text-sys-green money">{formatIndianCurrency(row.income, { decimals: false })}</p>
                                                 </div>
-                                                <div className="bg-sys-red/10 rounded-lg p-2">
-                                                    <p className="text-[10px] text-sys-red/70 font-medium">Expenses</p>
-                                                    <p className="text-sys-red font-bold text-xs money">{formatIndianCurrency(row.expenses)}</p>
-                                                </div>
-                                                <div className={`rounded-lg p-2 ${row.net >= 0 ? 'bg-sys-green/10' : 'bg-sys-red/10'}`}>
-                                                    <p className={`text-[10px] font-medium ${row.net >= 0 ? 'text-sys-green/70' : 'text-sys-red/70'}`}>Net</p>
-                                                    <p className={`font-bold text-xs money ${row.net >= 0 ? 'text-sys-green' : 'text-sys-red'}`}>
-                                                        {formatIndianCurrency(row.net)}
-                                                    </p>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] text-sys-label-tertiary uppercase tracking-wider">Expenses</p>
+                                                    <p className="text-[13px] font-semibold text-sys-red money">{formatIndianCurrency(row.expenses, { decimals: false })}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
-                    </div>
                 </motion.div>
             </div>
         </AppShell>
