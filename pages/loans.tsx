@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
-import { AlertCircle, Banknote, Plus } from 'lucide-react';
+import { AlertCircle, Plus, Wallet } from 'lucide-react';
 import AppShell from '@/components/layout/AppShell';
 import { useToast } from '@/components/layout/ToastHost';
 import { SkeletonRow } from '@/components/layout/SkeletonCard';
-import { StaggerContainer, StaggerItem } from '@/components/MotionPrimitives';
+import { PressableCard, StaggerContainer, StaggerItem } from '@/components/MotionPrimitives';
 import { formatIndianCurrency, formatShortDate } from '@/lib/format';
+import { ART_PRESETS } from '@/lib/accounts';
 import type { LoanTransaction } from '@/lib/google-sheet';
 
 // ── Loans ──
@@ -49,7 +50,6 @@ export default function LoansPage() {
     const [loanFormData, setLoanFormData] = useState<LoanForm>(emptyForm);
     const [selectedPerson, setSelectedPerson] = useState('');
     const [loanSubmitting, setLoanSubmitting] = useState(false);
-    const [loanFormExpanded, setLoanFormExpanded] = useState(false);
 
     // GET /api/loans/get returns a bare array of loan rows.
     const fetchLoansData = useCallback(async () => {
@@ -187,35 +187,61 @@ export default function LoansPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* ── Add transaction ── */}
                     <div className="lg:col-span-1">
-                        <div className="glass p-5">
-                            <button
-                                type="button"
-                                onClick={() => setLoanFormExpanded(!loanFormExpanded)}
-                                className="flex items-center justify-between w-full lg:pointer-events-none"
-                            >
-                                <h2 className="text-base font-bold text-sys-label">Add Transaction</h2>
-                                <Plus className={`w-5 h-5 text-sys-label-secondary lg:hidden transition-transform ${loanFormExpanded ? 'rotate-45' : ''}`} />
-                            </button>
+                        <div className="glass overflow-hidden p-5">
+                            <div className="glass-bloom" style={{ background: ART_PRESETS.violet }} aria-hidden="true" />
+                            <div className="glass-scrim" aria-hidden="true" />
+                            <div className="relative">
+                            <h2 className="text-base font-bold text-sys-label mb-4">Add Transaction</h2>
 
-                            <form
-                                onSubmit={handleLoanSubmit}
-                                className={`space-y-3.5 ${loanFormExpanded ? 'mt-5' : 'hidden'} lg:block lg:mt-5`}
-                            >
+                            <form onSubmit={handleLoanSubmit} className="space-y-4">
+                                {/* Transaction Type — segmented control */}
                                 <div>
-                                    <label htmlFor="loan-date" className="text-xs font-medium text-sys-label-secondary mb-1.5 block">Date</label>
-                                    <input
-                                        id="loan-date"
-                                        type="date"
-                                        required
-                                        className="apple-input"
-                                        style={{ colorScheme: 'dark' }}
-                                        value={loanFormData.Date}
-                                        onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
-                                    />
+                                    <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-2 block">Type</label>
+                                    <div className="bg-sys-elevated rounded-xl p-1 flex gap-1">
+                                        {([
+                                            { value: 'LENT', label: 'Lent', activeClass: 'bg-sys-blue' },
+                                            { value: 'RECEIVED', label: 'Received', activeClass: 'bg-sys-green' },
+                                            { value: 'ADDITIONAL_LOAN', label: 'Additional', activeClass: 'bg-sys-purple' },
+                                        ] as const).map(opt => {
+                                            const active = loanFormData.TransactionType === opt.value;
+                                            return (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    onClick={() => setLoanFormData({ ...loanFormData, TransactionType: opt.value })}
+                                                    className={`relative flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${active ? `${opt.activeClass} text-white` : 'text-sys-label-secondary'}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
 
+                                {/* Amount — glass card with bloom */}
+                                <div className="glass overflow-hidden">
+                                    <div className="glass-bloom" style={{ background: ART_PRESETS.amber }} aria-hidden="true" />
+                                    <div className="glass-scrim" aria-hidden="true" />
+                                    <div className="relative px-4 py-3">
+                                        <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider">Amount</label>
+                                        <div className="relative mt-1">
+                                            <div className="absolute inset-y-0 left-0 flex items-center">
+                                                <span className="text-sys-label-secondary text-xl font-bold">₹</span>
+                                            </div>
+                                            <input
+                                                type="number" required step="0.01" min="0" inputMode="decimal"
+                                                className="money w-full pl-7 bg-transparent text-sys-label focus:outline-none text-2xl font-bold placeholder-sys-label-tertiary"
+                                                placeholder="0.00"
+                                                value={loanFormData.Amount}
+                                                onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Person */}
                                 <div>
-                                    <label htmlFor="loan-person" className="text-xs font-medium text-sys-label-secondary mb-1.5 block">Person</label>
+                                    <label htmlFor="loan-person" className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-1.5 block">Person</label>
                                     {uniquePersons.length > 0 ? (
                                         <div className="space-y-2">
                                             <select
@@ -254,52 +280,36 @@ export default function LoansPage() {
                                     )}
                                 </div>
 
-                                <div>
-                                    <label htmlFor="loan-type" className="text-xs font-medium text-sys-label-secondary mb-1.5 block">Type</label>
-                                    <select
-                                        id="loan-type"
-                                        required
-                                        className="apple-select"
-                                        value={loanFormData.TransactionType}
-                                        onChange={(e) => setLoanFormData({ ...loanFormData, TransactionType: e.target.value })}
-                                    >
-                                        <option value="LENT">Money Lent</option>
-                                        <option value="ADDITIONAL_LOAN">Additional Loan</option>
-                                        <option value="RECEIVED">Money Received</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label htmlFor="loan-amount" className="text-xs font-medium text-sys-label-secondary mb-1.5 block">Amount</label>
-                                    <input
-                                        id="loan-amount"
-                                        type="number"
-                                        required
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="apple-input money"
-                                        value={loanFormData.Amount}
-                                        onChange={(e) => setLoanFormData({ ...loanFormData, Amount: e.target.value })}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="loan-description" className="text-xs font-medium text-sys-label-secondary mb-1.5 block">Description</label>
-                                    <input
-                                        id="loan-description"
-                                        type="text"
-                                        placeholder="Optional"
-                                        className="apple-input"
-                                        value={loanFormData.Description}
-                                        onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
-                                    />
+                                {/* Date + Description — glass fields */}
+                                <div className="glass overflow-hidden">
+                                    <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} aria-hidden="true" />
+                                    <div className="glass-scrim" aria-hidden="true" />
+                                    <div className="relative">
+                                        <div className="px-4 pt-3">
+                                            <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider block mb-1">Date</label>
+                                            <input
+                                                type="date" required className="w-full pb-3 bg-transparent text-sys-label focus:outline-none"
+                                                style={{ colorScheme: 'dark' }}
+                                                value={loanFormData.Date}
+                                                onChange={(e) => setLoanFormData({ ...loanFormData, Date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="border-t border-sys-glass-stroke mx-4" />
+                                        <div className="px-4 pt-3">
+                                            <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider block mb-1">Description</label>
+                                            <input
+                                                type="text" className="w-full pb-3.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none" placeholder="Optional"
+                                                value={loanFormData.Description}
+                                                onChange={(e) => setLoanFormData({ ...loanFormData, Description: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={loanSubmitting}
-                                    className="w-full bg-sys-blue text-white font-semibold py-3 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full bg-gradient-to-r from-sys-blue to-sys-purple text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[17px]"
                                 >
                                     {loanSubmitting ? (
                                         <><Spinner /> Adding...</>
@@ -308,6 +318,7 @@ export default function LoansPage() {
                                     )}
                                 </button>
                             </form>
+                            </div>
                         </div>
                     </div>
 
@@ -320,7 +331,7 @@ export default function LoansPage() {
                         ) : loansSummary.length === 0 ? (
                             <div className="glass p-12 text-center">
                                 <div className="w-14 h-14 bg-sys-elevated rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                    <Banknote className="w-7 h-7 text-sys-label-tertiary" />
+                                    <Wallet className="w-7 h-7 text-sys-label-tertiary" />
                                 </div>
                                 <p className="text-sys-label-secondary text-sm">No loan records yet</p>
                             </div>
@@ -340,7 +351,10 @@ export default function LoansPage() {
 
                                     return (
                                         <StaggerItem key={person}>
-                                            <div className="glass">
+                                            <div className="glass overflow-hidden">
+                                                <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} aria-hidden="true" />
+                                                <div className="glass-scrim" aria-hidden="true" />
+                                                <div className="relative">
                                                 <div className="px-5 py-4 border-b border-sys-separator">
                                                     <div className="flex items-center justify-between gap-3">
                                                         <div className="flex items-center gap-3 min-w-0">
@@ -394,6 +408,7 @@ export default function LoansPage() {
                                                             </div>
                                                         );
                                                     })}
+                                                </div>
                                                 </div>
                                             </div>
                                         </StaggerItem>

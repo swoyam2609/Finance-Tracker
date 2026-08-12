@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { ART_PRESETS } from '@/lib/accounts';
 
 export default function Login() {
     const router = useRouter();
@@ -64,13 +65,28 @@ export default function Login() {
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 <meta name="theme-color" content="#000000" />
             </Head>
-            <div className="min-h-screen flex flex-col items-center justify-center bg-sys-bg px-4">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-sys-bg px-4 relative overflow-hidden">
+                {/* Ambient bloom so the background never reads flat */}
+                <div
+                    className="pointer-events-none absolute left-1/2 top-1/2"
+                    style={{
+                        width: 600,
+                        height: 600,
+                        marginLeft: -300,
+                        marginTop: -300,
+                        background:
+                            'radial-gradient(circle, rgba(122,92,255,0.12) 0%, transparent 70%)',
+                    }}
+                />
+
                 {/* App Icon */}
-                <div className="mb-8 animate-fade-in">
-                    <div className="w-20 h-20 rounded-[22px] bg-sys-blue flex items-center justify-center shadow-lg shadow-sys-blue/20">
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                        </svg>
+                <div className="mb-8 animate-fade-in relative z-10">
+                    <div className="glass overflow-hidden w-20 h-20 rounded-[22px] flex items-center justify-center shadow-lg shadow-sys-blue/20 relative">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} />
+                        <div className="glass-scrim" />
+                        <div className="relative">
+                            <img src="/logos/app-logo.svg" alt="" className="w-14 h-14" draggable={false} decoding="async" />
+                        </div>
                     </div>
                 </div>
 
@@ -85,10 +101,12 @@ export default function Login() {
                 </div>
 
                 {/* Form Card */}
-                <div className="w-full max-w-sm animate-slide-up" style={{ animationDelay: '150ms' }}>
+                <div className="w-full max-w-sm animate-slide-up relative z-10" style={{ animationDelay: '150ms' }}>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Grouped inputs - iOS style */}
-                        <div className="apple-card overflow-hidden">
+                        <div className="glass overflow-hidden relative">
+                            <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} />
+                            <div className="glass-scrim" />
                             <div className="relative">
                                 <input
                                     id="email-address"
@@ -130,7 +148,7 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-sys-blue text-white font-semibold py-3.5 rounded-xl text-[17px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-sys-blue to-sys-purple text-white font-semibold py-3.5 rounded-xl text-[17px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">

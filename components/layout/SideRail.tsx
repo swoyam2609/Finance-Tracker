@@ -24,8 +24,10 @@ export default function SideRail() {
             >
                 <span
                     aria-hidden="true"
-                    className="w-[26px] h-[26px] shrink-0 rounded-lg bg-gradient-to-br from-sys-blue to-sys-purple"
-                />
+                    className="w-[26px] h-[26px] shrink-0 rounded-lg overflow-hidden"
+                >
+                    <img src="/logos/app-logo.svg" alt="" className="w-full h-full object-contain" draggable={false} />
+                </span>
                 <span className="hidden lg:block text-[15px] font-semibold text-sys-label">Finance</span>
                 <span className="sr-only">Finance</span>
             </Link>

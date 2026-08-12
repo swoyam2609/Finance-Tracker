@@ -19,7 +19,7 @@ import DueRow from '@/components/wallet/DueRow';
 import { TransactionGroup, TransactionRow } from '@/components/txn/TransactionRow';
 import { EditTransactionModal } from '@/components/txn/TransactionSheets';
 
-import { resolveArt } from '@/lib/accounts';
+import { resolveArt, ART_PRESETS } from '@/lib/accounts';
 import { amountOf, creditOutstanding, isTransfer, nextDue } from '@/lib/finance';
 import { groupTransactionsByDate } from '@/lib/transactions';
 import { formatIndianCurrency } from '@/lib/format';
@@ -186,9 +186,9 @@ export default function AccountDetail() {
                                 <YAxis hide domain={['dataMin', 'dataMax']} />
                                 <Tooltip
                                     contentStyle={{
-                                        background: '#1C1C1E', border: 'none', borderRadius: 12, fontSize: 12,
+                                        background: 'rgba(28, 28, 30, 0.95)', border: 'none', borderRadius: 12, fontSize: 12,
                                     }}
-                                    labelStyle={{ color: '#8E8E93' }}
+                                    labelStyle={{ color: 'rgba(142, 142, 147, 0.9)' }}
                                     formatter={(value: number) => [formatIndianCurrency(value), 'Balance']}
                                 />
                                 <Area
@@ -206,25 +206,37 @@ export default function AccountDetail() {
 
                 {/* Stats */}
                 <div className="flex gap-2 mt-4">
-                    <div className="glass flex-1 px-3 py-2.5">
-                        <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
-                            {isCredit ? 'Spent' : 'Out'}
-                        </p>
-                        <p className="money text-[15px] font-semibold text-sys-red mt-0.5">
-                            {formatIndianCurrency(view.spent, { decimals: false })}
-                        </p>
+                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.pink }} />
+                        <div className="glass-scrim" />
+                        <div className="relative">
+                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
+                                {isCredit ? 'Spent' : 'Out'}
+                            </p>
+                            <p className="money text-[15px] font-semibold text-sys-red mt-0.5">
+                                {formatIndianCurrency(view.spent, { decimals: false })}
+                            </p>
+                        </div>
                     </div>
-                    <div className="glass flex-1 px-3 py-2.5">
-                        <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
-                            {isCredit ? 'Paid' : 'In'}
-                        </p>
-                        <p className="money text-[15px] font-semibold text-sys-green mt-0.5">
-                            {formatIndianCurrency(view.credited, { decimals: false })}
-                        </p>
+                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.green }} />
+                        <div className="glass-scrim" />
+                        <div className="relative">
+                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
+                                {isCredit ? 'Paid' : 'In'}
+                            </p>
+                            <p className="money text-[15px] font-semibold text-sys-green mt-0.5">
+                                {formatIndianCurrency(view.credited, { decimals: false })}
+                            </p>
+                        </div>
                     </div>
-                    <div className="glass flex-1 px-3 py-2.5">
-                        <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">Txns</p>
-                        <p className="money text-[15px] font-semibold text-sys-label mt-0.5">{view.count}</p>
+                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} />
+                        <div className="glass-scrim" />
+                        <div className="relative">
+                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">Txns</p>
+                            <p className="money text-[15px] font-semibold text-sys-label mt-0.5">{view.count}</p>
+                        </div>
                     </div>
                 </div>
 
