@@ -51,7 +51,7 @@ export default function AppShell({
                     <SideRail />
 
                     <main
-                        className="min-h-screen md:pl-[62px] pb-[calc(56px+var(--safe-area-bottom,0px)+0.5rem)] md:pb-10"
+                        className="min-h-screen md:pl-[62px] lg:pl-[200px] pb-[calc(56px+var(--safe-area-bottom,0px)+0.5rem)] md:pb-10"
                     >
                         {children}
                     </main>

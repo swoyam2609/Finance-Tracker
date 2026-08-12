@@ -45,6 +45,10 @@ export const CARD_TYPE: Record<CardVariant, {
     meta: string;
     /** Chip block dimensions */
     chip: string;
+    /** Account glyph tile dimensions */
+    iconTile: string;
+    /** Bloom diameter in px — kept well under the card height so it stays a corner glow */
+    bloom: number;
     /** Shell width + height */
     shell: string;
     /** Shell padding */
@@ -67,6 +71,8 @@ export const CARD_TYPE: Record<CardVariant, {
         value: 'text-[20px]',
         meta: 'text-[9.5px]',
         chip: 'w-[22px] h-[16px]',
+        iconTile: 'w-[26px] h-[26px]',
+        bloom: 104,
         shell: 'w-[190px] h-[118px] shrink-0',
         pad: 'p-[14px]',
         ring: 38,
@@ -82,6 +88,8 @@ export const CARD_TYPE: Record<CardVariant, {
         value: 'text-[25px]',
         meta: 'text-[11px]',
         chip: 'w-[24px] h-[17px]',
+        iconTile: 'w-[32px] h-[32px]',
+        bloom: 150,
         shell: 'w-full h-[158px]',
         pad: 'px-4 py-[15px]',
         ring: 46,
@@ -97,6 +105,8 @@ export const CARD_TYPE: Record<CardVariant, {
         value: 'text-[13px]',
         meta: 'text-[9px]',
         chip: 'w-[19px] h-[14px]',
+        iconTile: 'w-[24px] h-[24px]',
+        bloom: 88,
         shell: 'w-full h-[96px]',
         pad: 'px-[13px] py-3',
         ring: 30,
@@ -112,6 +122,8 @@ export const CARD_TYPE: Record<CardVariant, {
         value: 'text-[15px]',
         meta: 'text-[9.5px]',
         chip: 'w-[19px] h-[14px]',
+        iconTile: 'w-[26px] h-[26px]',
+        bloom: 92,
         shell: 'w-full h-[96px]',
         pad: 'px-[13px] py-3',
         ring: 32,

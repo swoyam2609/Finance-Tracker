@@ -9,6 +9,9 @@
 
 import { motion } from 'framer-motion';
 import type { KeyboardEvent } from 'react';
+import {
+    Banknote, Building2, CreditCard, Landmark, TrendingUp, Wallet, type LucideIcon,
+} from 'lucide-react';
 
 import type { Account, AccountKind } from '@/lib/accounts';
 import { resolveArt } from '@/lib/accounts';
@@ -52,6 +55,26 @@ const NETWORK_LABEL: Record<string, string> = {
     amex: 'Amex',
 };
 
+/** Per-account glyphs, falling back by kind so a new sheet account still gets a mark. */
+const ID_ICON: Record<string, LucideIcon> = {
+    'AXIS Bank': Building2,
+    'SBI Bank': Landmark,
+    'Credit Card': CreditCard,
+    'Cash': Banknote,
+    'Mutual Fund': TrendingUp,
+};
+
+const KIND_ICON: Record<AccountKind, LucideIcon> = {
+    bank: Landmark,
+    credit: CreditCard,
+    cash: Banknote,
+    investment: TrendingUp,
+};
+
+function accountIcon(account: Account): LucideIcon {
+    return ID_ICON[account.Id] ?? KIND_ICON[account.Kind] ?? Wallet;
+}
+
 const BODIES: Record<AccountKind, (props: CardBodyProps) => JSX.Element> = {
     bank: BankBody,
     credit: CreditBody,
@@ -69,6 +92,7 @@ export default function AccountCard({
 }: AccountCardProps) {
     const type = CARD_TYPE[variant];
     const Body = BODIES[account.Kind];
+    const Icon = accountIcon(account);
     const masked = maskLast4(account.Last4, 2);
 
     const sublabel = [
@@ -101,20 +125,34 @@ export default function AccountCard({
                 >
                     <div
                         className="glass-bloom"
-                        style={{ background: resolveArt(account) }}
+                        style={{
+                            background: resolveArt(account),
+                            width: type.bloom,
+                            height: type.bloom,
+                        }}
                         aria-hidden="true"
                     />
+                    <div className="glass-scrim" aria-hidden="true" />
 
                     {/* Identity */}
                     <div className="relative flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                            <div className={`${type.name} font-semibold tracking-[0.01em] truncate`}>
-                                {account.Label}
-                            </div>
+                        <div className="flex min-w-0 items-center gap-2">
                             <div
-                                className={`${type.sub} mt-[2px] uppercase tracking-[0.1em] text-white/50 truncate`}
+                                className={`${type.iconTile} shrink-0 rounded-[8px] flex items-center justify-center`}
+                                style={{ backgroundColor: `${resolveArt(account)}33` }}
+                                aria-hidden="true"
                             >
-                                {sublabel}
+                                <Icon className="w-[55%] h-[55%] text-white/90" strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0">
+                                <div className={`${type.name} font-semibold tracking-[0.01em] truncate`}>
+                                    {account.Label}
+                                </div>
+                                <div
+                                    className={`${type.sub} mt-[2px] uppercase tracking-[0.1em] text-white/50 truncate`}
+                                >
+                                    {sublabel}
+                                </div>
                             </div>
                         </div>
                         <div

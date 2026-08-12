@@ -39,7 +39,7 @@ export default function BottomNav() {
     return (
         <nav
             aria-label="Primary"
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-sys-card/80 backdrop-blur-xl hairline-t"
+            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sys-card/80 backdrop-blur-xl hairline-t"
             style={{ paddingBottom: 'var(--safe-area-bottom, 0px)' }}
         >
             <ul className="flex items-stretch justify-around h-14">

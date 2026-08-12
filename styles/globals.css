@@ -119,15 +119,24 @@
         border: 0.5px solid theme(colors.sys.glass-stroke);
     }
 
-    /* Decorative colour bloom for .glass — background colour is set inline by the component */
+    /* Decorative colour bloom for .glass — colour and size are set inline by the
+       component. Anchored off the top-right corner so it stays a corner glow
+       rather than washing the whole face; the component scales it per variant. */
     .glass-bloom {
         @apply absolute pointer-events-none;
-        width: 180px;
-        height: 180px;
-        inset: -50% -25% auto auto;
+        width: 120px;
+        height: 120px;
+        top: -38%;
+        right: -12%;
         border-radius: 50%;
-        filter: blur(42px);
-        opacity: 0.45;
+        filter: blur(34px);
+        opacity: 0.42;
+    }
+
+    /* Keeps card text legible over a bloom, without dimming the glow itself. */
+    .glass-scrim {
+        @apply absolute inset-0 pointer-events-none;
+        background: linear-gradient(105deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.14) 45%, transparent 72%);
     }
 
     /* Tabular figures so animated counters don't shift layout */
