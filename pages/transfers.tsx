@@ -19,9 +19,11 @@ import { ArrowRightLeft, History } from 'lucide-react';
 import AppShell from '@/components/layout/AppShell';
 import { useFinance } from '@/components/data/FinanceProvider';
 import { useToast } from '@/components/layout/ToastHost';
+import { PressableCard } from '@/components/MotionPrimitives';
+import AccountLogo from '@/components/wallet/AccountLogo';
 import { formatIndianCurrency, formatShortDate } from '@/lib/format';
 import { amountOf } from '@/lib/finance';
-import type { Account } from '@/lib/accounts';
+import { ART_PRESETS, type Account } from '@/lib/accounts';
 
 interface TransferForm {
     Date: string;
@@ -203,11 +205,14 @@ export default function TransfersPage() {
                 </motion.div>
 
                 <motion.div
-                    className="glass p-5 sm:p-6"
+                    className="glass overflow-hidden p-5 sm:p-6"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: 0.05 }}
                 >
+                    <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} aria-hidden="true" />
+                    <div className="glass-scrim" aria-hidden="true" />
+                    <div className="relative">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-sys-blue/15 rounded-xl flex items-center justify-center shrink-0">
                             <ArrowRightLeft className="w-5 h-5 text-sys-blue" />
@@ -216,53 +221,68 @@ export default function TransfersPage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Transfer flow */}
-                        <div className="bg-sys-elevated rounded-2xl p-4 sm:p-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-end">
-                                <div>
-                                    <label
-                                        htmlFor="transfer-from"
-                                        className="text-xs text-sys-label-secondary font-medium mb-1 block"
-                                    >
-                                        From
-                                    </label>
-                                    <select
-                                        id="transfer-from"
-                                        value={formData.FromAccount}
-                                        onChange={e => update({ FromAccount: e.target.value }, 'FromAccount')}
-                                        className="apple-select"
-                                        required
-                                    >
-                                        {visibleAccounts.map(account => (
-                                            <option key={account.Id} value={account.Id}>{account.Label}</option>
-                                        ))}
-                                    </select>
+                        {/* Transfer flow — visual account pickers */}
+                        <div className="bg-sys-elevated/60 rounded-2xl p-4 sm:p-5">
+                            {/* From */}
+                            <div>
+                                <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-2 block">From</label>
+                                <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+                                    {visibleAccounts.map(account => {
+                                        const selected = formData.FromAccount === account.Id;
+                                        return (
+                                            <PressableCard
+                                                key={account.Id}
+                                                onClick={() => update({ FromAccount: account.Id }, 'FromAccount')}
+                                                scaleAmount={0.94}
+                                                className="shrink-0"
+                                            >
+                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                                    <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                                    <div className="relative flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                                                            <AccountLogo account={account} />
+                                                        </div>
+                                                        <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                    </div>
+                                                </div>
+                                            </PressableCard>
+                                        );
+                                    })}
                                 </div>
+                            </div>
 
-                                <div className="flex justify-center sm:pb-2.5" aria-hidden="true">
-                                    <div className="w-10 h-10 rounded-full bg-sys-blue/15 flex items-center justify-center">
-                                        <ArrowRightLeft className="w-4 h-4 text-sys-blue rotate-90 sm:rotate-0" />
-                                    </div>
+                            {/* Arrow */}
+                            <div className="flex justify-center py-3" aria-hidden="true">
+                                <div className="w-10 h-10 rounded-full bg-sys-blue/15 flex items-center justify-center">
+                                    <ArrowRightLeft className="w-4 h-4 text-sys-blue rotate-90 sm:rotate-0" />
                                 </div>
+                            </div>
 
-                                <div>
-                                    <label
-                                        htmlFor="transfer-to"
-                                        className="text-xs text-sys-label-secondary font-medium mb-1 block"
-                                    >
-                                        To
-                                    </label>
-                                    <select
-                                        id="transfer-to"
-                                        value={formData.ToAccount}
-                                        onChange={e => update({ ToAccount: e.target.value }, 'ToAccount')}
-                                        className="apple-select"
-                                        required
-                                    >
-                                        {visibleAccounts.map(account => (
-                                            <option key={account.Id} value={account.Id}>{account.Label}</option>
-                                        ))}
-                                    </select>
+                            {/* To */}
+                            <div>
+                                <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-2 block">To</label>
+                                <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+                                    {visibleAccounts.map(account => {
+                                        const selected = formData.ToAccount === account.Id;
+                                        return (
+                                            <PressableCard
+                                                key={account.Id}
+                                                onClick={() => update({ ToAccount: account.Id }, 'ToAccount')}
+                                                scaleAmount={0.94}
+                                                className="shrink-0"
+                                            >
+                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                                    <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                                    <div className="relative flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                                                            <AccountLogo account={account} />
+                                                        </div>
+                                                        <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                    </div>
+                                                </div>
+                                            </PressableCard>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -274,11 +294,14 @@ export default function TransfersPage() {
                         </div>
 
                         {/* Amount / Date / Description */}
-                        <div className="bg-sys-elevated rounded-2xl overflow-hidden">
+                        <div className="glass overflow-hidden">
+                            <div className="glass-bloom" style={{ background: ART_PRESETS.violet }} aria-hidden="true" />
+                            <div className="glass-scrim" aria-hidden="true" />
+                            <div className="relative">
                             <div>
                                 <label
                                     htmlFor="transfer-amount"
-                                    className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block"
+                                    className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider px-4 pt-3 block"
                                 >
                                     Amount
                                 </label>
@@ -300,12 +323,12 @@ export default function TransfersPage() {
                                 </div>
                             </div>
 
-                            <div className="border-t border-sys-separator ml-4" />
+                            <div className="border-t border-sys-glass-stroke mx-4" />
 
                             <div>
                                 <label
                                     htmlFor="transfer-date"
-                                    className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block"
+                                    className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider px-4 pt-3 block"
                                 >
                                     Date
                                 </label>
@@ -320,12 +343,12 @@ export default function TransfersPage() {
                                 />
                             </div>
 
-                            <div className="border-t border-sys-separator ml-4" />
+                            <div className="border-t border-sys-glass-stroke mx-4" />
 
                             <div>
                                 <label
                                     htmlFor="transfer-description"
-                                    className="text-xs font-medium text-sys-label-secondary px-4 pt-3 block"
+                                    className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider px-4 pt-3 block"
                                 >
                                     Description
                                 </label>
@@ -338,12 +361,13 @@ export default function TransfersPage() {
                                     placeholder="Optional"
                                 />
                             </div>
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={submitting || sameAccount}
-                            className="w-full bg-sys-blue text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-[17px] flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-sys-blue to-sys-purple text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-[17px] flex items-center justify-center gap-2"
                         >
                             {submitting ? (
                                 <><Spinner /> Processing...</>
@@ -352,6 +376,7 @@ export default function TransfersPage() {
                             )}
                         </button>
                     </form>
+                    </div>
                 </motion.div>
 
                 {/* Recent transfers — nothing at all when there are none */}
@@ -368,7 +393,10 @@ export default function TransfersPage() {
                             </h2>
                         </div>
 
-                        <div className="glass divide-y divide-sys-glass-stroke/60">
+                        <div className="glass overflow-hidden divide-y divide-sys-glass-stroke/60">
+                            <div className="glass-bloom" style={{ background: ART_PRESETS.teal }} aria-hidden="true" />
+                            <div className="glass-scrim" aria-hidden="true" />
+                            <div className="relative">
                             {recentTransfers.map((txn, index) => (
                                 <div
                                     key={txn.RowIndex ?? `${txn.Date}-${txn.Description}-${index}`}
@@ -390,6 +418,7 @@ export default function TransfersPage() {
                                     </p>
                                 </div>
                             ))}
+                            </div>
                         </div>
                     </motion.section>
                 )}
