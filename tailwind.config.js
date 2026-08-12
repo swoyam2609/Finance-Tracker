@@ -27,7 +27,14 @@ module.exports = {
                     teal: '#64D2FF',
                     indigo: '#5E5CE6',
                     cyan: '#00C7BE',
+                    glass: 'rgba(255,255,255,0.055)',
+                    'glass-stroke': 'rgba(255,255,255,0.13)',
+                    'glass-hi': 'rgba(255,255,255,0.09)',
                 },
+            },
+            boxShadow: {
+                glass: 'inset 0 1px 0 rgba(255,255,255,0.09)',
+                float: '0 6px 18px rgba(91,140,255,0.45)',
             },
             fontFamily: {
                 sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
@@ -46,6 +53,8 @@ module.exports = {
                 'bounce-in': 'bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
                 'slide-up-sheet': 'slideUpSheet 0.35s cubic-bezier(0.32, 0.72, 0, 1) both',
                 'slide-down-sheet': 'slideDownSheet 0.25s ease-in both',
+                /* Credit utilization ring: set --ring-len (circumference) and --ring-target (final offset) on the SVG circle. */
+                'ring-draw': 'ringDraw 1.1s cubic-bezier(0.25, 1, 0.5, 1) both',
             },
             keyframes: {
                 fadeIn: {
@@ -92,6 +101,10 @@ module.exports = {
                 slideDownSheet: {
                     '0%': { transform: 'translateY(0)' },
                     '100%': { transform: 'translateY(100%)' },
+                },
+                ringDraw: {
+                    '0%': { strokeDashoffset: 'var(--ring-len, 0)' },
+                    '100%': { strokeDashoffset: 'var(--ring-target, 0)' },
                 },
             },
         },
