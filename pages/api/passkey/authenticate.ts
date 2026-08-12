@@ -4,6 +4,11 @@ import {
     verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import { getStoredCredential } from '@/lib/passkey';
+import {
+    setAuthChallenge,
+    getAuthChallenge,
+    clearAuthChallenge,
+} from '@/lib/passkey-challenge';
 
 /**
  * Passkey authentication.
@@ -46,8 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 userVerification: 'preferred',
             });
 
-            // Store the challenge for verification (in-memory).
-            (req as any).pendingAuthChallenge = options.challenge;
+            // Store the challenge for verification in the POST request.
+            setAuthChallenge(options.challenge);
 
             return res.status(200).json(options);
         } catch (error) {
@@ -64,7 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             const body = req.body;
-            const expectedChallenge = (req as any).pendingAuthChallenge;
+            const expectedChallenge = getAuthChallenge();
+            clearAuthChallenge();
 
             const verification = await verifyAuthenticationResponse({
                 response: body,
