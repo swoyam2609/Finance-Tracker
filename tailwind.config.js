@@ -37,7 +37,7 @@ module.exports = {
                 float: '0 6px 18px rgba(91,140,255,0.45)',
             },
             fontFamily: {
-                sans: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['"Google Sans Text"', '"Google Sans"', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
             },
             animation: {
                 'fade-in': 'fadeIn 0.4s ease-out both',
