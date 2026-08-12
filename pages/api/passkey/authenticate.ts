@@ -74,9 +74,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const verification = await verifyAuthenticationResponse({
                 response: body,
-                expectedChallenge: `${expectedChallenge}`,
+                expectedChallenge: expectedChallenge ?? '',
                 expectedOrigin: getOrigin(req),
                 expectedRPID: getRpId(req),
+                requireUserVerification: false,
                 credential: {
                     id: credential.id,
                     publicKey: Buffer.from(credential.publicKey, 'base64'),
@@ -86,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
 
             if (!verification.verified) {
+                console.error('Passkey auth verification failed:', { verified: verification.verified });
                 return res.status(401).json({ error: 'Authentication failed' });
             }
 
@@ -94,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { saveCredential } = await import('@/lib/passkey');
             saveCredential(credential);
 
+            console.info('Passkey authenticated successfully:', { counter: credential.counter });
             return res.status(200).json({ verified: true });
         } catch (error) {
             console.error('Passkey auth verification error:', error);

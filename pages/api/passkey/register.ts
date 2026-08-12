@@ -83,12 +83,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const verification = await verifyRegistrationResponse({
                 response: body,
-                expectedChallenge: `${expectedChallenge}`,
+                expectedChallenge: expectedChallenge ?? '',
                 expectedOrigin: origin,
                 expectedRPID: rpId,
+                requireUserVerification: false,
             });
 
             if (!verification.verified || !verification.registrationInfo) {
+                console.error('Passkey registration verification failed:', { verified: verification.verified });
                 return res.status(400).json({ error: 'Registration verification failed' });
             }
 
@@ -101,6 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 transports: credential.transports || [],
             });
 
+            console.info('Passkey registered successfully:', { id: credential.id, counter: credential.counter });
             return res.status(200).json({ verified: true });
         } catch (error) {
             console.error('Passkey registration verification error:', error);

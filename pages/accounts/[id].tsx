@@ -8,7 +8,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Wallet } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import AppShell from '@/components/layout/AppShell';
@@ -103,13 +103,19 @@ export default function AccountDetail() {
         return (
             <AppShell title="Account">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-16 text-center">
-                    <p className="text-[17px] text-sys-label">No account called “{id}”.</p>
-                    <p className="text-[13px] text-sys-label-secondary mt-2">
-                        It may have been renamed in the Accounts tab.
-                    </p>
-                    <Link href="/" className="inline-block mt-6 text-[15px] text-sys-blue font-medium">
-                        Back to home
-                    </Link>
+                    <div className="glass overflow-hidden px-6 py-10">
+                        <div className="glass-bloom" style={{ background: '#6E6E78' }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
+                        <div className="relative">
+                            <p className="text-[17px] text-sys-label">No account called “{id}”.</p>
+                            <p className="text-[13px] text-sys-label-secondary mt-2">
+                                It may have been renamed in the Accounts tab.
+                            </p>
+                            <Link href="/" className="inline-block mt-6 text-[15px] text-sys-blue font-medium">
+                                Back to home
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </AppShell>
         );
@@ -155,12 +161,12 @@ export default function AccountDetail() {
                 )}
 
                 {/* Period */}
-                <div className="flex gap-1 p-1 rounded-xl bg-sys-glass mt-5">
+                <div className="glass flex gap-1 p-1 mt-5">
                     {PERIODS.map(entry => (
                         <button
                             key={entry.key}
                             onClick={() => setPeriod(entry.key)}
-                            className={`flex-1 py-1.5 rounded-lg text-[12px] ${
+                            className={`flex-1 py-1.5 rounded-xl text-[12px] transition-colors ${
                                 period === entry.key
                                     ? 'bg-sys-elevated text-sys-label font-semibold'
                                     : 'text-sys-label-secondary'
@@ -172,70 +178,74 @@ export default function AccountDetail() {
                 </div>
 
                 {/* Balance over time */}
-                <div className="h-[150px] mt-4">
-                    {view.series.length > 1 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={view.series} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
-                                <defs>
-                                    <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor={art} stopOpacity={0.35} />
-                                        <stop offset="100%" stopColor={art} stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="label" hide />
-                                <YAxis hide domain={['dataMin', 'dataMax']} />
-                                <Tooltip
-                                    contentStyle={{
-                                        background: 'rgba(28, 28, 30, 0.95)', border: 'none', borderRadius: 12, fontSize: 12,
-                                    }}
-                                    labelStyle={{ color: 'rgba(142, 142, 147, 0.9)' }}
-                                    formatter={(value: number) => [formatIndianCurrency(value), 'Balance']}
-                                />
-                                <Area
-                                    type="monotone" dataKey="balance" stroke={art} strokeWidth={1.8}
-                                    fill="url(#balanceFill)" strokeLinecap="round"
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div className="glass h-full flex items-center justify-center">
-                            <p className="text-[13px] text-sys-label-secondary">Not enough history to chart</p>
-                        </div>
-                    )}
+                <div className="glass overflow-hidden mt-4 p-4">
+                    <div className="glass-bloom" style={{ background: art }} aria-hidden="true" />
+                    <div className="glass-scrim" aria-hidden="true" />
+                    <div className="relative h-[150px]">
+                        {view.series.length > 1 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={view.series} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+                                    <defs>
+                                        <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={art} stopOpacity={0.35} />
+                                            <stop offset="100%" stopColor={art} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="label" hide />
+                                    <YAxis hide domain={['dataMin', 'dataMax']} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            background: 'rgba(28, 28, 30, 0.95)', border: 'none', borderRadius: 12, fontSize: 12,
+                                        }}
+                                        labelStyle={{ color: 'rgba(142, 142, 147, 0.9)' }}
+                                        formatter={(value: number) => [formatIndianCurrency(value), 'Balance']}
+                                    />
+                                    <Area
+                                        type="monotone" dataKey="balance" stroke={art} strokeWidth={1.8}
+                                        fill="url(#balanceFill)" strokeLinecap="round"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center">
+                                <p className="text-[13px] text-sys-label-secondary">Not enough history to chart</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex gap-2 mt-4">
-                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
-                        <div className="glass-bloom" style={{ background: ART_PRESETS.pink }} />
-                        <div className="glass-scrim" />
+                <div className="flex gap-3 mt-4">
+                    <div className="glass overflow-hidden flex-1 px-4 py-3">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.pink }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
                         <div className="relative">
-                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
+                            <p className="text-[11px] uppercase tracking-[0.1em] text-sys-label-secondary">
                                 {isCredit ? 'Spent' : 'Out'}
                             </p>
-                            <p className="money text-[15px] font-semibold text-sys-red mt-0.5">
+                            <p className="money text-[20px] font-[640] tracking-[-0.01em] text-sys-red mt-0.5">
                                 {formatIndianCurrency(view.spent, { decimals: false })}
                             </p>
                         </div>
                     </div>
-                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
-                        <div className="glass-bloom" style={{ background: ART_PRESETS.green }} />
-                        <div className="glass-scrim" />
+                    <div className="glass overflow-hidden flex-1 px-4 py-3">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.green }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
                         <div className="relative">
-                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">
+                            <p className="text-[11px] uppercase tracking-[0.1em] text-sys-label-secondary">
                                 {isCredit ? 'Paid' : 'In'}
                             </p>
-                            <p className="money text-[15px] font-semibold text-sys-green mt-0.5">
+                            <p className="money text-[20px] font-[640] tracking-[-0.01em] text-sys-green mt-0.5">
                                 {formatIndianCurrency(view.credited, { decimals: false })}
                             </p>
                         </div>
                     </div>
-                    <div className="glass overflow-hidden flex-1 px-3 py-2.5">
-                        <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} />
-                        <div className="glass-scrim" />
+                    <div className="glass overflow-hidden flex-1 px-4 py-3">
+                        <div className="glass-bloom" style={{ background: art }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
                         <div className="relative">
-                            <p className="text-[10px] uppercase tracking-[0.1em] text-sys-label-tertiary">Txns</p>
-                            <p className="money text-[15px] font-semibold text-sys-label mt-0.5">{view.count}</p>
+                            <p className="text-[11px] uppercase tracking-[0.1em] text-sys-label-secondary">Txns</p>
+                            <p className="money text-[20px] font-[640] tracking-[-0.01em] text-sys-label mt-0.5">{view.count}</p>
                         </div>
                     </div>
                 </div>
@@ -248,7 +258,10 @@ export default function AccountDetail() {
                             {[1, 2, 3, 4].map(row => <SkeletonRow key={row} />)}
                         </div>
                     ) : groups.length === 0 ? (
-                        <div className="glass py-10 text-center">
+                        <div className="glass flex flex-col items-center text-center py-12 px-6">
+                            <div className="w-12 h-12 rounded-2xl bg-sys-fill/50 flex items-center justify-center mb-3">
+                                <Wallet className="w-5 h-5 text-sys-label-secondary" />
+                            </div>
                             <p className="text-[15px] text-sys-label">Nothing here yet</p>
                             <p className="text-[13px] text-sys-label-secondary mt-1">
                                 Transactions on this account will appear here

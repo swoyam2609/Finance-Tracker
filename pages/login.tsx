@@ -74,7 +74,8 @@ export default function Login() {
             // 1. Get auth options from the server.
             const optsRes = await fetch('/api/passkey/authenticate');
             if (!optsRes.ok) {
-                setError('No passkey registered. Sign in with password first to set one up.');
+                const errBody = await optsRes.json().catch(() => ({}));
+                setError(errBody?.error || 'No passkey registered. Sign in with password first to set one up.');
                 return;
             }
             const opts = await optsRes.json();
@@ -90,7 +91,8 @@ export default function Login() {
             });
 
             if (!verifyRes.ok) {
-                setError('Passkey verification failed');
+                const errBody = await verifyRes.json().catch(() => ({}));
+                setError(errBody?.error || 'Passkey verification failed');
                 return;
             }
 
@@ -120,7 +122,8 @@ export default function Login() {
             // 1. Get registration options (requires an active session).
             const optsRes = await fetch('/api/passkey/register');
             if (!optsRes.ok) {
-                setError('Sign in with password first to register a passkey');
+                const errBody = await optsRes.json().catch(() => ({}));
+                setError(errBody?.error || 'Sign in with password first to register a passkey');
                 return;
             }
             const opts = await optsRes.json();
@@ -136,11 +139,13 @@ export default function Login() {
             });
 
             if (!verifyRes.ok) {
-                setError('Passkey registration failed');
+                const errBody = await verifyRes.json().catch(() => ({}));
+                setError(errBody?.error || 'Passkey registration failed');
                 return;
             }
 
             setPasskeyRegistered(true);
+            setRegisteringPasskey(false);
             // Redirect to home after successful registration.
             router.push('/');
         } catch (err: any) {
