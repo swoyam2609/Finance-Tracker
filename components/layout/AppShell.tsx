@@ -41,13 +41,15 @@ export default function AppShell({
         <>
             <Head>
                 <title>{title ? `${title} · Finance Tracker` : 'Finance Tracker'}</title>
-                <link rel="icon" type="image/png" href="/favicon.png?v=2" />
-                <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+                <link rel="icon" href="/favicon.ico" sizes="48x48" />
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="manifest" href="/manifest.json" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <meta name="apple-mobile-web-app-title" content="Finance" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-                <meta name="theme-color" content="#000000" />
+                <meta name="theme-color" content="#0A84FF" />
             </Head>
 
             {showLoading && <LoadingScreen />}

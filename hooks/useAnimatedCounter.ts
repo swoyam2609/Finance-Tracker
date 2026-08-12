@@ -1,65 +1,84 @@
 /**
- * Tweens a number towards `target`, driven by rAF.
+ * Tweens a number towards `target` using an underdamped spring.
  *
- * Uses a two-phase easing: a fast ease-out for the first 60% of the distance
- * (so the number races towards its new value), then a gentle settle for the
- * remaining 40% (so it decelerates naturally rather than stopping abruptly).
+ * The spring overshoots the target by ~3% and settles back — the physical
+ * "iOS spring" feel. This replaces the previous two-phase ease, which was
+ * mathematically broken: both phases were ease-out curves, so the number
+ * just decelerated with a velocity kink at 55% rather than truly rushing
+ * and settling.
  *
- * Extracted from the original single-page implementation, with fixes:
- *  - the previous animation frame loop is cancelled when `target` changes
- *    mid-flight, so overlapping tweens can no longer fight over the value;
- *  - `prefers-reduced-motion` short-circuits the tween and reports `target`
- *    immediately, so no motion is produced at all.
+ * Uses the closed-form underdamped spring solution rather than numerical
+ * integration, so there is no accumulated error and the value at any time t
+ * is exact:
  *
- * Starts from 0 on mount, then tweens from the previous target to the new one.
+ *   x(t) = target − A · e^(−ζω₀t) · [cos(ω_d·t) + (ζω₀/ω_d)·sin(ω_d·t)]
+ *
+ * where A = target − start, ω_d = ω₀√(1−ζ²).
+ *
+ * The `duration` parameter (ms) controls the settling time: ω₀ is derived so
+ * that the spring settles within 2% of the target at roughly `duration`.
+ * The overshoot percentage is fixed by ζ and stays constant regardless of
+ * duration.
+ *
+ * `prefers-reduced-motion` short-circuits and reports `target` immediately.
+ *
+ * Starts from 0 on mount, then springs from the current displayed value to
+ * the new target on each change — so mid-flight target changes don't jump.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
-export function useAnimatedCounter(target: number, duration: number = 1100): number {
+/** Damping ratio. 0.75 → ~2.8% overshoot. */
+const ZETA = 0.75;
+
+export function useAnimatedCounter(target: number, duration: number = 900): number {
     const shouldReduceMotion = useReducedMotion();
     const [value, setValue] = useState(0);
-    const prevTarget = useRef(0);
+    // Tracks the actual displayed value, not the target — so a mid-flight
+    // target change springs from where the number currently is, not from the
+    // previous target (which would cause a visible jump).
+    const currentRef = useRef(0);
 
     useEffect(() => {
-        // No motion requested: jump straight to the target and keep the
-        // tween origin in sync so a later re-enable starts from the right place.
         if (shouldReduceMotion) {
-            prevTarget.current = target;
+            currentRef.current = target;
             setValue(target);
             return;
         }
 
-        const start = prevTarget.current;
-        prevTarget.current = target;
-
-        // If the value hasn't changed, skip the tween.
+        const start = currentRef.current;
         if (start === target) return;
+
+        // Derive ω₀ from the requested duration so the 2% settling time
+        // roughly matches: t_s ≈ 4 / (ζ·ω₀)  →  ω₀ = 4 / (ζ · duration_s)
+        const omega0 = 4 / (ZETA * (duration / 1000));
+        const omegaD = omega0 * Math.sqrt(1 - ZETA * ZETA);
+        const amplitude = target - start;
 
         const startTime = performance.now();
 
-        // Two-phase ease: fast ease-out (0→0.6 in 55% of duration) then a
-        // gentle decelerate (0.6→1.0 in 45%). This makes the number feel
-        // like it's rushing towards the new value and then settling.
-        function ease(progress: number): number {
-            if (progress < 0.55) {
-                // Fast phase: ease-out quad, scaled to 0–0.6
-                const p = progress / 0.55;
-                return 0.6 * (1 - Math.pow(1 - p, 3));
-            } else {
-                // Settle phase: ease-in-out, scaled to 0.6–1.0
-                const p = (progress - 0.55) / 0.45;
-                return 0.6 + 0.4 * (1 - Math.pow(1 - p, 2));
-            }
-        }
-
         let frame = requestAnimationFrame(function tick(now: number) {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = ease(progress);
-            setValue(start + (target - start) * eased);
-            if (progress < 1) frame = requestAnimationFrame(tick);
+            const t = (now - startTime) / 1000; // seconds
+
+            // Closed-form underdamped spring position at time t.
+            const decay = Math.exp(-ZETA * omega0 * t);
+            const oscillation =
+                Math.cos(omegaD * t) + (ZETA * omega0 / omegaD) * Math.sin(omegaD * t);
+            const next = target - amplitude * decay * oscillation;
+
+            currentRef.current = next;
+            setValue(next);
+
+            // Stop when the spring has settled within 0.5 of the target
+            // (half a rupee is invisible in the formatted output).
+            if (Math.abs(next - target) < 0.5) {
+                currentRef.current = target;
+                setValue(target);
+                return;
+            }
+
+            frame = requestAnimationFrame(tick);
         });
 
         return () => cancelAnimationFrame(frame);

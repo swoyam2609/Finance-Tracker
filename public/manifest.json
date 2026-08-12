@@ -1,0 +1,23 @@
+{
+  "name": "Finance Tracker",
+  "short_name": "Finance",
+  "description": "Personal finance tracker with Google Sheets backend",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0A84FF",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192\u00d7192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512\u00d7512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

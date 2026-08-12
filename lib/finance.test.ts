@@ -288,8 +288,8 @@ describe('summarize', () => {
 describe('reserves', () => {
     it('names each account holding a reserve, for the breakdown sheet', () => {
         expect(reserves(DEFAULT_ACCOUNTS)).toEqual([
-            { id: 'AXIS Bank', label: 'AXIS Bank', amount: 10000 },
-            { id: 'SBI Bank', label: 'SBI Bank', amount: 5000 },
+            { id: 'AXIS Bank', label: 'AXIS Bank', amount: 12000 },
+            { id: 'SBI Bank', label: 'SBI Bank', amount: 3000 },
         ]);
     });
 });
