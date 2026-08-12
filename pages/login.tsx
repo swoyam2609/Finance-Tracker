@@ -21,6 +21,10 @@ export default function Login() {
     const [registeringPasskey, setRegisteringPasskey] = useState(false);
 
     // Check if a passkey is already registered on mount.
+    // This is a server-side check (does a credential file exist?), not a
+    // browser check (does this device have the passkey?). It's used only to
+    // decide whether to show the registration prompt after password login —
+    // the passkey login button is always visible.
     useEffect(() => {
         fetch('/api/passkey/authenticate', { method: 'GET' })
             .then(res => { if (res.ok) setPasskeyRegistered(true); })
@@ -318,36 +322,34 @@ export default function Login() {
                             </form>
 
                             {/* Passkey sign-in divider + button */}
-                            {passkeyRegistered && (
-                                <>
-                                    <div className="flex items-center gap-3 py-2">
-                                        <div className="flex-1 h-px bg-sys-separator" />
-                                        <span className="text-xs text-sys-label-tertiary uppercase tracking-wider">or</span>
-                                        <div className="flex-1 h-px bg-sys-separator" />
-                                    </div>
-                                    <button
-                                        onClick={handlePasskeyLogin}
-                                        disabled={passkeyLoading}
-                                        className="w-full glass overflow-hidden text-sys-label font-semibold py-3.5 rounded-xl text-[17px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 relative"
-                                    >
-                                        <div className="glass-bloom" style={{ background: ART_PRESETS.green }} aria-hidden="true" />
-                                        <div className="glass-scrim" aria-hidden="true" />
-                                        <span className="relative flex items-center gap-2">
-                                            {passkeyLoading ? (
-                                                <>
-                                                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                    Verifying...
-                                                </>
-                                            ) : (
-                                                <><Fingerprint className="w-5 h-5" /> Sign in with passkey</>
-                                            )}
-                                        </span>
-                                    </button>
-                                </>
-                            )}
+                            <>
+                                <div className="flex items-center gap-3 py-2">
+                                    <div className="flex-1 h-px bg-sys-separator" />
+                                    <span className="text-xs text-sys-label-tertiary uppercase tracking-wider">or</span>
+                                    <div className="flex-1 h-px bg-sys-separator" />
+                                </div>
+                                <button
+                                    onClick={handlePasskeyLogin}
+                                    disabled={passkeyLoading}
+                                    className="w-full glass overflow-hidden text-sys-label font-semibold py-3.5 rounded-xl text-[17px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 relative"
+                                >
+                                    <div className="glass-bloom" style={{ background: ART_PRESETS.green }} aria-hidden="true" />
+                                    <div className="glass-scrim" aria-hidden="true" />
+                                    <span className="relative flex items-center gap-2">
+                                        {passkeyLoading ? (
+                                            <>
+                                                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                                Verifying...
+                                            </>
+                                        ) : (
+                                            <><Fingerprint className="w-5 h-5" /> Sign in with passkey</>
+                                        )}
+                                    </span>
+                                </button>
+                            </>
                         </>
                     )}
                 </div>
