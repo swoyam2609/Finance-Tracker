@@ -20,6 +20,8 @@ export default async function handler(
 
     try {
         const expenses = await fetchData();
+        // Prevent the browser from serving stale data after the sheet is edited.
+        res.setHeader('Cache-Control', 'no-store, max-age=0');
         return res.status(200).json(expenses);
     } catch (error) {
         console.error('Error fetching expenses:', error);
@@ -29,4 +31,3 @@ export default async function handler(
         });
     }
 }
-

@@ -72,13 +72,18 @@ const FinanceContext = createContext<FinanceContextValue | null>(null);
 const EXPENSES_URL = '/api/expenses/get';
 const ACCOUNTS_URL = '/api/accounts/get';
 
+/** Appends a cache-busting timestamp so the browser never serves a stale response. */
+function uncached(url: string): string {
+    return `${url}?t=${Date.now()}`;
+}
+
 function toError(value: unknown): Error {
     return value instanceof Error ? value : new Error(String(value));
 }
 
 /** Both API routes return bare arrays; anything else is a contract break. */
 async function fetchArray(url: string): Promise<unknown[]> {
-    const response = await fetch(url);
+    const response = await fetch(uncached(url));
     if (!response.ok) throw new Error(`Request to ${url} failed (${response.status})`);
     const payload = await response.json();
     if (!Array.isArray(payload)) throw new Error(`Expected an array from ${url}`);

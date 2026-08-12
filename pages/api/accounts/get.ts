@@ -19,6 +19,7 @@ export default async function handler(
 
     try {
         const accounts = await getAccounts();
+        res.setHeader('Cache-Control', 'no-store, max-age=0');
         return res.status(200).json(accounts);
     } catch (error) {
         console.error('Error fetching accounts:', error);
