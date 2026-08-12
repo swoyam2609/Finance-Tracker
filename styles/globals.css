@@ -114,7 +114,7 @@
     /* Glass card surface — translucent fill + hairline stroke + inset top highlight */
     .glass {
         @apply relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-glass;
-        background: theme(colors.sys.glass);
+        background-color: theme(colors.sys.glass);
         /* raw CSS: @apply cannot express a 0.5px hairline border width */
         border: 0.5px solid theme(colors.sys.glass-stroke);
         /* Safari/WebKit does not clip filter:blur() descendants inside
@@ -125,6 +125,12 @@
         /* Belt-and-suspenders: a zero translateZ also pins the compositing
            layer so the blur is rasterised within the card's bounds. */
         transform: translateZ(0);
+        /* iOS Safari bug: when backdrop-filter + background-color + border-radius
+           are combined, the background paints as a full rectangle ignoring the
+           rounded corners. -webkit-mask-image forces the entire element —
+           background, border, and backdrop — to clip to the border-radius. */
+        -webkit-mask-image: -webkit-radial-gradient(white, black);
+        mask-image: radial-gradient(white, black);
     }
 
     /* Decorative colour bloom for .glass — colour and size are set inline by the
