@@ -1,5 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
+import { coerceAccount, sortAccounts, DEFAULT_ACCOUNTS } from '@/lib/accounts';
+import type { Account } from '@/lib/accounts';
 
 export interface ExpenseData {
     Date: string;
@@ -233,6 +235,70 @@ export async function updateLoanTransaction(rowIndex: number, loanData: LoanTran
         await row.save();
     } catch (error) {
         console.error('Error updating loan transaction in Google Sheets:', error);
+        throw error;
+    }
+}
+
+// ==================== ACCOUNTS SHEET FUNCTIONS ====================
+
+// Fetch account metadata from the Accounts sheet.
+// The tab is optional: when it is missing or has no usable rows, the built-in
+// DEFAULT_ACCOUNTS are returned so the app keeps working before the user
+// creates it.
+export async function getAccounts(): Promise<Account[]> {
+    try {
+        const doc = await getSheetsDoc();
+        const sheet = doc.sheetsByTitle['Accounts']; // Use sheet named "Accounts"
+
+        if (!sheet) {
+            console.info('Accounts sheet not found. Falling back to default accounts.');
+            return DEFAULT_ACCOUNTS;
+        }
+
+        await sheet.loadHeaderRow();
+        const rows = await sheet.getRows();
+
+        const accounts: Account[] = [];
+        let skipped = 0;
+
+        rows.forEach((row, index) => {
+            const rawRow = {
+                Id: row.get('Id'),
+                Label: row.get('Label'),
+                Kind: row.get('Kind'),
+                Last4: row.get('Last4'),
+                Network: row.get('Network'),
+                Art: row.get('Art'),
+                CreditLimit: row.get('CreditLimit'),
+                MinBalance: row.get('MinBalance'),
+                StatementDay: row.get('StatementDay'),
+                DueDay: row.get('DueDay'),
+                Order: row.get('Order'),
+                Archived: row.get('Archived'),
+            };
+
+            const account = coerceAccount(rawRow, index);
+
+            if (!account) {
+                skipped += 1;
+                return;
+            }
+
+            accounts.push(account);
+        });
+
+        if (skipped > 0) {
+            console.warn(`Skipped ${skipped} Accounts row(s) with no usable Id.`);
+        }
+
+        if (accounts.length === 0) {
+            console.info('Accounts sheet has no usable rows. Falling back to default accounts.');
+            return DEFAULT_ACCOUNTS;
+        }
+
+        return sortAccounts(accounts);
+    } catch (error) {
+        console.error('Error fetching accounts from Google Sheets:', error);
         throw error;
     }
 }

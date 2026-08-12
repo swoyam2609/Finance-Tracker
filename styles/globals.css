@@ -7,6 +7,7 @@
         --foreground-rgb: 255, 255, 255;
         --background-rgb: 0, 0, 0;
         --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-area-top: env(safe-area-inset-top, 0px);
     }
 
     body {
@@ -109,6 +110,39 @@
         @apply focus:outline-none focus:ring-2 focus:ring-sys-blue/50;
         @apply appearance-none cursor-pointer transition-all;
     }
+
+    /* Glass card surface — translucent fill + hairline stroke + inset top highlight */
+    .glass {
+        @apply relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-glass;
+        background: theme(colors.sys.glass);
+        /* raw CSS: @apply cannot express a 0.5px hairline border width */
+        border: 0.5px solid theme(colors.sys.glass-stroke);
+    }
+
+    /* Decorative colour bloom for .glass — background colour is set inline by the component */
+    .glass-bloom {
+        @apply absolute pointer-events-none;
+        width: 180px;
+        height: 180px;
+        inset: -50% -25% auto auto;
+        border-radius: 50%;
+        filter: blur(42px);
+        opacity: 0.45;
+    }
+
+    /* Tabular figures so animated counters don't shift layout */
+    .money {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
+    }
+
+    /* Hairline dividers for nav bars */
+    .hairline-t {
+        border-top: 0.5px solid theme(colors.sys.glass-stroke);
+    }
+    .hairline-b {
+        border-bottom: 0.5px solid theme(colors.sys.glass-stroke);
+    }
 }
 
 @layer utilities {
@@ -128,5 +162,14 @@
     .scroll-fade-right {
         -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    }
+}
+
+/* CSS animations/transitions only — framer-motion is handled separately via useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
