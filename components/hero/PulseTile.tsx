@@ -6,8 +6,10 @@
  * Pure presentation: the value arrives already computed and already signed.
  */
 
+import { motion, useReducedMotion } from 'framer-motion';
 import { ART_PRESETS } from '@/lib/accounts';
 import { formatIndianCurrency } from '@/lib/format';
+import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 
 export type PulseTone = 'neutral' | 'green' | 'red' | 'teal';
 
@@ -45,15 +47,23 @@ function resolveBloom(art: string | undefined, tone: PulseTone): string {
 
 export default function PulseTile({ label, value, tone = 'neutral', sublabel, art }: PulseTileProps) {
     const bloom = resolveBloom(art, tone);
+    const shouldReduceMotion = useReducedMotion();
+    const animated = useAnimatedCounter(value, 800);
 
     return (
         <div className="glass flex-1 px-4 py-3">
             <div className="glass-bloom" style={{ background: bloom }} />
             <div className="relative">
                 <div className="text-[11px] uppercase tracking-[0.1em] text-sys-label-secondary">{label}</div>
-                <div className={`money mt-0.5 text-[20px] font-[640] tracking-[-0.01em] ${TONE_TEXT[tone]}`}>
-                    {formatIndianCurrency(value, { decimals: false })}
-                </div>
+                <motion.div
+                    className={`money mt-0.5 text-[20px] font-[640] tracking-[-0.01em] ${TONE_TEXT[tone]}`}
+                    key={value}
+                    initial={shouldReduceMotion ? false : { opacity: 0.5, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                >
+                    {formatIndianCurrency(shouldReduceMotion ? value : animated, { decimals: false })}
+                </motion.div>
                 {sublabel && (
                     <div className="mt-0.5 text-[11px] text-sys-label-secondary">{sublabel}</div>
                 )}

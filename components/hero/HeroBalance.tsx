@@ -11,6 +11,7 @@
  */
 
 import { motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { PressableCard } from '@/components/MotionPrimitives';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
@@ -58,6 +59,19 @@ export default function HeroBalance({
     const target = mode === 'spendable' ? spendable : mode === 'networth' ? netWorth : investments;
     const animated = useAnimatedCounter(target);
 
+    // Track whether the value went up or down for the colour flash.
+    const prevTargetRef = useRef(target);
+    const [flashDirection, setFlashDirection] = useState<'up' | 'down' | null>(null);
+
+    useEffect(() => {
+        if (target !== prevTargetRef.current) {
+            setFlashDirection(target > prevTargetRef.current ? 'up' : 'down');
+            prevTargetRef.current = target;
+            const timer = setTimeout(() => setFlashDirection(null), 900);
+            return () => clearTimeout(timer);
+        }
+    }, [target]);
+
     // Split the formatted figure so the paise render smaller, as in the mockup.
     // The string still comes from `lib/format` — never hand-rolled here.
     const formatted = formatIndianCurrency(animated);
@@ -69,10 +83,26 @@ export default function HeroBalance({
     const isUp = monthDelta > 0;
 
     const figure = (
-        <span aria-hidden="true" className="money block text-[42px] font-[680] leading-[1.05] tracking-[-0.03em] md:text-[48px]">
+        <motion.span
+            aria-hidden="true"
+            className="money block text-[42px] font-[680] leading-[1.05] tracking-[-0.03em] md:text-[48px]"
+            animate={
+                shouldReduceMotion || !flashDirection
+                    ? {}
+                    : { scale: [1, 1.04, 1] }
+            }
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            style={{
+                color: flashDirection === 'up'
+                    ? '#26A862'
+                    : flashDirection === 'down'
+                        ? '#FF375F'
+                        : undefined,
+            }}
+        >
             {whole}
             {fraction && <span className="text-[22px] text-white/45 md:text-[24px]">{fraction}</span>}
-        </span>
+        </motion.span>
     );
 
     return (
