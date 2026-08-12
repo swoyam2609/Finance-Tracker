@@ -1,0 +1,15 @@
+<!-- Original geometric card mark drawn for this app. Not a Visa, Mastercard, RuPay or any other card-network trademark. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="presentation">
+    <defs>
+        <linearGradient id="cardPlate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#8E73FF" />
+            <stop offset="1" stop-color="#6446E8" />
+        </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="11" fill="url(#cardPlate)" />
+    <rect width="40" height="40" rx="11" fill="none" stroke="#7A5CFF" stroke-width="1" />
+    <rect x="7" y="11.5" width="26" height="17" rx="3.6" fill="#FFFFFF" />
+    <rect x="7" y="15.4" width="26" height="4.2" fill="#5B3FD6" />
+    <rect x="10.4" y="22.6" width="9" height="2.6" rx="1.3" fill="#5B3FD6" opacity="0.55" />
+    <rect x="21.6" y="22.6" width="4.2" height="2.6" rx="1.3" fill="#5B3FD6" opacity="0.35" />
+</svg>

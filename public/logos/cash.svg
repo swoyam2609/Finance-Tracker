@@ -1,0 +1,21 @@
+<!-- Original geometric note-and-coin mark drawn for this app. Not a trademark of any bank, mint or currency authority. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="presentation">
+    <defs>
+        <linearGradient id="cashPlate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2FC275" />
+            <stop offset="1" stop-color="#1C8B50" />
+        </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="11" fill="url(#cashPlate)" />
+    <rect width="40" height="40" rx="11" fill="none" stroke="#26A862" stroke-width="1" />
+    <!-- Banknote with the coin punched clean through it (even-odd), so the plate reads as the coin face. -->
+    <path
+        fill="#FFFFFF"
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M9.6 11.8 H30.4 A3.1 3.1 0 0 1 33.5 14.9 V25.1 A3.1 3.1 0 0 1 30.4 28.2 H9.6 A3.1 3.1 0 0 1 6.5 25.1 V14.9 A3.1 3.1 0 0 1 9.6 11.8 Z
+           M20 15.9 A4.1 4.1 0 1 0 20 24.1 A4.1 4.1 0 1 0 20 15.9 Z"
+    />
+    <rect x="9.6" y="18.7" width="3.6" height="2.6" rx="1.3" fill="#1C8B50" />
+    <rect x="26.8" y="18.7" width="3.6" height="2.6" rx="1.3" fill="#1C8B50" />
+</svg>

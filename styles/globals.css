@@ -117,6 +117,14 @@
         background: theme(colors.sys.glass);
         /* raw CSS: @apply cannot express a 0.5px hairline border width */
         border: 0.5px solid theme(colors.sys.glass-stroke);
+        /* Safari/WebKit does not clip filter:blur() descendants inside
+           overflow:hidden the way Blink does — the bloom leaks past the
+           rounded corners and bleeds into neighbouring cards. Forcing a
+           new stacking context here makes the overflow clip authoritative. */
+        isolation: isolate;
+        /* Belt-and-suspenders: a zero translateZ also pins the compositing
+           layer so the blur is rasterised within the card's bounds. */
+        transform: translateZ(0);
     }
 
     /* Decorative colour bloom for .glass — colour and size are set inline by the

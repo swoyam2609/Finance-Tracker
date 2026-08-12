@@ -9,12 +9,14 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
-import { BottomSheet, ModalSheet, SlideIndicator } from '@/components/MotionPrimitives';
+import { BottomSheet, ModalSheet, SlideIndicator, PressableCard } from '@/components/MotionPrimitives';
 import { useToast } from '@/components/layout/ToastHost';
 import { useFinance, type Transaction } from '@/components/data/FinanceProvider';
 import { CATEGORIES } from '@/lib/categories';
 import { amountOf } from '@/lib/finance';
-import type { Account } from '@/lib/accounts';
+import { ART_PRESETS, type Account } from '@/lib/accounts';
+import { categoryGlyph } from '@/components/txn/CategoryIcon';
+import AccountLogo from '@/components/wallet/AccountLogo';
 
 function Spinner() {
     return (
@@ -126,10 +128,12 @@ export function AddTransactionSheet({ isOpen, onClose, accounts }: {
         }
     };
 
+    const accent = isIncome ? ART_PRESETS.green : ART_PRESETS.pink;
+
     return (
         <BottomSheet isOpen={isOpen} onClose={onClose}>
-            <div className="px-6 pb-6 sm:p-6">
-                <div className="flex items-center justify-between mb-8">
+            <div className="px-6 pb-[calc(1.5rem+var(--safe-area-bottom,0px))]">
+                <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-sys-label">New Transaction</h2>
                     <button onClick={onClose} aria-label="Close"
                         className="rounded-full bg-sys-fill/50 flex items-center justify-center min-w-[44px] min-h-[44px]">
@@ -137,57 +141,113 @@ export function AddTransactionSheet({ isOpen, onClose, accounts }: {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <TypeToggle isIncome={isIncome} onChange={setIsIncome} layoutId="addTypeToggle" />
 
-                    <div>
-                        <label className="text-sm font-medium text-sys-label-secondary mb-2 block">Amount</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-5">
-                                <span className="text-sys-label-secondary text-2xl font-bold">₹</span>
+                    {/* Amount — glass card with bloom */}
+                    <div className="glass overflow-hidden">
+                        <div className="glass-bloom" style={{ background: accent }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
+                        <div className="relative px-5 py-4">
+                            <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider">Amount</label>
+                            <div className="relative mt-1">
+                                <div className="absolute inset-y-0 left-0 flex items-center">
+                                    <span className="text-sys-label-secondary text-2xl font-bold">₹</span>
+                                </div>
+                                <input
+                                    type="number" required step="0.01" min="0" inputMode="decimal"
+                                    className="money w-full pl-8 bg-transparent text-sys-label focus:outline-none text-3xl font-bold placeholder-sys-label-tertiary"
+                                    value={form.Amount}
+                                    onChange={event => setForm({ ...form, Amount: event.target.value })}
+                                    placeholder="0.00"
+                                />
                             </div>
-                            <input
-                                type="number" required step="0.01" min="0" inputMode="decimal"
-                                className="money w-full pl-14 pr-4 py-5 bg-sys-card text-sys-label rounded-2xl focus:outline-none focus:ring-2 focus:ring-sys-blue/50 transition-all text-3xl font-bold placeholder-sys-label-tertiary"
-                                value={form.Amount}
-                                onChange={event => setForm({ ...form, Amount: event.target.value })}
-                                placeholder="0.00"
-                            />
                         </div>
                     </div>
 
-                    <div className="glass overflow-hidden">
-                        <FieldRow label="Date" first>
-                            <input type="date" required className={FIELD_CLASS} style={{ colorScheme: 'dark' }}
-                                value={form.Date} onChange={event => setForm({ ...form, Date: event.target.value })} />
-                        </FieldRow>
-                        <FieldRow label="Account">
-                            <select required className={`${FIELD_CLASS} appearance-none cursor-pointer`}
-                                value={form.Account} onChange={event => setForm({ ...form, Account: event.target.value })}>
-                                {accounts.map(account => (
-                                    <option key={account.Id} value={account.Id}>{account.Label}</option>
-                                ))}
-                            </select>
-                        </FieldRow>
-                        {!isIncome && (
-                            <FieldRow label="Category">
-                                <select required className={`${FIELD_CLASS} appearance-none cursor-pointer`}
-                                    value={form.Category} onChange={event => setForm({ ...form, Category: event.target.value })}>
-                                    <option value="">Select category</option>
-                                    {CATEGORIES.map(category => <option key={category} value={category}>{category}</option>)}
-                                </select>
-                            </FieldRow>
-                        )}
-                        <FieldRow label="Description">
-                            <input type="text" className={`${FIELD_CLASS} placeholder-sys-label-tertiary`} placeholder="Optional"
-                                value={form.Description} onChange={event => setForm({ ...form, Description: event.target.value })} />
-                        </FieldRow>
+                    {/* Account picker — horizontal scroll of logo chips */}
+                    <div>
+                        <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-2 block">Account</label>
+                        <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+                            {accounts.map(account => {
+                                const selected = form.Account === account.Id;
+                                return (
+                                    <PressableCard
+                                        key={account.Id}
+                                        onClick={() => setForm({ ...form, Account: account.Id })}
+                                        scaleAmount={0.94}
+                                        className="shrink-0"
+                                    >
+                                        <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                            <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                            <div className="relative flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                                                    <AccountLogo account={account} />
+                                                </div>
+                                                <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                            </div>
+                                        </div>
+                                    </PressableCard>
+                                );
+                            })}
+                        </div>
                     </div>
 
+                    {/* Category picker — grid of icon chips */}
+                    {!isIncome && (
+                        <div>
+                            <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider mb-2 block">Category</label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {CATEGORIES.map(category => {
+                                    const glyph = categoryGlyph(category);
+                                    const selected = form.Category === category;
+                                    return (
+                                        <PressableCard
+                                            key={category}
+                                            onClick={() => setForm({ ...form, Category: category })}
+                                            scaleAmount={0.92}
+                                        >
+                                            <div className={`glass overflow-hidden flex flex-col items-center gap-1.5 py-2.5 px-1 ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                                <div className={`w-8 h-8 rounded-lg ${glyph.bgColor} flex items-center justify-center`}>
+                                                    {glyph.icon}
+                                                </div>
+                                                <span className="text-[9px] text-sys-label-secondary text-center leading-tight truncate w-full">{category}</span>
+                                            </div>
+                                        </PressableCard>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Date + Description — glass fields */}
+                    <div className="glass overflow-hidden">
+                        <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} aria-hidden="true" />
+                        <div className="glass-scrim" aria-hidden="true" />
+                        <div className="relative">
+                            <div className="px-5 pt-3.5">
+                                <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider block mb-1">Date</label>
+                                <input type="date" required className="w-full pb-3 bg-transparent text-sys-label focus:outline-none" style={{ colorScheme: 'dark' }}
+                                    value={form.Date} onChange={event => setForm({ ...form, Date: event.target.value })} />
+                            </div>
+                            <div className="border-t border-sys-glass-stroke mx-5" />
+                            <div className="px-5 pt-3.5">
+                                <label className="text-[11px] font-medium text-sys-label-secondary uppercase tracking-wider block mb-1">Description</label>
+                                <input type="text" className="w-full pb-3.5 bg-transparent text-sys-label placeholder-sys-label-tertiary focus:outline-none" placeholder="Optional"
+                                    value={form.Description} onChange={event => setForm({ ...form, Description: event.target.value })} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Submit — gradient matching the type */}
                     <button type="submit" disabled={submitting}
-                        className="w-full bg-sys-blue text-white font-semibold py-4 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 text-[17px]">
+                        className={`w-full text-white font-semibold py-4 rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40 text-[17px] flex items-center justify-center gap-2 ${
+                            isIncome
+                                ? 'bg-gradient-to-r from-sys-green to-sys-teal'
+                                : 'bg-gradient-to-r from-sys-pink to-sys-red'
+                        }`}>
                         {submitting
-                            ? <span className="flex items-center justify-center gap-2"><Spinner />Adding...</span>
+                            ? <><Spinner />Adding...</>
                             : (isIncome ? 'Add Income' : 'Add Expense')}
                     </button>
                 </form>

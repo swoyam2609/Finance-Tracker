@@ -29,10 +29,19 @@ import { accountGlyph } from '@/components/txn/CategoryIcon';
 import { availableMonths, filterByPeriod } from '@/lib/transactions';
 import { summarize, amountOf, isTransfer } from '@/lib/finance';
 import { CATEGORIES, ALL_CATEGORIES, categoryColor } from '@/lib/categories';
-import { resolveArt, type Account } from '@/lib/accounts';
+import { resolveArt, ART_PRESETS, type Account } from '@/lib/accounts';
 import { formatIndianCurrency } from '@/lib/format';
 
 const TOTAL_COLOR = '#0A84FF';
+
+/** Bloom colour per summary stat, matching the text colour of each tile. */
+const STAT_BLOOM: string[] = [
+    ART_PRESETS.green,   // Income
+    ART_PRESETS.teal,    // Investment
+    ART_PRESETS.pink,    // Expenses
+    ART_PRESETS.green,   // Net Savings (overwritten inline if negative)
+    ART_PRESETS.blue,    // Savings Rate
+];
 
 interface CategorySlice {
     category: string;
@@ -211,7 +220,7 @@ export default function AnalyticsPage() {
     if (loading) {
         return (
             <AppShell title="Analytics">
-                <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
                     <div className="h-7 w-32 skeleton motion-reduce:animate-none" aria-hidden="true" />
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         {[0, 1, 2, 3, 4].map(index => (
@@ -227,7 +236,7 @@ export default function AnalyticsPage() {
 
     return (
         <AppShell title="Analytics">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
                 {/* Period Selector */}
                 <div className="flex justify-between items-center gap-3">
                     <h2 className="text-lg font-bold text-sys-label">Analysis</h2>
@@ -262,23 +271,38 @@ export default function AnalyticsPage() {
 
                 {/* Summary Stats */}
                 <StaggerContainer className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
-                    {summaryCards.map(card => (
-                        <StaggerItem key={card.label} className="glass p-4 min-w-[42vw] snap-center sm:min-w-0 flex-shrink-0">
-                            <p className="text-[11px] font-medium text-sys-label-secondary mb-1.5 uppercase tracking-wider">{card.label}</p>
-                            <p className={`text-lg font-bold money ${card.color}`}>
-                                {card.isPercent ? `${card.value.toFixed(1)}%` : formatIndianCurrency(card.value)}
-                            </p>
+                    {summaryCards.map((card, index) => (
+                        <StaggerItem key={card.label} className="glass overflow-hidden p-4 min-w-[44vw] snap-center sm:min-w-0 flex-shrink-0">
+                            <div
+                                className="glass-bloom"
+                                style={{
+                                    background: card.label === 'Net Savings' && card.value < 0
+                                        ? ART_PRESETS.pink
+                                        : STAT_BLOOM[index],
+                                }}
+                                aria-hidden="true"
+                            />
+                            <div className="glass-scrim" aria-hidden="true" />
+                            <div className="relative">
+                                <p className="text-[10px] sm:text-[11px] font-medium text-sys-label-secondary mb-1.5 uppercase tracking-wider truncate">{card.label}</p>
+                                <p className={`text-base sm:text-lg font-bold money ${card.color}`}>
+                                    {card.isPercent ? `${card.value.toFixed(1)}%` : formatIndianCurrency(card.value)}
+                                </p>
+                            </div>
                         </StaggerItem>
                     ))}
                 </StaggerContainer>
 
                 {/* Daily Expenses Chart */}
                 <motion.div
-                    className="glass p-6"
+                    className="glass overflow-hidden p-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.1 }}
                 >
+                    <div className="glass-bloom" style={{ background: ART_PRESETS.blue }} aria-hidden="true" />
+                    <div className="glass-scrim" aria-hidden="true" />
+                    <div className="relative">
                     <h3 className="text-base font-bold text-sys-label mb-1">
                         {isAllCategories ? 'Daily Expenses' : selectedCategory}
                     </h3>
@@ -386,15 +410,19 @@ export default function AnalyticsPage() {
                             </ResponsiveContainer>
                         </div>
                     )}
+                    </div>
                 </motion.div>
 
                 {/* Category Distribution */}
                 <motion.div
-                    className="glass p-6"
+                    className="glass overflow-hidden p-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.2 }}
                 >
+                    <div className="glass-bloom" style={{ background: ART_PRESETS.violet }} aria-hidden="true" />
+                    <div className="glass-scrim" aria-hidden="true" />
+                    <div className="relative">
                     <h3 className="text-base font-bold text-sys-label mb-4">
                         {isAllCategories ? 'Expenses by Category' : `${selectedCategory} Expenses`}
                     </h3>
@@ -431,15 +459,19 @@ export default function AnalyticsPage() {
                             ))}
                         </div>
                     )}
+                    </div>
                 </motion.div>
 
                 {/* Account Breakdown */}
                 <motion.div
-                    className="glass"
+                    className="glass overflow-hidden"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
                 >
+                    <div className="glass-bloom" style={{ background: ART_PRESETS.teal }} aria-hidden="true" />
+                    <div className="glass-scrim" aria-hidden="true" />
+                    <div className="relative">
                     <div className="px-5 py-4 border-b border-sys-separator">
                         <h3 className="text-base font-bold text-sys-label">Account Breakdown</h3>
                         <p className="text-xs text-sys-label-secondary mt-0.5">
@@ -529,6 +561,7 @@ export default function AnalyticsPage() {
                             </div>
                         </>
                     )}
+                    </div>
                 </motion.div>
             </div>
         </AppShell>

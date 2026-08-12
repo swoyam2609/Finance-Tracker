@@ -1,0 +1,20 @@
+<!-- Original geometric monogram drawn for this app. Not the official Axis Bank trademark or any part of it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="presentation">
+    <defs>
+        <linearGradient id="axisPlate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#B21B5C" />
+            <stop offset="1" stop-color="#7C0F3F" />
+        </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="11" fill="url(#axisPlate)" />
+    <rect width="40" height="40" rx="11" fill="none" stroke="#97144D" stroke-width="1" />
+    <path
+        d="M10.6 29.4 L20 10.9 L29.4 29.4"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="3.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+    <path d="M15.1 23.2 H24.9" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" />
+</svg>

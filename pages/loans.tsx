@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, FormEvent } from 'react';
+import { useSession } from 'next-auth/react';
 import { AlertCircle, Banknote, Plus } from 'lucide-react';
 import AppShell from '@/components/layout/AppShell';
 import { useToast } from '@/components/layout/ToastHost';
@@ -40,6 +41,7 @@ const Spinner = () => (
 
 export default function LoansPage() {
     const { addToast } = useToast();
+    const { status } = useSession();
 
     const [loans, setLoans] = useState<LoanTx[]>([]);
     const [loansLoading, setLoansLoading] = useState(true);
@@ -54,7 +56,13 @@ export default function LoansPage() {
         try {
             setLoansLoading(true);
             const response = await fetch('/api/loans/get');
-            if (!response.ok) throw new Error('Failed to fetch loans');
+            if (!response.ok) {
+                // Name the status: a bare "Failed to fetch loans" hid a 401 here.
+                const detail = await response.json().catch(() => null);
+                throw new Error(detail?.error
+                    ? `${detail.error} (${response.status})`
+                    : `Couldn't reach the loans sheet (HTTP ${response.status})`);
+            }
             const data: LoanTx[] = await response.json();
             setLoans(data);
             setLoansError('');
@@ -66,9 +74,12 @@ export default function LoansPage() {
         }
     }, []);
 
+    // Wait for the session before calling a session-guarded route, otherwise the
+    // first request races authentication and comes back 401.
     useEffect(() => {
+        if (status !== 'authenticated') return;
         fetchLoansData();
-    }, [fetchLoansData]);
+    }, [status, fetchLoansData]);
 
     const handleLoanSubmit = async (e: FormEvent) => {
         e.preventDefault();

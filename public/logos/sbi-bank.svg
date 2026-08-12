@@ -1,0 +1,19 @@
+<!-- Original geometric monogram drawn for this app. Not the official State Bank of India trademark or any part of it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="presentation">
+    <defs>
+        <linearGradient id="sbiPlate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2C4FB6" />
+            <stop offset="1" stop-color="#1B3480" />
+        </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="11" fill="url(#sbiPlate)" />
+    <rect width="40" height="40" rx="11" fill="none" stroke="#22409A" stroke-width="1" />
+    <!-- White disc with a keyhole cut straight through it (even-odd), evoking a vault, not a logo. -->
+    <path
+        fill="#FFFFFF"
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M20 8.2 C13.5 8.2 8.2 13.5 8.2 20 C8.2 26.5 13.5 31.8 20 31.8 C26.5 31.8 31.8 26.5 31.8 20 C31.8 13.5 26.5 8.2 20 8.2 Z
+           M20 13.4 C22 13.4 23.6 15 23.6 17 C23.6 18.2 23 19.3 22.1 19.9 L23.4 25.7 C23.5 26.2 23.1 26.7 22.6 26.7 L17.4 26.7 C16.9 26.7 16.5 26.2 16.6 25.7 L17.9 19.9 C17 19.3 16.4 18.2 16.4 17 C16.4 15 18 13.4 20 13.4 Z"
+    />
+</svg>
