@@ -178,13 +178,13 @@ export function AddTransactionSheet({ isOpen, onClose, accounts }: {
                                         scaleAmount={0.94}
                                         className="shrink-0"
                                     >
-                                        <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
-                                            <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                        <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
+                                            <div className="glass-bloom" style={{ background: selected ? ART_PRESETS.blue : (account.Art || ART_PRESETS.slate) }} aria-hidden="true" />
                                             <div className="relative flex items-center gap-2">
                                                 <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
                                                     <AccountLogo account={account} />
                                                 </div>
-                                                <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                <span className={`text-xs font-medium truncate ${selected ? 'text-sys-blue' : 'text-sys-label'}`}>{account.Label}</span>
                                             </div>
                                         </div>
                                     </PressableCard>
@@ -207,11 +207,11 @@ export function AddTransactionSheet({ isOpen, onClose, accounts }: {
                                             onClick={() => setForm({ ...form, Category: category })}
                                             scaleAmount={0.92}
                                         >
-                                            <div className={`glass overflow-hidden flex flex-col items-center gap-1.5 py-2.5 px-1 ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                            <div className={`glass overflow-hidden flex flex-col items-center gap-1.5 py-2.5 px-1 ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
                                                 <div className={`w-8 h-8 rounded-lg ${glyph.bgColor} flex items-center justify-center`}>
                                                     {glyph.icon}
                                                 </div>
-                                                <span className="text-[9px] text-sys-label-secondary text-center leading-tight truncate w-full">{category}</span>
+                                                <span className={`text-[9px] text-center leading-tight truncate w-full ${selected ? 'text-sys-blue font-semibold' : 'text-sys-label-secondary'}`}>{category}</span>
                                             </div>
                                         </PressableCard>
                                     );
@@ -370,13 +370,13 @@ export function EditTransactionModal({ isOpen, onClose, txn, accounts }: {
                                         scaleAmount={0.94}
                                         className="shrink-0"
                                     >
-                                        <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
-                                            <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                        <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
+                                            <div className="glass-bloom" style={{ background: selected ? ART_PRESETS.blue : (account.Art || ART_PRESETS.slate) }} aria-hidden="true" />
                                             <div className="relative flex items-center gap-2">
                                                 <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
                                                     <AccountLogo account={account} />
                                                 </div>
-                                                <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                <span className={`text-xs font-medium truncate ${selected ? 'text-sys-blue' : 'text-sys-label'}`}>{account.Label}</span>
                                             </div>
                                         </div>
                                     </PressableCard>
@@ -399,11 +399,11 @@ export function EditTransactionModal({ isOpen, onClose, txn, accounts }: {
                                             onClick={() => setForm({ ...form, Category: category })}
                                             scaleAmount={0.92}
                                         >
-                                            <div className={`glass overflow-hidden flex flex-col items-center gap-1.5 py-2.5 px-1 ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
+                                            <div className={`glass overflow-hidden flex flex-col items-center gap-1.5 py-2.5 px-1 ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
                                                 <div className={`w-8 h-8 rounded-lg ${glyph.bgColor} flex items-center justify-center`}>
                                                     {glyph.icon}
                                                 </div>
-                                                <span className="text-[9px] text-sys-label-secondary text-center leading-tight truncate w-full">{category}</span>
+                                                <span className={`text-[9px] text-center leading-tight truncate w-full ${selected ? 'text-sys-blue font-semibold' : 'text-sys-label-secondary'}`}>{category}</span>
                                             </div>
                                         </PressableCard>
                                     );

@@ -236,13 +236,13 @@ export default function TransfersPage() {
                                                 scaleAmount={0.94}
                                                 className="shrink-0"
                                             >
-                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
-                                                    <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
+                                                    <div className="glass-bloom" style={{ background: selected ? ART_PRESETS.blue : (account.Art || ART_PRESETS.slate) }} aria-hidden="true" />
                                                     <div className="relative flex items-center gap-2">
                                                         <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
                                                             <AccountLogo account={account} />
                                                         </div>
-                                                        <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                        <span className={`text-xs font-medium truncate ${selected ? 'text-sys-blue' : 'text-sys-label'}`}>{account.Label}</span>
                                                     </div>
                                                 </div>
                                             </PressableCard>
@@ -271,13 +271,13 @@ export default function TransfersPage() {
                                                 scaleAmount={0.94}
                                                 className="shrink-0"
                                             >
-                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'ring-2 ring-sys-blue' : ''}`}>
-                                                    <div className="glass-bloom" style={{ background: account.Art || ART_PRESETS.slate }} aria-hidden="true" />
+                                                <div className={`glass overflow-hidden px-3 py-2.5 min-w-[88px] ${selected ? 'border-2 border-sys-blue' : 'border-2 border-transparent'}`}>
+                                                    <div className="glass-bloom" style={{ background: selected ? ART_PRESETS.blue : (account.Art || ART_PRESETS.slate) }} aria-hidden="true" />
                                                     <div className="relative flex items-center gap-2">
                                                         <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
                                                             <AccountLogo account={account} />
                                                         </div>
-                                                        <span className="text-xs font-medium text-sys-label truncate">{account.Label}</span>
+                                                        <span className={`text-xs font-medium truncate ${selected ? 'text-sys-blue' : 'text-sys-label'}`}>{account.Label}</span>
                                                     </div>
                                                 </div>
                                             </PressableCard>
